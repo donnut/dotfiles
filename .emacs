@@ -34,7 +34,7 @@
 (setq make-backup-files nil)
 
 ;; remove scoll bars
-(scroll-bar-mode -1)
+(setq scroll-bar-mode -1)
 
 ;; set font height
 (set-face-attribute 'default nil :height 100)
