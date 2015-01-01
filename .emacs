@@ -66,8 +66,8 @@
 ;; Do setting recommemded configuration
 (tss-config-default)
 
-;; Word wrap on vertical split
-(setq truncate-partial-width-windows nil)
+;; disable word wrapping
+(setq default-truncate-lines t)
 
 ;; applies a golden ratio to window with focus
 (require 'golden-ratio)
