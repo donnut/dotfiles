@@ -69,3 +69,9 @@
 ;; Word wrap on vertical split
 (setq truncate-partial-width-windows nil)
 
+;; applies a golden ratio to window with focus
+(require 'golden-ratio)
+(golden-ratio-mode 1)
+(setq golden-ratio-exclude-modes '("ediff-mode"
+                                   "eshell-mode"
+                                   "dired-mode"))
