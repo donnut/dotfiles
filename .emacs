@@ -71,13 +71,6 @@
 ;; disable word wrapping
 (setq default-truncate-lines t)
 
-;; applies a golden ratio to window with focus
-(require 'golden-ratio)
-(golden-ratio-mode 1)
-(setq golden-ratio-exclude-modes '("ediff-mode"
-                                   "eshell-mode"
-                                   "dired-mode"))
-
 ;;; Use "%" to jump to the matching {}.
 (defun goto-match-paren (arg)
   "Go to the matching {} if on {}, otherwise insertthe character typed."
@@ -86,6 +79,3 @@
 	((looking-at "\s}") (forward-char 1) (backward-list 1))
 	(t                    (self-insert-command (or arg 1))) ))
 (global-set-key "%" `goto-match-paren)
-
-;; javascript
-(smart-tabs-insinuate 'typescript 'javascript)
