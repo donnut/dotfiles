@@ -34,6 +34,7 @@
 
 ;; turn off backup files
 (setq make-backup-files nil)
+(setq auto-save-default nil)
 
 ;; remove scoll bars
 (setq scroll-bar-mode -1)
@@ -79,3 +80,25 @@
 	((looking-at "\s}") (forward-char 1) (backward-list 1))
 	(t                    (self-insert-command (or arg 1))) ))
 (global-set-key "%" `goto-match-paren)
+
+;; hide show minor mode enabled to fold stuff
+(add-hook 'prog-mode-hook #'hs-minor-mode)
+
+;; use spaces for tabs only
+(setq-default indent-tabs-mode nil)
+
+;; enable markdown syntax
+(autoload 'markdown-mode "markdown-mode"
+       "Major mode for editing Markdown files" t)
+    (add-to-list 'auto-mode-alist '("\\.text\\'" . markdown-mode))
+    (add-to-list 'auto-mode-alist '("\\.markdown\\'" . markdown-mode))
+    (add-to-list 'auto-mode-alist '("\\.md\\'" . markdown-mode))
+
+;; If necessary, add JDK_HOME or JAVA_HOME to the environment
+;; (setenv "JDK_HOME" "/path/to/jdk")
+;; If necessary, make sure "sbt" and "scala" are in the PATH environment
+;; (setenv "PATH" (concat "/path/to/sbt/bin:" (getenv "PATH")))
+;; (setenv "PATH" (concat "/path/to/scala/bin:" (getenv "PATH")))
+;; You can also customize `ensime-inf-get-project-root' and `ensime-inf-get-repl-cmd-line'
+(require 'ensime)
+(add-hook 'scala-mode-hook 'ensime-scala-mode-hook)
