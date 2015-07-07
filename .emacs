@@ -7,7 +7,7 @@
    [default default default italic underline success warning error])
  '(ansi-color-names-vector
    ["#242424" "#e5786d" "#95e454" "#cae682" "#8ac6f2" "#333366" "#ccaa8f" "#f6f3e8"])
- '(custom-enabled-themes (quote (wheatgrass)))
+
  '(haskell-hoogle-command "hoogle")
  '(haskell-indent-spaces 4)
  '(haskell-mode-hook (quote (turn-on-haskell-doc turn-on-haskell-indentation))))
@@ -27,10 +27,11 @@
 
 ;; color improvement (maybe unnecessary)
 (autoload 'color-theme-approximate-on "color-theme-approximate")
-(color-theme-approximate-on)
 
 ;; theme
-(load-theme 'misterioso)
+(add-to-list 'custom-theme-load-path "~/.emacs.d/themes")
+(load-theme 'tango)
+
 
 ;; disable toolbar
 (tool-bar-mode -1)
@@ -59,18 +60,18 @@
 (require 'typescript)
 (add-to-list 'auto-mode-alist '("\\.ts\\'" . typescript-mode))
 
-;;(require 'tss)
+(require 'tss)
 
 ;; Key binding
-;;(setq tss-popup-help-key "C-:")
-;;(setq tss-jump-to-definition-key "C->")
-;;(setq tss-implement-definition-key "C-c i")
+(setq tss-popup-help-key "C-:")
+(setq tss-jump-to-definition-key "C->")
+(setq tss-implement-definition-key "C-c i")
 
 ;; Make config suit for you. About the config item, eval the following sexp.
 ;; (customize-group "tss")
 
 ;; Do setting recommemded configuration
-;;(tss-config-default)
+(tss-config-default)
 
 ;; disable word wrapping
 (setq default-truncate-lines t)
@@ -93,18 +94,8 @@
 ;; enable markdown syntax
 (autoload 'markdown-mode "markdown-mode"
        "Major mode for editing Markdown files" t)
-    (add-to-list 'auto-mode-alist '("\\.text\\'" . markdown-mode))
     (add-to-list 'auto-mode-alist '("\\.markdown\\'" . markdown-mode))
     (add-to-list 'auto-mode-alist '("\\.md\\'" . markdown-mode))
-
-;; If necessary, add JDK_HOME or JAVA_HOME to the environment
-;; (setenv "JDK_HOME" "/path/to/jdk")
-;; If necessary, make sure "sbt" and "scala" are in the PATH environment
-;; (setenv "PATH" (concat "/path/to/sbt/bin:" (getenv "PATH")))
-;; (setenv "PATH" (concat "/path/to/scala/bin:" (getenv "PATH")))
-;; You can also customize `ensime-inf-get-project-root' and `ensime-inf-get-repl-cmd-line'
-(require 'ensime)
-(add-hook 'scala-mode-hook 'ensime-scala-mode-hook)
 
 ;; scroll one line at a time (less "jumpy" than defaults)
 (setq mouse-wheel-scroll-amount '(3 ((shift) . 1))) ;; one line at a time
@@ -112,4 +103,3 @@
 (setq mouse-wheel-follow-mouse 't) ;; scroll window under mouse
 (setq scroll-step 1) ;; keyboard scroll one line at a time
 
-;; haskell mode

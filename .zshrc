@@ -51,7 +51,7 @@ source $ZSH/oh-my-zsh.sh
 
 # User configuration
 
-export PATH="/home/donnut/bin:/home/donnut/.cabal/bin:/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl:/sbin"
+export PATH="/home/donnut/.nix-profile/bin:/home/donnut/.nix-profile/sbin:/home/donnut/bin:/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl:/sbin"
 # export MANPATH="/usr/local/man:$MANPATH"
 
 # You may need to manually set your language environment
@@ -83,12 +83,24 @@ alias open="firefox -new-tab "
 
 export NVM_DIR="/home/donnut/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
-
-PATH="$PATH:/home/donnut/apps/flow/"
+nvm use iojs-1.5.0
 
 # path to sbt for scala
-PATH="$PATH:$HOME/dev/sbt/bin/"
+SCALA_HOME="$HOME/dev/scala/bin/scala-2.11.6"
+PATH="$PATH:$SCALA_HOME/bin"
 
 # path for java jdk
 export JDK_HOME="/usr/lib/jvm/java-7-openjdk/bin/"
 export JAVA_HOME="/usr/lib/jvm/java-7-openjdk/bin/"
+
+#path for idea
+PATH="$PATH:$HOME/apps/idea-IC-141.713.2/bin/"
+
+# path for scripts
+PATH="$PATH:$HOME/scripts"
+
+# clojurescript
+export CLOJURESCRIPT_HOME="$HOME/dev/clojurescript"
+
+# nix
+if [ -e /home/donnut/.nix-profile/etc/profile.d/nix.sh ]; then . /home/donnut/.nix-profile/etc/profile.d/nix.sh; fi
