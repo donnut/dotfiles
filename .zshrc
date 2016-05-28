@@ -51,12 +51,12 @@ source $ZSH/oh-my-zsh.sh
 
 # User configuration
 
-export PATH="/home/donnut/.nix-profile/bin:/home/donnut/.nix-profile/sbin:/home/donnut/bin:/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl:/sbin"
+export PATH="/home/donnut/bin:/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl:/sbin"
 # export MANPATH="/usr/local/man:$MANPATH"
 
 # You may need to manually set your language environment
-# export LANG=en_US.UTF-8
-export LANG=nl_NL.UTF-8
+export LANG=en_US.UTF-8
+#export LANG=nl_NL.UTF-8
 
 # Preferred editor for local and remote sessions
 # if [[ -n $SSH_CONNECTION ]]; then
@@ -81,26 +81,42 @@ export LANG=nl_NL.UTF-8
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 alias open="firefox -new-tab "
 
-export NVM_DIR="/home/donnut/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
-nvm use iojs-1.5.0
+#path for npm
+PATH="$PATH:$HOME/npm-global/bin"
 
 # path to sbt for scala
 SCALA_HOME="$HOME/dev/scala/bin/scala-2.11.6"
 PATH="$PATH:$SCALA_HOME/bin"
 
 # path for java jdk
-export JDK_HOME="/usr/lib/jvm/java-7-openjdk/bin/"
-export JAVA_HOME="/usr/lib/jvm/java-7-openjdk/bin/"
+export JAVA_HOME="/usr/lib/jvm/default/"
+PATH="$PATH:/usr/lib/jvm/default/bin/"
+PATH="$PATH:/opt/maven/bin/"
 
 #path for idea
-PATH="$PATH:$HOME/apps/idea-IC-141.713.2/bin/"
+PATH="$PATH:$HOME/bin/VSCode-linux-x64/"
 
 # path for scripts
 PATH="$PATH:$HOME/scripts"
 
 # clojurescript
-export CLOJURESCRIPT_HOME="$HOME/dev/clojurescript"
+#export CLOJURESCRIPT_HOME="$HOME/dev/clojurescript"
 
-# nix
-if [ -e /home/donnut/.nix-profile/etc/profile.d/nix.sh ]; then . /home/donnut/.nix-profile/etc/profile.d/nix.sh; fi
+#ruby
+PATH="$PATH:$HOME/.gem/ruby/2.2.0/bin"
+
+# added by Anaconda 2.3.0 installer
+export PATH="/home/donnut/anaconda/bin:$PATH"
+
+# fix CURL certificates path
+export CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+
+# docker
+# alias
+alias dm=docker-machine
+
+# shell prompt
+#autoload -Uz promptinit
+#promptinit
+#prompt wunjo
+#$(__docker_machine_ps1)

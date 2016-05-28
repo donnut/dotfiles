@@ -2,23 +2,23 @@ execute pathogen#infect()
 
 filetype plugin indent on
 
-syntax on
+"syntax on
 
 map <silent> <Leader>tr :NERDTreeToggle<cr>
 map <silent> <Leader>tf :NERDTreeFocus<cr>
-map <silent> <Leader>ls :CtrlPBuffer<cr>
+map <silent> <Leader>bd :bp<bar>sp<bar>bn<bar>bd<cr>
 
 command! FixWhitespaces %s/\s\+$//g
 
-nnoremap j gj
-nnoremap k gk
-vnoremap j gj
-vnoremap k gk
+"nnoremap j gj
+"nnoremap k gk
+"vnoremap j gj
+"vnoremap k gk
 
-noremap <Up> <nop>
-noremap <Down> <nop>
-noremap <Left> <nop>
-noremap <Right> <nop>
+"noremap <Up> <nop>
+"noremap <Down> <nop>
+"noremap <Left> <nop>
+"noremap <Right> <nop>
 nnoremap <silent> <C-l> :noh<CR><C-l>
 "nnoremap * *N
 "nnoremap # #N
@@ -65,7 +65,8 @@ set foldnestmax=10
 
 "colorscheme solarized
 "colorscheme busybee
-colorscheme molokai
+"colorscheme molokai
+colorscheme PaperColor
 highlight VertSplit guifg=#465457 guibg=#465457
 highlight StatusLineNC guifg=#465457 guibg=#465457
 
@@ -153,3 +154,12 @@ autocmd FileType typescript nmap <buffer> <Leader>t : <C-u>echo tsuquyomi#hint()
 " circumfence words
 nmap <leader>q ysiw'
 nmap <leader>d ysiw"
+
+" tmux
+let g:tmux_navigator_no_mappings = 1
+
+nnoremap <silent> <c-h> :TmuxNavigateLeft<cr>
+nnoremap <silent> <c-j> :TmuxNavigateDown<cr>
+nnoremap <silent> <c-k> :TmuxNavigateUp<cr>
+nnoremap <silent> <c-l> :TmuxNavigateRight<cr>
+"nnoremap <silent> {Previous-Mapping} :TmuxNavigatePrevious<cr>
