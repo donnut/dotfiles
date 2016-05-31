@@ -1,0 +1,18 @@
+class Pip {
+    private prive: string;
+    constructor(public name: string, private age: number) {
+        this.prive = name;
+    }
+
+    static read() {
+        return 'Hello, ' + this.prive;
+    }
+
+    get() {
+        return read();
+    }
+}
+
+
+var pip = new Pip("Erwin");
+console.log(pip.get());

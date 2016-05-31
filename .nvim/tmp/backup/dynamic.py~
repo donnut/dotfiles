@@ -1,0 +1,97 @@
+import csv, getpass, json, os, time, twitter
+from pymongo import MongoClient
+
+def init():
+    ckey =  'cWN3UpsbOqG7jn0m8EmvoqtSV'
+    csecret = 'e5Ep2oM1FRVHXgXKiEJwGEZasytAuNDv6h69XS0nPLGmDLx3gz'
+    atoken = '15123362-RkHEznCU2x8RhIhu4vWNEzb5BETha2nsLIp7M0vXf'
+    asecret = 't9GeqpH4ufn2fix14BEdM5EKrrOHGGYUDVVbVFkeENsYy'
+
+    auth = twitter.oauth.OAuth(atoken, asecret,
+                               ckey, csecret)
+
+    return twitter.Twitter(auth=auth, retry=True)
+
+def get_user_params():
+
+    user_params = {}
+
+    # get user input params
+    user_params['outList']  = input( '\nOutput file [./data/steenbergen_tweets.csv]: ' )
+
+    # apply defaults
+    if user_params['outList']  == '':
+        user_params['outList'] = './data/steenbergen_tweets.csv'
+
+    return user_params
+
+def dump_user_params( user_params ):
+
+    # dump user params for confirmation
+    print( 'Output:    '   + user_params['outList'])
+    return
+
+
+def get_writer( out_filename ):
+
+    # write total fetch list csv
+    fp = open( out_filename, 'w' )
+    fieldnames = ['name', 'user_id', 'created_at', 'text']
+    writer = csv.DictWriter( fp, fieldnames=fieldnames )
+
+    writer.writeheader()
+
+    return writer
+
+
+def write_tweets_to_csv( collection, writer, excluded_users ):
+
+    for item in collection.find({'$and': [ {'retweeted_status': {'$eq': None}}, {'entities.urls':{'$eq':[]}}, {'user.id': { '$nin': excluded_users }}]}):
+    #for item in collection.find({'retweeted_status': {'$eq': None}}):
+        writer.writerow({'name': item['user']['screen_name'], 'user_id':item['user']['id_str'], 'created_at': item['created_at'], 'text': item['text']})
+    #try:
+        #for item in collection.find():
+            #writer.writerow({name: item['screen_name'], created_at: item['created_at'], text: item['text']})
+    #except:
+        #print "Something went wrong it item %s" % item['id_str']
+    return
+
+
+def main():
+
+    twitter_api = init()
+    client = MongoClient('localhost', 27017)
+
+    db = client.steenbergen
+    collection = db.tweets
+
+    # get user parameters
+    user_params = get_user_params()
+    dump_user_params( user_params )
+
+    excluded_users = [
+            22345243,
+            154507217,
+            136201656,
+            19501504,
+            2591083172,
+            212263856,
+            19501504,
+            907594386,
+            2814976134,
+            176926047,
+            2917249011,
+            160891807,
+            154508104,
+            808243068,
+            492092224,
+    ]
+    # get fetch list
+    writer = get_writer(user_params['outList'])
+    write_tweets_to_csv(collection, writer, excluded_users)
+
+    return
+
+
+if __name__ == '__main__':
+    main()

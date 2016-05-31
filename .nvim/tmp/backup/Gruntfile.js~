@@ -1,0 +1,146 @@
+/*global module:false*/
+module.exports = function(grunt) {
+  "use strict";
+	// Project configuration.
+	grunt.initConfig({
+		pkg: grunt.file.readJSON('package.json'),
+		meta: {
+			banner: '/*! <%= pkg.name %> - v<%= pkg.version %> - ' +
+				'<%= grunt.template.today("yyyy-mm-dd") %>\n' +
+				'<%= pkg.homepage ? "* " + pkg.homepage + "\\n" : "" %>' +
+				'* Copyright (c) <%= grunt.template.today("yyyy") %> <%= pkg.author.name %>;' +
+				' Licensed <%= pkg.license %> */\n'
+		},
+		jshint: {
+			options: {
+				jshintrc: '.jshintrc'
+			},
+			files: ['Gruntfile.js', 'mope.js', 'start.js', 'lib/cube.js', 'lib/imgScope.js']
+    },
+    // cssmin: {
+    //   minify: {
+    //     expand: true,
+    //     cwd: 'css/',
+    //     src: ['**/size.css', "*.css"],
+    //     dest: 'pub/css/',
+    //     ext: '.css',
+    //     options: {
+    //       compatibility: true,
+    //       noAdvanced: true,
+    //       keepBreaks: true
+    //     }
+    //   }
+    // },
+    copy: {
+      main: {
+        files: [{
+          expand: true,
+          src: ['css/**', 'icon/**', 'img/**'],
+          dest: 'pub/'
+        },
+        {
+          expand: true,
+          cwd: 'lib',
+          src: [
+            'require.js',
+            'sizzle.min.js',
+            'lodash.compat.min.js',
+            'jquery.min.js',
+            'gulliver.min.js',
+            'modernizr.custom.08358.min.js'
+          ],
+          dest: 'pub/lib'
+        },
+        {
+          expand: true,
+          src: ['mope.html', 'index.php', 'favicon.ico'],
+          dest: 'pub/'
+        },
+        {
+          expand: true,
+          cwd: 'src',
+          src: ['mope.js', 'start.js'],
+          dest: 'pub/src'
+        },{
+          expand: true,
+          src: ['vendor/**'],
+          dest: 'pub/'
+        }
+      ]
+      }
+    },
+    sed: {
+      underscore: {
+        pattern: ": *'lodash.compat'",
+        replacement: ": 'lodash.compat.min'",
+        path: 'pub/src/mope.js'
+      },
+      gulliver: {
+        pattern: ": *'gulliver'",
+        replacement: ": 'gulliver.min'",
+        path: 'pub/src/mope.js'
+      },
+      jquery: {
+        pattern: ": *'jquery'",
+        replacement: ": 'jquery.min'",
+        path: 'pub/src/mope.js'
+      },
+      imgScope: {
+        pattern: ": *'imgScope'",
+        replacement: ": 'imgScope.min'",
+        path: 'pub/src/mope.js'
+      },
+      cube: {
+        pattern: ": *'cube'",
+        replacement: ": 'cube.min'",
+        path: 'pub/src/mope.js'
+      },
+      modernizr: {
+        pattern: "modernizr.custom.08358",
+        replacement: "modernizr.custom.08358.min",
+        path: 'pub/mope.html'
+      },
+      mope: {
+        pattern: 'src="src/start',
+        replacement: 'src="src/start.min',
+        path: 'pub/mope.html'
+      },
+      start: {
+        pattern: "data-main='src/mope",
+        replacement: "data-main='src/mope.min",
+        path: 'pub/mope.html'
+      }
+    },
+    uglify: {
+      all: {
+        files: {
+          'pub/lib/cube.min.js': ['lib/cube.js'],
+          'pub/lib/imgScope.min.js': ['lib/imgScope.js'],
+          'pub/src/mope.min.js': ['pub/src/mope.js'],
+          'pub/src/start.min.js': ['pub/src/start.js']
+        },
+        options: {
+          preserveComments: false,
+					banner: "/*! MOPE " +
+          "(c) 2012, <%= grunt.template.today('yyyy') %> " +
+          "*/\n",
+					compress: {
+            global_defs: {
+              DEBUG: false
+            }
+          }
+        }
+      }
+    }
+
+	});
+
+	grunt.loadNpmTasks('grunt-contrib-jshint');
+	// grunt.loadNpmTasks('grunt-contrib-cssmin');
+	grunt.loadNpmTasks('grunt-contrib-copy');
+	grunt.loadNpmTasks('grunt-sed');
+	grunt.loadNpmTasks('grunt-contrib-uglify');
+
+	grunt.registerTask('build', ['copy', 'sed', 'uglify'] );
+  grunt.registerTask('default', ['build']);
+};

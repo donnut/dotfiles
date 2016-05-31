@@ -1,0 +1,61 @@
+import smtplib
+import os
+import sys
+import logging
+
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email.mime.text import MIMEText
+from email.encoders import encode_base64
+
+log = logging.getLogger("custom.senderrormail")
+
+body = """
+Hello,
+
+Thank you for using jQueryConfig. Unfortunately an error
+occurred during building your configuration.
+
+The server responded with:
+    "%s"
+
+Please go to jqueryconfig.com and try again.
+
+If this error persist, report an issue stating the error.
+
+The jQueryConfig team
+"""
+
+args  = sys.argv
+
+if len(args) == 3:
+    destination = args[1]
+    errorMsg = args[2]
+else:
+    log.error('send_error_mail called with wrong number of arguments: %d' % (len(args)-1))
+    sys.exit()
+
+log.info('starting error sendmail script, sending to %s' % destination)
+msg  = MIMEMultipart('mixed')
+user = 'AKIAJ6ZF4OJCSYGXUEWQ'
+pw   = 'An9EdNhO2C84UHjXAV4g/bH7F5VBBjyW5wnsWJsQEYrS'
+host = 'email-smtp.eu-west-1.amazonaws.com'
+port = 25
+me   = u'info@jqueryconfig.com'
+msg['From'] = me
+msg['To'] = destination
+msg['Subject'] = 'Building your jQuery configuration failed'
+
+msg.attach(MIMEText(body % errorMsg))
+
+s = smtplib.SMTP(host, port, 'jqueryconfig.com')
+s.starttls()
+s.login(user, pw)
+
+try:
+    s.sendmail(me, destination, msg.as_string())
+    log.info('Email with error message sent to %s' % destination)
+except:
+    log.exception('200: Failed to send error_mail to %s' % destination)
+    sys.exit("200")
+

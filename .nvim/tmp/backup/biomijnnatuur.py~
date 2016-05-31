@@ -1,0 +1,26 @@
+import scrapy
+
+from scrapy.spiders import CrawlSpider, Rule
+from scrapy.linkextractors import LinkExtractor
+
+from biomijnnatuur.items import BioItem
+
+class BioMijnNatuurSpider(CrawlSpider):
+    name = "biomijnnatuur"
+    allowed_domains = ["www.biomijnnatuur.be"]
+    start_urls = [
+        "http://www.biomijnnatuur.be/biogenietengids/resultaten?values[postcode]=postcode%20of%20gemeente&values[slider][value]=10&values[name]=bedrijfsnaam&values[rubriek][versvandeboer]=versvandeboer&values[rubriek][restaurant]=0&values[rubriek][abonnement]=0&values[rubriek][catering]=0&values[rubriek][zelfoogst]=0&values[rubriek][kookworkshop]=0&values[rubriek][biowinkel]=0&values[rubriek][vergaderzaal]=0&values[rubriek][winkelketen]=0&values[rubriek][textiel]=0&values[rubriek][markt]=0&values[rubriek][health]=0&values[rubriek][bakker]=0&values[rubriek][groenentuinen]=0&values[rubriek][slager]=0&values[rubriek][kids]=0&values[rubriek][logies]=0&values[rubriek][bijleren]=0&values[rubriek][webshop]=0&values[zoekknop]=Zoek&values[form_build_id]=form-mV60F1TmUVC2YYg5cMaaTPx7VMmDw88CD0Ha9RCiQ9w&values[form_id]=zoek_form&values[op]=Zoek"
+    ]
+
+    rules = (
+        Rule(LinkExtractor(allow=("\/biogenietengids\/detail\?id=", )), callback="parse_item"),
+    )
+
+    def parse_item(self, response):
+        item = BioItem()
+        main = response.xpath("//div[id='detailtxt']")
+        item['name'] = main.xpath("h1/text()")
+        item['url'] = main.xpath("a/@href")
+        return item
+
+

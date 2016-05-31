@@ -1,0 +1,46 @@
+from pymongo import MongoClient, ASCENDING, DESCENDING
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+client = MongoClient('localhost', 27017)
+
+db = client.vluchtelingen
+collin = db.tweets
+colluniq = db.unique_tweets
+collsort = db.sorted_tweets
+
+#tweets = collin.find()
+
+#prev_text = tweets[0]["text"]
+
+#for tweet in tweets[1:]:
+
+    #text = tweet["text"]
+    #tfidf = TfidfVectorizer().fit_transform([prev_text, text])
+    #pairwise_similarity = tfidf * tfidf.T
+    #sim_factor = pairwise_similarity[0, 1]
+    #if sim_factor < 0.5:
+        #colluniq.insert(tweet)
+    ##else:
+        ##print("%f\n%s\n%s\n\n" % (sim_factor, prev_text, text))
+    #prev_text = text
+
+#print("Slag 1: aantal tweets gereduceerd van %s naar %s" % (collin.count(), colluniq.count()))
+
+collin.create_index([("text", ASCENDING)])
+tweets = collin.find(sort=[("text", ASCENDING)])
+
+prev_text = tweets[0]["text"]
+
+for tweet in tweets[1:]:
+
+    text = tweet["text"]
+    tfidf = TfidfVectorizer().fit_transform([prev_text, text])
+    pairwise_similarity = tfidf * tfidf.T
+    sim_factor = pairwise_similarity[0, 1]
+    if sim_factor < 0.5:
+        collsort.insert(tweet)
+    #else:
+        #print("%f\n%s\n%s\n\n" % (sim_factor, prev_text, text))
+    prev_text = text
+
+print("Slag 2: aantal tweets gereduceerd van %s naar %s" % (collin.count(), collsort.count()))

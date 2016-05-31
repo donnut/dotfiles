@@ -1,0 +1,49 @@
+exports.Send = (function() {
+    function Send(res, logger, TIMEOUT) {
+        console.log('binnen send');
+        this.logger = logger;
+        this.res = res;
+        this.TIMEOUT = TIMEOUT;
+    }
+
+    Send.prototype.systemError = function(errNr, msg, streq, email) {
+        this.logger.error("System error: " + errNr + " msg: " + msg);
+        var text  = "Oops! Something went wrong while building your jQuery configuration\n";
+        text     += "Please, try again.\n";
+        text     += "If this error persist, report an issue stating error code: " + errNr;
+        if (Date.now() - streq > this.TIMEOUT) {
+            // send message by mail
+            this.mail(email, text)
+        } else {
+            this.res.status(500).json({type: 'system', text: text});
+        }
+    }
+
+    Send.prototype.error = function(jsonErr, streq, email) {
+        this.logger.error(jsonErr);
+        if (email && Date.now() - streq > this.TIMEOUT) {
+            // send message by mail
+            this.mail(email, JSON.stringify(jsonErr));
+        } else {
+            this.res.status(500).json(jsonErr);
+        }
+    }
+
+    Send.prototype.success = function(streq) {
+        var timeDiff = Date.now() - streq;
+        if (timeDiff < this.TIMEOUT) {
+            this.res.json({type: 'success', text: 'Your jQuery is sent. Please check your mailbox.'}).end();
+        } else {
+            this.logger.info('configuration successfully sent after timeout period of ' + timeDiff.toString());
+        }
+    }
+
+    Send.prototype.mail = function(email, text) {
+        text = text || 'Internal Server Error';
+        child_process.exec('python3 send_error_mail.py ' + email + ' ' + text, {
+            cwd: 'assets'
+        }, function(err, stdout, stderr) {});
+    }
+    return Send;
+}());
+

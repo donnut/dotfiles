@@ -1,0 +1,52 @@
+from pymongo import MongoClient
+from py2neo import Graph, authenticate, Node, Relationship
+
+c = MongoClient('localhost', 27017)
+db = c.spijt_vluchtelingen
+coll = db.tweets
+
+authenticate("localhost:7474", "neo4j", "sxn8REd5")
+
+graph = Graph()
+
+tweets = coll.find()
+
+graph.delete_all()
+
+nr_tweets = coll.count()
+for idx, tweet in enumerate(tweets):
+    # retweet
+    print("%s of %s" % (idx, nr_tweets))
+    user = graph.merge_one("User", 'id', tweet['user']['id_str'])
+    if not 'name' in user.properties:
+        user.properties['name'] = tweet['user']['screen_name']
+        user.push()
+    tw, = graph.create(Node("Tweet", text=tweet['text'], id=tweet['id_str']))
+    r, = graph.create(Relationship(user, "POSTS", tw))
+
+    if 'retweeted_status' in tweet:
+        user = graph.merge_one("User", 'id', tweet['retweeted_status']['user']['id_str'])
+        user.properties['name'] = tweet['retweeted_status']['user']['screen_name']
+        user.push()
+
+        # try find tweet that is retweeted
+        rtw = graph.merge_one("Tweet", 'id', tweet['retweeted_status']['id_str'])
+        if not 'text' in rtw.properties:
+            tw.properties["text"] = tweet['retweeted_status']['text']
+            tw.push()
+        graph.create(Relationship(rtw, "RETWEETS", tw))
+
+    # in reply to
+    if tweet['in_reply_to_status_id_str'] != None:
+        rp_tw = graph.merge_one("Tweet", 'id', tweet['in_reply_to_status_id_str'])
+        rr, = graph.create(Relationship(tw, "REPLY_TO", rp_tw))
+
+    if len(tweet['entities']['hashtags']) > 0:
+        for hashtag in tweet['entities']['hashtags']:
+            ht = graph.merge_one('Hashtag', 'text', hashtag['text'])
+            graph.create(Relationship(ht, 'TAGS', tw))
+
+    if len(tweet['entities']['user_mentions']) > 0:
+        for user_men in tweet['entities']['user_mentions']:
+            user_m = graph.merge_one("User", 'id', user_men['id_str'])
+            graph.create(Relationship(user, 'MENTIONS', user_m))

@@ -1,0 +1,122 @@
+import sys
+import os
+import subprocess
+import shutil
+import io
+import logging
+
+import sendmail
+
+log = logging.getLogger('custom')
+#log.setLevel(logging.WARNING)
+log.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+fh = logging.FileHandler('custom.log')
+fh.setFormatter(formatter)
+
+log.addHandler(fh)
+
+DEVNULL = subprocess.DEVNULL
+PIPE = subprocess.PIPE
+
+args = sys.argv
+if len(args) < 4:
+    print(
+        """Usage: python custom.py email config_code version options
+        """
+        )
+    sys.exit("100")
+
+# read arguments
+mail_address = args[1]
+config_code  = args[2]
+semver       = args[3]
+options      = args[4:]
+
+# create unique directory
+try:
+    scratchDir = subprocess.check_output(["mktemp", "-d"]).decode("utf-8").strip()
+except:
+    log.exception('101: Failed to create the scratch directory')
+    sys.exit("101")
+finally:
+    log.info('Scratch directory %s' % scratchDir)
+
+# storage directory for jquery archives
+storageDir = "%s/storage" % os.getcwd()
+
+# construct jquery directory based on selected version
+jqueryDir = "%s/jquery-%s" % (os.getcwd(), semver)
+
+# copy jquery repo into temp directory
+try:
+    shutil.copytree(jqueryDir, "%s/jquery" % scratchDir)
+except:
+    log.exception('102: Failed to copy the directory %s to %s' % (jqueryDir, scratchDir))
+    sys.exit("102")
+
+# change to this temp directory
+try:
+    os.chdir("%s/jquery" % scratchDir)
+except:
+    log.exception('103: Failed to change directory %s/jquery' % scratchDir)
+    sys.exit("103")
+
+# run grunt custom:... for dist pointing to new directory
+try:
+    if len(options) == 0:
+        proc = subprocess.Popen(["grunt"], stdout=PIPE, stderr=PIPE)
+        for line in proc.stdout:
+            log.info(line)
+    else:
+        optionStr = "-" + ",-".join(format(x) for x in options)
+        proc = subprocess.Popen(["grunt", "custom:%s" % optionStr], stdout=PIPE, stderr=PIPE)
+        for line in proc.stdout:
+            log.info(line)
+except:
+    log.exception('104: Failed to build jquery using grunt')
+    sys.exit("104")
+
+# change to dir dist
+try:
+    os.chdir("dist")
+except:
+    log.exception('105: Failed to change to dist directory')
+    sys.exit("105")
+
+# rename the files so the version and code is added
+try:
+    os.rename("jquery.js", "jquery-%s-%s.js" % (semver, config_code))
+    os.rename("jquery.min.js", "jquery-%s-%s.min.js" % (semver, config_code))
+    if os.path.isfile("jquery.min.map"):
+        os.rename("jquery.min.map", "jquery-%s-%s.min.map" % (semver, config_code))
+except:
+    log.exceptions('108: Failed to rename jquery files')
+    sys.exit("107")
+
+# zip the js files
+try:
+    name = "%s/jquery-%s-%s" % (storageDir, semver, config_code)
+    shutil.make_archive(name, "zip")
+except:
+    log.exception('106: Failed to create the archive')
+    sys.exit("106")
+
+
+# read zip file and pipe to stdout
+#output = getattr(sys.stdout, 'buffer', sys.stdout)
+#f = io.FileIO("%s.zip" % name, mode="r", closefd=True)
+# send file to user
+# sendmail.send('erwin@wbbit.com', "%s.zip" % name, options)
+
+# send file to output
+#archive = f.read()
+#output.write(archive)
+
+# cleanup directory
+try:
+    subprocess.call(["rm", "-rf", "%s" % scratchDir])
+except:
+    log.exception('107: Failed to remove scratch directory %s' % scratchDir)
+    sys.exit(0)

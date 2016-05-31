@@ -1,0 +1,123 @@
+/// <reference path="../dts/ramda.d.ts" />
+/// <reference path="../dts/objectid.ts" />
+/// <reference path="globals.ts" />
+
+namespace Pip.Path {
+    import G = Globals;
+    import PT = G.PipType;
+    import MK = G.MessageKey;
+    import ELM = G.Element;
+    import ON = G.OptionName;
+    import OV = G.OptionValue;
+    import AK = G.AddressKey;
+
+    declare var DEBUG;
+
+    export var def = {
+        event: function(options: G.IEventPipOptions): string[] {
+            return defineEventPathPart(options);
+        },
+        eventItem: function(options: G.IEventItemPipOptions): string[] {
+            return defineEventPathPart(options);
+        },
+        state: function(options: G.IStatePipOptions): string[] {
+            return defineStatePathPart(options);
+        },
+        stateItem: function(options: G.IStateItemPipOptions): string[] {
+            return defineStatePathPart(options);
+        },
+        template: function(options: G.ITemplatePipOptions): string[] {
+            return defineTplPathPart(options);
+        },
+        templateItem: function(options: G.ITemplateItemPipOptions): string[] {
+            return defineTplPathPart(options);
+        },
+        element: function(options: G.IElementPipOptions): string[] {
+            return [];
+        },
+        shadowElement: function(options: G.IShadowElementPipOptions): string[] {
+            return [];//'shadow'
+        },
+        listItem: function(options: G.IListItemPipOptions): string[] {
+            return [];
+        },
+        itemElement: function(options: G.IItemElementPipOptions): string[] {
+            return [];
+        },
+        sub: function(options: G.ISubPipOptions): string[]{
+            return [PT[PT.sub]];
+        },
+        list: function(options: G.IListPipOptions): string[] {
+            return [PT[PT.list]];
+        },
+        select: function(options: G.ISelectPipOptions): string[] {
+            //TODO hoe select naam geven??
+            return options[ON[ON.name]]
+                ? [ PT[PT.select], options[ON[ON.name]] ]
+                : [ PT[PT.select] ];
+        },
+        target: function(options: G.ITargetPipOptions): string[] {
+            return [PT[PT.target]];
+        },
+        targetItem: function(options: G.ITargetItemPipOptions): string[] {
+            return [PT[PT.target]];
+        },
+        router: function(options): string[] {
+            return [PT[PT.router]];
+        },
+        navTree: function(options): string[] {
+            return [PT[PT.navTree]];
+        },
+        model: function(options: G.IModelPipOptions): string[] {
+            return ['models', options[ON[ON.name]] || ObjectId.create()];
+        },
+        collection: function(options: G.ICollectionPipOptions): string[] {
+            return ['models', options[ON[ON.name]] || ObjectId.create()];
+        },
+        tree: function(options: G.ISubPipOptions): string[]{
+            return [PT[PT.tree]];
+        },
+        nest: function(options: G.IListPipOptions): string[] {
+            return [PT[PT.nest]];
+        }
+    };
+
+
+    function defineTplPathPart(options: G.ITemplatePipOptions|G.ITemplateItemPipOptions): string[] {
+        var part = [], method;
+        var attributeName = options[ON[ON.attr]] || OV[OV.html];
+        if (attributeName === OV[OV.html]) {
+            method = options[ON[ON.method]] ||OV[OV.html];
+            part.push(method); //[OV[OV.html]
+        } else if (attributeName === 'class') {
+            part = part.concat(['classes', '_tpl']);
+        } else {
+            part.push(attributeName);
+        }
+        return part;
+    }
+
+    function defineStatePathPart(options: G.IStatePipOptions|G.IStateItemPipOptions): string[] {
+        var part = [], defaultState;
+
+        if (options[ON[ON.default]]) {
+            defaultState = options[ON[ON.default]];
+            // attributeName = (_.find(states, {name: defaultState}))[attr];
+        } else {
+            defaultState = options[ON[ON.states]][0][ON[ON.name]];//pipOption[ON[ON.states]][0].value??
+            // attributeName = pipOption[ON[ON.states]][0][ON[ON.attr]];
+        }
+        //if(attributeName === 'class'){
+        //part.concat(['classes', defaultState]);
+        return part.concat(['states', defaultState]);
+        // }
+        // else {
+        //   part.push(attributeName);//, defaultState
+        // }
+    }
+
+    function defineEventPathPart(options: G.IEventPipOptions|G.IEventItemPipOptions): string[] {
+        return ['events', Utils.mergeTermsCamelCase(options[ON[ON.events]])];
+    }
+
+}

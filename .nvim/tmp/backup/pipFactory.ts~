@@ -1,0 +1,487 @@
+/// <reference path="../dst/ramda.d.ts" />
+/// <reference path="./globals.ts" />
+/// <reference path="./baseFunctions.ts" />
+/// <reference path="./serverIO.ts" />
+/// <reference path="./links.ts" />
+/// <reference path="./createPip.ts" />
+/// <reference path="./interpretFunctions.ts" />
+
+module PipFactory {
+
+    import PT = Globals.PipType;
+    import ACT = Globals.Action;
+    import MK = Globals.MessageKey;
+    //import ELM = Globals.Element;
+    import ON = Globals.OptionName;
+    import AK = Globals.AddressKey;
+    import PC = Globals.PipClass;
+    import LO = Globals.LinkOptionName;
+
+    export var factoryDef = {
+        event: function(options: Globals.IEventPipOptions, address: Globals.IAddresses, $anc?: DOMIO.Instance): Globals.IPipProps {
+            var delegation: boolean = options[ON[ON.delegation]];
+            return {
+                pipType:  options[ON[ON.type]],
+                pipClass:   PC[PC.enable],
+                itType:   false,
+                initReg:  null,
+                setReg:   Base.basicSetReg,
+                values:   Base.desiredValues(options, PC[PC.enable], false),
+                outActions: Base.DOMActions,
+                regActions: Base.DOMRegActions,
+                diffTest:   Base.objectDiffTest,
+                emptyInput: Base.defineInitInput(ACT[ACT.remove]),
+                emitTest:   Base.DOMEmitTest(address),
+                interpret:  Interpret.base,
+                pipFn:    Base.eventDOMFunctions(options, address),
+                switchFn:   Base.eventSwitchFn(PT[PT.event], options[ON[ON.delegation]]),//afwijking hier waarde voor delegation op ture gezet,
+                    //delegation: delegation
+            };
+        },
+
+        eventItem: function(options: Globals.IEventItemPipOptions, address: Globals.IAddresses, $anc?: DOMIO.Instance): Globals.IPipItemProps {
+            var delegation: boolean = options[ON[ON.delegation]];
+            return {
+                pipType:    options[ON[ON.type]],
+                pipClass:   PC[PC.enable],
+                itType:     delegation ? false : true,
+                defineItemId: Base.mapItemId,
+                initReg:    delegation ? null : [], //TODO initReg -> regFormat //afwijkend
+                setReg:     delegation ? Base.basicSetReg : Base.arraySetReg, //afwijkend
+                values:     Base.desiredValues(options, PC[PC.enable], delegation ? false: true), //afwijkend
+                outActions:   Base.DOMActions,
+                regActions:   Base.DOMRegActions,
+                diffTest:   Base.objectDiffTest,
+                emptyInput:   Base.defineInitInput(ACT[ACT.remove]),
+                emitTest:   Base.DOMEmitTest(address),
+                interpret:  delegation ? Interpret.base : Interpret.item,
+                pipFn:    Base.eventDOMFunctions(options, address),
+                switchFn:   Base.eventSwitchFn(PT[PT.eventItem], options[ON[ON.delegation]]),//afwijking
+                    //delegation: delegation
+            };
+        },
+
+        state: function(options: Globals.IStatePipOptions, address: Globals.IAddresses, $anc?: DOMIO.Instance): Globals.IPipProps {
+            return {
+                pipType:  options[ON[ON.type]],
+                pipClass:   PC[PC.state],
+                itType:   false,
+                initReg:  null,
+                setReg:   Base.basicSetReg,
+                values:   Base.desiredValues(options, PC[PC.state], false),
+                outActions: Base.DOMActions,
+                regActions: Base.DOMRegActions,
+                diffTest:   Base.objectDiffTest,
+                emptyInput: Base.defineInitInput(ACT[ACT.remove]),
+                emitTest:   Base.DOMEmitTest(address),
+                interpret:  Interpret.base,
+                stateNames: R.pluck('name', options.states),
+                pipFn:    Base.defineBasicDOMFn(options, PC[PC.state]),
+                switchFn:   Base.DOMSwitchFn(address),
+            };
+        },
+
+        stateItem: function(options: Globals.IStateItemPipOptions, address: Globals.IAddresses, $anc?: DOMIO.Instance):Globals.IPipItemProps {
+            return {
+                pipType:    options[ON[ON.type]],
+                pipClass:   PC[PC.state],
+                itType:     true,
+                defineItemId: Base.mapItemId,
+                initReg:    {},
+                setReg:     Base.itemSetReg,
+                values:     Base.desiredValues(options, PC[PC.state], true),
+                outActions:   Base.DOMActions,
+                regActions:   Base.DOMRegActions,
+                diffTest:   Base.objectDiffTest,
+                emptyInput:   Base.defineInitInput(ACT[ACT.remove]),
+                emitTest:   Base.DOMEmitTest(address),
+                interpret:  Interpret.item,
+                stateNames:   R.pluck('name', options.states),
+                pipFn:    Base.defineBasicDOMFn(options, PC[PC.state], true),
+                switchFn:   Base.DOMSwitchFn(address),
+            };
+        },
+
+        template: function(options: Globals.ITemplatePipOptions, address: Globals.IAddresses, $anc?: DOMIO.Instance): Globals.IPipProps {
+            return {
+                pipType:  options[ON[ON.type]],
+                pipClass:   PC[PC.tpl],
+                itType:   false,
+                initReg:  '',//afwijking
+                setReg:   Base.basicSetReg,
+                values:   Base.desiredValues(options, PC[PC.tpl], false),
+                outActions: Base.DOMActions,
+                regActions: Base.DOMRegActions,
+                diffTest:   Base.objectDiffTest,
+                emptyInput: Base.defineInitInput(ACT[ACT.remove]),
+                emitTest:   Base.DOMEmitTest(address),
+                interpret:  Interpret.base,
+                pipFn:    Base.defineBasicDOMFn(options, PC[PC.tpl]),
+                switchFn:   Base.DOMSwitchFn(address),
+            };
+        },
+
+        templateItem: function(options: Globals.ITemplateItemPipOptions, address: Globals.IAddresses, $anc?: DOMIO.Instance):Globals.IPipItemProps {
+            return {
+                pipType:    options[ON[ON.type]],
+                pipClass:   PC[PC.tpl],
+                itType:     true,
+                defineItemId: Base.mapItemId,
+                initReg:    {},
+                setReg:     Base.itemSetReg,
+                values:     Base.desiredValues(options, PC[PC.tpl], true),
+                outActions:   Base.DOMActions,
+                regActions:   Base.DOMRegActions,
+                diffTest:   Base.objectDiffTest,
+                emptyInput:   Base.defineInitInput(ACT[ACT.remove]),
+                emitTest:   Base.DOMEmitTest(address),
+                interpret:  Interpret.item,
+                pipFn:    Base.defineBasicDOMFn(options, PC[PC.tpl], true),
+                switchFn:   Base.DOMSwitchFn(address),
+            };
+        },
+
+        select: function(options: Globals.ISelectPipOptions, address: Globals.IAddresses, $anc?: DOMIO.Instance): Globals.ISelectPipProps {
+            return {
+                pipType:      options[ON[ON.type]],
+                pipClass:     PC[PC.select],
+                itType:       true,
+                defineItemId: Base.mapItemId,
+                initReg:      [],
+                setReg:       Base.arraySetReg,
+                values:       Base.selectValues,
+                outActions:   Base.selectActions,
+                regActions:   Base.selectActions,
+                diffTest:     Base.arrayDiffTest,
+                emptyInput:   {action: ACT[ACT.remove]},//anders gedefinieerd dan elders?? terecht??
+                emitTest:     Base.DOMEmitTest(address),
+                correctSelection: Base.correctSelection(options),
+                interpret:    Interpret.select
+            };
+        },
+
+        target: function(options: Globals.ITargetPipOptions, address: Globals.IAddresses, $anc?: DOMIO.Instance): Globals.IPipProps {
+            return {
+                pipType:      options[ON[ON.type]],
+                pipClass:     PC[PC.target],
+                itType:       false,
+                defineItemId: Base.mapItemId,
+                initReg:      null,
+                setReg:       Base.basicSetReg,
+                values:       Base.desiredValues(options, PC[PC.state], false),
+                outActions:   Base.DOMActions,
+                regActions:   Base.DOMRegActions,
+                diffTest:     Base.objectDiffTest,
+                emptyInput:   {action: ACT[ACT.remove]},//anders gedefinieerd dan elders?? terecht??
+                emitTest:     Base.DOMEmitTest(address),
+                interpret:    Interpret.base
+            };
+
+        },
+
+        targetItem: function(options: Globals.ITargetItemPipOptions, address: Globals.IAddresses, $anc?: DOMIO.Instance): Globals.ISelectPipProps {
+            return {
+                pipType:      options[ON[ON.type]],
+                pipClass:     PC[PC.target],
+                itType:       true,
+                defineItemId: Base.mapItemId,
+                initReg:      [],
+                setReg:       Base.arraySetReg,
+                values:       Base.selectValues,
+                outActions:   Base.selectActions,
+                regActions:   Base.selectActions,
+                diffTest:     Base.arrayDiffTest,
+                emptyInput:   {action: ACT[ACT.remove]},//anders gedefinieerd dan elders?? terecht??
+                emitTest:     Base.DOMEmitTest(address),
+                interpret:    Interpret.select,
+                correctSelection: Base.correctSelection(options)
+            };
+        },
+
+        router: function(options: Globals.IRouterPipOptions, address: Globals.IAddresses): Globals.IRouterPipProps {
+            return {
+                pipType:      options[ON[ON.type]],
+                pipClass:     PC[PC.router],
+                itType:       true,
+
+                    //TODO liever schone idType of index?
+                defineItemId: Base.mapItemId,
+
+                initReg:      {},
+                setReg:       Base.routerSetReg,
+                values:       Base.routerValues,
+                outActions:   Base.DOMActions,
+                regActions:   Base.DOMRegActions,
+                    //create en delete komen echter niet voor,
+                    //maar zit niet in de weg
+                diffTest:     Base.modelDiffTest, //??
+                emptyInput:   {action: ACT[ACT.remove]},
+                interpret:    Interpret.listItem, //want kan ook ev zijn
+                emitTest:     Base.modelEmitTest, //of aanvullen //action !== ACT[ACT.remove]
+                switchFn:     Base.routerSwitchFn(),
+
+                pipFn:        Base.routerFn()
+            };
+        },
+
+        sub: function(options: Globals.ISubPipOptions, address: Globals.IAddresses, $anc?: DOMIO.Instance): Globals.IPipProps {
+            // var initInput ={};
+            // if (options[ON[ON.empty]]) {
+            //   initInput[MK[MK.action]] = ACT[ACT.create];
+            //   initInput[MK[MK.value]] = options[ON[ON.empty]];
+            // } else {
+            //   initInput =Base.defineInitInput(ACT[ACT.insert]);
+            // }
+            return {
+                pipType:    options[ON[ON.type]],
+                pipClass:   PC[PC.sub],// or 'node'??
+                itType:     false,
+                initReg:    null,
+                setReg:     Base.basicSetReg,
+                values:     Base.nodeValues(false),
+                outActions: Base.nodeActions,
+                regActions: Base.nodeRegActions,
+                diffTest:   Base.objectDiffTest,
+                emptyInput: Base.defineInitInput(ACT[ACT.remove]),
+                    //initInput: initInput, emptyyinput geworden
+                emitTest:   Base.DOMEmitTest(address),
+                interpret:  Interpret.base,
+                pipFn:      Base.nodeDOMFunctions(options),//address, false
+                switchFn:   Base.subSwitchFn(address),
+            };
+        },
+
+        list: function(options: Globals.IListPipOptions, address: Globals.IAddresses, $anc?: DOMIO.Instance):Globals.IPipItemProps {
+            // var initInput = {};
+            // if (options[ON[ON.empty]]) {
+            //   initInput[MK[MK.action]] = ACT[ACT.create];
+            //   initInput[MK[MK.value]] = options[ON[ON.empty]];
+            // } else {
+            //   initInput = Base.defineInitInput(ACT[ACT.insert]);
+            // }
+
+            return {
+                pipType:      options[ON[ON.type]],
+                pipClass:     PC[PC.list],//or 'node'??
+                itType:       true,
+                defineItemId: Base.nodeDefineItemId(options),
+                initReg:      [],
+                setReg:       Base.arraySetReg,//uitbebreid tbv list met desiredIndex
+                values:       Base.nodeValues(true),
+                outActions:   Base.nodeActions,
+                regActions:   Base.nodeRegActions,
+                diffTest:     Base.listDiffTest,
+                emptyInput:   Base.defineInitInput(ACT[ACT.delete]),
+                    // initInput:  initInput, is empty input geworden
+                emitTest:     Base.DOMEmitTest(address),
+                    // interpret:  Interpret.item,
+
+                interpret:    Interpret.list,//wijziging tbv filter en sort
+                pipFn:        Base.nodeDOMFunctions(options, address, true),
+                switchFn:     Base.listSwitchFn(address),//afwijking
+                correctList:  Base.correctList(options)//wijziging tbv filter en sort
+            };
+        },
+
+        element: function(options: Globals.IElementPipOptions, address: Globals.IAddresses): Globals.IPipProps {
+            let initInput = address[AK[AK.anc]]
+                ? Base.defineInitInput(ACT[ACT.remove])
+                : Base.defineInitInput(ACT[ACT.insert]);
+            return {
+                pipType:  options[ON[ON.type]],
+                pipClass:   PC[PC.el],
+                itType:   false,
+                initReg:  null,
+                setReg:   Base.basicSetReg,
+                values:   Base.elementValues(options, address, false),
+                outActions: Base.elementActions,
+                regActions: Base.elementActions,
+                diffTest:   Base.elDiffTest,
+                emptyInput: initInput,
+                emitTest:   Base.DOMEmitTest(address),
+                interpret:  Interpret.base
+            };
+        },
+
+        shadowElement: function(options: Globals.IElementPipOptions, address: Globals.IAddresses): Globals.IPipProps {
+            //krijgt array binnen ipv enkelvoudig!
+            return {
+                pipType:  options[ON[ON.type]],
+                pipClass:   PC[PC.el],
+                itType:   false,
+                initReg:  null,
+                setReg:   Base.basicSetReg,
+                values:   Base.elementValues(options, address, false),
+                outActions: Base.elementActions,
+                regActions: Base.elementActions,
+                diffTest:   Base.elDiffTest,
+                emptyInput: Base.defineInitInput(ACT[ACT.remove]),
+                emitTest:   Base.DOMEmitTest(address),
+                interpret:  Interpret.shadow,
+                filter:   Base.filterShadowInput(options, address),
+            };
+        },
+
+        listItem: function(options: Globals.IListItemPipOptions, address: Globals.IAddresses): Globals.IListItemPipProps {
+            return {
+                pipType:    options[ON[ON.type]],
+                pipClass:   PC[PC.el],
+                itType:     true,
+                defineItemId: Base.mapItemId,
+                initReg:    {},
+                setReg:     Base.itemSetReg,
+                values:     Base.elementValues(options, address, true),
+                outActions:   Base.elementActions,
+                regActions:   Base.elementActions,
+                diffTest:   Base.elDiffTest,
+                    //tbv statisch, als alsnog dynamisch nooit aangeroepen
+                    // TODO NIET MEER NODIG VIRTUAL DOOM CONCEPT
+                initDOMList:  Base.initDOMList(options, address),//blijft nodig voor manual code van Fred
+                emptyInput:   Base.defineInitInput(ACT[ACT.remove]),
+                emitTest:   Base.DOMEmitTest(address),
+                interpret:  Interpret.listItem //is wel nodig voor Fred
+                    //interpret:  Interpret.item
+            };
+        },
+
+        itemElement: function(options: Globals.IItemElementPipOptions, address: Globals.IAddresses): Globals.IPipItemElementProps {//waarin anders dan List
+            return {
+                pipType:    options[ON[ON.type]],
+                pipClass:   PC[PC.el],
+                itType:     true,
+                defineItemId: Base.mapItemId,
+                initReg:    {},
+                setReg:     Base.itemSetReg,
+                values:     Base.elementValues(options, address, true),
+                outActions:   Base.elementActions,
+                regActions:   Base.elementActions,
+                diffTest:   Base.elDiffTest,
+                emptyInput:   Base.defineInitInput(ACT[ACT.remove]),
+                emitTest:   Base.DOMEmitTest(address),
+                interpret:  Interpret.item
+            };
+        },
+
+        model: function(options: Globals.IModelPipOptions): Globals.ICollectionPipProps {
+            var pipProps: any = {
+                pipType:  options[ON[ON.type]],
+                pipClass:   PC[PC.attr],
+                itType:   false,
+                initReg:  null,
+                setReg:   Base.basicSetReg,
+                values:   Base.modelValues(options, false),
+                outActions: Base.modelActions,
+                regActions: Base.modelActions,
+                diffTest:   Base.modelDiffTest,
+                emptyInput: Base.defineModelInitInput(options),
+                emitTest:   Base.modelEmitTest,
+                interpret:  Interpret.base,
+                keyNames:   Base.modelKeys(options)
+            };
+
+            // default a connection with server is created
+            if (options[ON[ON.server]] == null || options[ON[ON.server]] === true) {
+                var serverIO = new ServerIO.Server(options[ON[ON.name]]);
+                pipProps.switchFn = Base.modelSwitchFn;
+                pipProps.pipFn = Base.serverFn(this, options, serverIO);
+                pipProps.serverIO = serverIO;
+            }
+            return pipProps;
+        },
+
+        collection: function(options: Globals.ICollectionPipOptions): Globals.ICollectionPipProps {
+            var pipProps: any = {
+                pipType:    options[ON[ON.type]],
+                pipClass:   PC[PC.attr],
+                itType:     true,
+                defineItemId: Base.getMid,
+                initReg:    {},
+                setReg:     Base.itemSetReg,
+                values:     Base.modelValues(options, true),
+                outActions:   Base.modelActions,
+                regActions:   Base.modelActions,
+                diffTest:   Base.modelDiffTest,
+                emptyInput:   Base.defineCollectionInitInput(options),
+                emitTest:   Base.modelEmitTest,
+                interpret:  Interpret.item,
+                keyNames:   Base.modelKeys(options)
+            };
+            //if not defined options.server,
+            //default connection with server
+            if (options[ON[ON.server]] == null || options[ON[ON.server]] === true) {
+                var serverIO = new ServerIO.Server(options[ON[ON.name]]);
+                pipProps.switchFn = Base.modelSwitchFn;
+                pipProps.pipFn = Base.serverFn(this, options, serverIO);
+                pipProps.serverIO = serverIO;
+            }
+            return pipProps;
+        }
+    }; // end factoryDef
+    export function factory(options: Globals.IElementPipOptions, address: Globals.IAddresses, nameSpace?: string);//, $anc?: IO.Instance
+    export function factory(options: Globals.IShadowElementPipOptions, address: Globals.IAddresses, nameSpace?: string);//, $anc?: IO.Instance
+    export function factory(options: Globals.IItemElementPipOptions, address: Globals.IAddresses, nameSpace?: string);//, $anc?: IO.Instance
+    export function factory(options: Globals.IListItemPipOptions, address: Globals.IAddresses, nameSpace?: string);//, $anc?: IO.Instance
+
+    export function factory(options: Globals.IStatePipOptions, address: Globals.IAddresses, nameSpace?: string);//, $anc?: IO.Instance
+    export function factory(options: Globals.IStateItemPipOptions, address: Globals.IAddresses, nameSpace?: string);//, $anc?: IO.Instance
+    export function factory(options: Globals.IEventPipOptions, address: Globals.IAddresses, $anc, nameSpace?: string);//, $anc?: IO.Instance
+    export function factory(options: Globals.IEventItemPipOptions, address: Globals.IAddresses, nameSpace?: string);//, $anc?: IO.Instance
+    export function factory(options: Globals.ITemplatePipOptions, address: Globals.IAddresses, nameSpace?: string);//, $anc?: IO.Instance
+    export function factory(options: Globals.ITemplateItemPipOptions, address: Globals.IAddresses, nameSpace?: string);//, $anc?: IO.Instance
+    export function factory(options: Globals.ISelectPipOptions, address: Globals.IAddresses, nameSpace?: string);//, $anc?: IO.Instance
+
+    export function factory(options: Globals.ISubPipOptions, address: Globals.IAddresses, nameSpace?: string);//, $anc?: IO.Instance
+    export function factory(options: Globals.IListPipOptions, address: Globals.IAddresses, nameSpace?: string);//, $anc?: IO.Instance
+
+    export function factory(options: Globals.IModelPipOptions, address: Globals.IAddresses, nameSpace?: string);
+    export function factory(options: Globals.ICollectionPipOptions, address: Globals.IAddresses, nameSpace?: string);
+
+    export function factory(options: any, address: Globals.IAddresses, nameSpace?: string): void {//, $anc?: IO.Instance, $sel?: IO.Instance
+
+        nameSpace = nameSpace
+            ? nameSpace + '.pips'
+            : 'pips';
+
+        const pipType: string = options[ON[ON.type]];
+
+        //pipProps defines precompiled arguments for react
+        const pipProps = factoryDef[pipType](options, address);
+        // pipProps.pipType = pipType;
+        const pipClass: string = pipProps.pipClass;
+        //pips[address.pip].reg = factoryDef[pipType].reg;
+        //functions definies public functions of pip
+        const publicFn: any = {
+            getInit: Base.getInitFunction(address, pipClass, pipProps.outActions, pipProps.itType)//, $anc, $sel
+        }
+
+        if (pipClass === PC[PC.el] && pipProps.itType) {//pipType = PT[PT.listItem] || pipType = PT[PT.itemElement] ??
+            publicFn.getItemId = Base.getItemId(address);//, $anc, $sel
+        }
+
+        if (pipClass === PC[PC.attr] && (options[ON[ON.server]] == null || options[ON[ON.server]] === true)) {
+            publicFn.server = pipProps.serverIO;
+        }
+
+        const thisPip = Pips.create(address, pipProps, publicFn, nameSpace);
+
+        if (address[AK[AK.anc]]) {
+            // create automatically default links between register pips
+            const linkOptions: any = {};
+            linkOptions[LO[LO.pub]] = address[AK[AK.anc]];
+            linkOptions[LO[LO.sub]] = address[AK[AK.pip]];
+            Links.createLink(linkOptions, nameSpace);
+        }
+
+        if (pipClass === PC[PC.attr] && options[ON[ON.server]] === true) {
+            thisPip.fetch()
+                .mapp((result) =>
+                        R.map((i) => {
+                            return { it: Utils.uniqueId(), action: ACT[ACT.create], emit: false, value: i };
+                        }, result.value))
+                .fork(
+                    (err) => { throw new Error(err) },
+                    (data) => thisPip.react(thisPip.normalizeServerOutput(data))
+                 );
+        }
+    }
+}

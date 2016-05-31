@@ -1,0 +1,343 @@
+module Pip.Props {
+    import G = Globals;
+    import PT = G.PipType;
+    import ACT = G.Action;
+    import MK = G.MessageKey;
+    import ON = G.OptionName;
+    import AK = G.AddressKey;
+    import PC = G.PipClass;
+    import IStorage = Store.IStorage;
+
+    declare var DEBUG;
+
+    export interface RegAddressBook {
+        [index: string]: G.IAddresses;
+    }
+
+    // interface PipSpec {
+    //     options: any;
+    //     addresses: G.IAddresses;
+    // }
+    var basicProps = function(address) {
+        return {
+            outActions: Pip.Actions.DOM,//meest voorkomend, meest basaal  Pip.Actions.basic
+            regActions: Pip.Actions.DOMReg,//meest voorkomend, meest basaal  Pip.Actions.basic
+            emptyInput: Pip.Input.defineInit(ACT[ACT.remove]),
+            emitTest: Pip.Tests.DOMEmit(address),//meest voorkomend, meest basaal  Pip.Tests.modelEmit
+        };
+    };
+    export var singleProps = function(address) {
+        return R.merge(basicProps(address), {
+            itType: false,
+            initReg: null,
+            // values: {
+            //     defaultValue: false,
+            //     create: function(pipIn: G.IMessage): any {
+            //         return pipIn[MK[MK.value]];
+            //     },
+            //     update: function(pipIn: G.IMessage): boolean {
+            //         return pipIn[MK[MK.value]];
+            //     },
+            //     insert: function(pipIn: G.IMessage, register: G.IRegister<boolean>, defaultValue: any, itemId?: string): boolean|any {
+            //         return register.value ? register.value : defaultValue;
+            //     },
+            //     reg: () => null
+            // },
+            setReg: Pip.SetReg.basic,
+            interpret: Pip.Interpret.base,
+            diffTest: Pip.Tests.basicDiff,
+        });
+    }
+
+    export var itemProps = function(address) {
+        return R.merge(basicProps(address), {
+            itType: true,
+            initReg: {},
+            // values: {
+            //     defaultValue: false,
+            //     create: function(pipIn: G.IMessage): any {
+            //         return pipIn[MK[MK.value]];
+            //     },
+            //     update: function(pipIn: G.IMessage): boolean {
+            //         return pipIn[MK[MK.value]];
+            //     },
+            //     insert: function(pipIn: G.IMessage, register: G.IRegister<boolean>, defaultValue: any, itemId?: string): boolean|any {
+            //         return (register.value[itemId] ? register.value[itemId] : defaultValue);
+            //     },
+            //     reg: () => { }
+            // },
+            setReg: Pip.SetReg.item,
+            diffTest: Pip.Tests.objectDiff,
+            interpret: Pip.Interpret.item,
+            defineItemId: Pip.ItemId.map,
+        });
+    };
+
+    var pipClassProps = {
+    event: function(options: G.IEventPipOptions|G.IEventItemPipOptions, address: G.IAddresses, itType: boolean, storage: IStorage){
+            return {
+                pipType: options[ON[ON.type]],
+                pipClass: PC[PC.enable],
+                values: Pip.Values.event(options, itType),
+                pipFn: Pip.Effect.eventDOMFunctions(options, address, storage),
+                switchFn: Pip.Effect.eventSwitchFn(options[ON[ON.type]], options[ON[ON.delegation]]),//afwijking hier waarde voor delegation op ture gezet,
+            }
+        },
+        state: function(options: G.IStatePipOptions|G.IStateItemPipOptions, address: G.IAddresses, itType: boolean){
+            return {
+                pipType: options[ON[ON.type]],
+                pipClass: PC[PC.state],
+                values: Pip.Values.state(options, itType),
+
+                switchFn: Pip.Effect.DOMSwitchFn(),
+                pipFn: Pip.Effect.stateDOMFn(options),
+                //stateNames: R.pluck('name', options.states),
+                //publicFn :{
+                //     getValues: Pip.Public.getStates,
+                //     getDefaultValue : Pip.Public.getDefaultState(pipProps.stateNames),
+                // }
+            };
+        },
+        template: function(options:G.ITemplatePipOptions|G.ITemplateItemPipOptions, address: G.IAddresses, itType: boolean) {
+            return {
+                pipType: options[ON[ON.type]],
+                pipClass: PC[PC.tpl],
+                values: Pip.Values.template(options,itType),
+                switchFn: Pip.Effect.DOMSwitchFn(),
+                pipFn: Pip.Effect.templateDOMFn(options),
+            };
+        },
+        selectAlike: function(options: G.ISelectPipOptions|G.ITargetItemPipOptions, address: G.IAddresses) {
+            return {
+                pipType: options[ON[ON.type]],
+                pipClass: options[ON[ON.type]] === PT[PT.select] ? PC[PC.select] : PC[PC.target],
+                initReg: [],
+                setReg: Pip.SetReg.array,
+                values: Pip.Values.select,
+                regActions: Pip.Actions.DOM,//select
+                diffTest: Pip.Tests.arrayDiff,
+                interpret: Pip.Interpret.correct,// TODO Pip.Interpret.correct??
+
+                correctInput: {
+                    define: Pip.Input.correctSelection(options),
+                    baseActionTest: Pip.Input.DOMTest,
+                    emptyActionTest: Pip.Input.falseTest,
+                }
+            }
+        },
+        regPipBasics: function(options: G.IElementPipOptions|G.IItemElementPipOptions|G.IListItemPipOptions|G.IShadowElementPipOptions, address: G.IAddresses, itType: boolean, storage: IStorage) {
+            var regProps:any = {
+                pipType: options[ON[ON.type]],
+                pipClass: PC[PC.el],
+                values: Pip.Values.element(options, address, itType, storage),
+                outActions: Pip.Actions.basic,
+                regActions: Pip.Actions.basic,
+                diffTest: Pip.Tests.elDiff,
+            };
+
+            if (itType){
+                regProps.publicFn = {
+                    getItemId: Pip.Public.getItemId(address, storage)
+                };
+            }
+            return regProps;
+        },
+        modelBasic: function(options: G.IModelPipOptions|G.ICollectionPipOptions, address: G.IAddresses, itType: boolean, storage: IStorage) {
+            let pipProps:any = {
+                pipType: options[ON[ON.type]],
+                pipClass: PC[PC.attr],
+                values: Pip.Values.model(options, itType),
+                outActions: Pip.Actions.model,//model
+                regActions: Pip.Actions.model,//model
+                diffTest: Pip.Tests.modelDiff,
+                emitTest: Pip.Tests.modelEmit,
+                //publicFn:{
+                //getKeys : Pip.Public.getKeys
+                //getValues : Pip.Public.getValues
+                //}
+            };
+             // default a connection with server is created
+            if (options[ON[ON.server]] == null || options[ON[ON.server]] === true) {
+                let server = new ServerLocal.Server(Globals.serverAddress, options[ON[ON.name]], options);
+                let serverIO = new ServerIO.Server(server, options[ON[ON.name]]);
+                pipProps.switchFn = Pip.Effect.modelSwitchFn();
+                pipProps.pipFn = Pip.Effect.serverFn(options, serverIO, address, storage);
+                pipProps.server = serverIO;
+                pipProps.publicFn = {
+                    server: serverIO,
+                    normalizeServerOutput: Pip.Public.normalizeServerOutput(itType),
+                };
+                // );
+            }
+            return pipProps;
+        },
+    }
+
+    export var def = {
+        'model': function(options: G.IModelPipOptions, address: G.IAddresses, storage: IStorage): G.ICollectionPipProps {
+            let modelProps:any = pipClassProps.modelBasic(options, address, false, storage);
+            modelProps.emptyInput = Pip.Input.defineModelInit(options);
+            return R.merge(singleProps(address), modelProps);
+        },
+        'collection': function(options: G.ICollectionPipOptions, address: G.IAddresses, storage: IStorage): G.ICollectionPipProps {
+            let collectionProps:any = R.merge(pipClassProps.modelBasic(options, address, true, storage), {
+                emptyInput : Pip.Input.defineCollectionInit(options),
+                defineItemId: Pip.ItemId.getMid
+            });
+            return R.merge(itemProps(address), collectionProps);
+        },
+        'event': function(options: G.IEventPipOptions, address: G.IAddresses, storage: IStorage): G.IPipProps {
+            return R.merge(singleProps(address), pipClassProps.event(options, address, false, storage));
+        },
+        'eventItem': function(options: G.IEventItemPipOptions, address: G.IAddresses, storage: IStorage): G.IItemPipProps | G.IPipProps {
+            let eventItemProps;
+            if (options[ON[ON.delegation]]){
+                let delegatedProps = R.merge(pipClassProps.event(options, address, false, storage), { defineItemId: Pip.ItemId.map });
+                eventItemProps = R.merge(singleProps(address), delegatedProps);
+            } else {
+                let unDelegatedProps = R.merge(pipClassProps.event(options, address, true, storage), {
+                    initReg: [], //TODO initReg -> regFormat //afwijkend
+                    setReg: Pip.SetReg.array, //afwijkend
+                    diffTest: Pip.Tests. arrayDiff,
+                });
+                eventItemProps = R.merge(itemProps(address), unDelegatedProps);
+            }
+            return eventItemProps;
+        },
+        'state': function(options: G.IStatePipOptions, address: G.IAddresses): G.IPipProps {
+            return R.merge(singleProps(address), pipClassProps.state(options, address, false));
+        },
+        'stateItem': function(options: G.IStateItemPipOptions, address: G.IAddresses): G.IItemPipProps {
+            return R.merge(itemProps(address), pipClassProps.state(options, address, true));
+        },
+        'template': function(options: G.ITemplatePipOptions, address: G.IAddresses): G.IPipProps {
+            return R.merge(singleProps(address), pipClassProps.template(options, address, false));
+        },
+        'templateItem': function(options: G.ITemplateItemPipOptions, address: G.IAddresses): G.IItemPipProps {
+            return R.merge(itemProps(address), pipClassProps.template(options, address, true));
+        },
+        'select': function(options: G.ISelectPipOptions, address: G.IAddresses): G.ICorrectPipProps {
+            return R.merge(itemProps(address), pipClassProps.selectAlike(options, address));
+        },
+        'sub': function(options: G.ISubPipOptions, address: G.IAddresses, storage: IStorage): G.IPipProps {
+            return R.merge(singleProps(address),  {
+                pipType: options[ON[ON.type]],
+                pipClass: PC[PC.sub],// or 'node'??
+                values: Pip.Values.node(false),
+                outActions: Pip.Actions.node,
+                regActions: Pip.Actions.nodeReg,
+                pipFn: Pip.Effect.nodeDOMFunctions(options, storage),//address, false,
+                switchFn: Pip.Effect.subSwitchFn(address),
+            });
+        },
+        'list': function(options: G.IListPipOptions, address: G.IAddresses, storage: IStorage): G.IListPipProps {
+            return R.merge(itemProps(address), {
+                pipType: options[ON[ON.type]],
+                pipClass: PC[PC.list],
+                defineItemId: Pip.ItemId.node(options),
+                initReg: [],
+                setReg: Pip.SetReg.array,
+                values: Pip.Values.node(true),
+                outActions: Pip.Actions.node,
+                regActions: Pip.Actions.nodeReg,
+                diffTest: Pip.Tests.listDiff,
+                emptyInput: Pip.Input.defineInit(ACT[ACT.delete]),
+                pipFn: Pip.Effect.nodeDOMFunctions(options, storage, address, true),
+                switchFn: Pip.Effect.listSwitchFn(address),//afwijking
+                interpret: Pip.Interpret.correct,//TODO correct  wijziging tbv filter en sort
+                correctInput: {
+                    define: Pip.Input.correctList(options),
+                    baseActionTest: Pip.Input.insertTest,
+                    emptyActionTest: Pip.Input.destructTest,
+                },
+                publicFn:{
+                    defineItemId : Pip.ItemId.node(options)
+                }
+            })
+        },
+        'element': function(options: G.IElementPipOptions, address: G.IAddresses, storage: IStorage): G.IPipProps {
+            let elementProps:any = pipClassProps.regPipBasics(options, address, false, storage);
+            elementProps.emptyInput = address[AK[AK.anc]]
+                ? Pip.Input.defineInit(ACT[ACT.remove])
+                : Pip.Input.defineInit(ACT[ACT.insert]);
+            return R.merge(singleProps(address), elementProps);
+        },
+        'shadowElement': function(options: G.IShadowElementPipOptions, address: G.IAddresses, storage: IStorage): G.IPipProps {
+            //krijgt array binnen ipv enkelvoudig!
+            let shadowElementProps = R.merge( pipClassProps.regPipBasics(options, address, false, storage), {
+                interpret: Pip.Interpret.correct,
+                correctInput: {
+                    define: Pip.Input.filterShadow(options, address),
+                    baseActionTest: Pip.Input.destructTest,//delete komt welliswaar niet voor
+                    emptyActionTest: Pip.Input.falseTest,
+                },
+
+            });
+            return R.merge(singleProps(address), shadowElementProps);
+        },
+        'listItem': function(options: G.IListItemPipOptions, address: G.IAddresses, storage: IStorage): G.ICorrectPipProps {
+             let listItemProps =R.merge( pipClassProps.regPipBasics(options, address, true, storage), {
+                //tbv statisch, als alsnog dynamisch nooit aangeroepen
+                // TODO NIET MEER NODIG VIRTUAL DOOM CONCEPT
+                correctInput: {
+                    define:  Pip.Input.initDOMList(options, address, storage),//blijft nodig voor manual code van Fred
+                    baseActionTest: Pip.Input.insertTest,
+                    emptyActionTest: Pip.Input.destructTest,
+                },
+                interpret: Pip.Interpret.correct // TODO correct? is wel nodig voor Fred
+            });
+            return R.merge(itemProps(address), listItemProps);
+        },
+        'itemElement': function(options: G.IItemElementPipOptions, address: G.EventItemAddresses, storage: IStorage): G.IItemPipProps {//waarin anders dan List
+            return R.merge(itemProps(address), pipClassProps.regPipBasics(options, address, true, storage));
+        },
+        'target': function(options: G.ITargetPipOptions, address: G.IAddresses): G.IPipProps {
+            return R.merge(singleProps(address), {
+                pipType: options[ON[ON.type]],
+                pipClass: PC[PC.target],
+                values: Pip.Values.state(options, false),
+                //     stateNames: R.pluck('name', options.states),
+                //publicFn :{
+                //     getValues: Pip.Public.getStates,
+                //     getDefaultValue : Pip.Public.getDefaultState(pipProps.stateNames),
+                // }
+            });
+        },
+        'targetItem': function(options: G.ITargetItemPipOptions, address: G.IAddresses): G.ICorrectPipProps {
+            return R.merge(itemProps(address), pipClassProps.selectAlike(options, address));
+        },
+        'router': function(options: G.IRouterPipOptions, address: G.IAddresses, storage: IStorage): G.IItemPipProps {
+            return R.merge(itemProps(address), {
+                pipType: options[ON[ON.type]],
+                pipClass: PC[PC.router],
+                values: Pip.Values.router,
+                diffTest: Pip.Tests.modelDiff,//bij init zal toevoegen anc leiden tot diff!
+                emitTest: Pip.Tests.modelEmit,
+                switchFn: Pip.Effect.routerSwitchFn(),
+                pipFn: Pip.Effect.routerFn(options, storage)
+            });
+        },
+        'navTree': function(options: G.INavTreePipOptions): G.IItemPipProps {
+            return R.merge(itemProps({}), {//address is undefined
+                pipType: options[ON[ON.type]],
+                pipClass: PC[PC.nav],
+                setReg: Pip.SetReg.navTree,
+                values: Pip.Values.navTree,
+                outActions: Pip.Actions.basic,
+                regActions: Pip.Actions.basic,
+                diffTest: Pip.Tests.navTreeDiff,
+                interpret: Pip.Interpret.correct,
+                emitTest: Pip.Tests.modelEmit,
+                correctInput: {
+                    define: Pip.Input.correctNavTree(options),
+                    baseActionTest: Pip.Input.falseTest,
+                    emptyActionTest: Pip.Input.destructTest,
+                }
+            });
+        }
+    };
+
+    export function addPipType(pipProps){
+        def[pipProps.pipType] = pipProps;
+    }
+}

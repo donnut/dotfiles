@@ -1,0 +1,1310 @@
+var assert = require('assert'),
+  mongoose = require('mongoose'),
+  async = require('async'),
+  _ = require('lodash'),
+  Schema = mongoose.Schema,
+  revisions = require('..')(mongoose),
+  ObjectId = require('pow-mongodb-fixtures').createObjectId,
+  fixtures = null,
+  pid = ObjectId('5225aeb97291db651c000001'),
+  pid2 = ObjectId('5225aeb97291db651c000002'),
+  pid3 = ObjectId('5225aeb97291db651c000003'),
+  pid4 = ObjectId('5225aeb97291db651c000004'),
+  owner = 'me',
+  RM, conn;
+
+describe('Revision Manager', function() {
+  before(function(done) {
+    mongoose.connect('mongodb://localhost/rm_test', function(err) {
+      RM = mongoose.model('rm', revisions.manager);
+      fixtures = require('pow-mongodb-fixtures').connect('rm_test');
+      done();
+    });
+  });
+
+
+  describe('query methods working on "active" docs only', function() {
+    before(function(done) {
+      var testSchema = new Schema({
+        name: String,
+        number: Number
+      }, {
+        collection: 'querymodels'
+      });
+      testSchema.plugin(revisions.versions);
+      var Test = mongoose.model('queryModel', testSchema);
+      done();
+    });
+
+    beforeEach(function(done) {
+      fixtures.clearAllAndLoad(__dirname+'/fixtures/revision-fixtures.js',function(err) {
+        if (err) throw new Error(err);
+        done();
+      });
+    });
+
+    it('should get the active document, using find', function(done) {
+      var Test = mongoose.model('queryModel');
+      Test.find({}, function(err, models) {
+        assert.equal(err, null);
+        assert.equal(models.length, 1);
+        assert.equal(models[0].number, 2);
+        done();
+      });
+    });
+
+    it('should get the active document, using findOne', function(done) {
+      var Test = mongoose.model('queryModel');
+      Test.findOne({}, function(err, model) {
+        assert.equal(err, null);
+        assert.equal(model.number, 2);
+        done();
+      });
+    });
+
+    it('should get the active document, using findById', function(done) {
+      var Test = mongoose.model('queryModel');
+      Test.findById('535a3244df3e28615aa29605', function(err, model) {
+        assert.equal(err, null);
+        assert.equal(model.number, 2);
+        done();
+      });
+    });
+
+    it('should return null, using findById on nonactive document', function(done) {
+      var Test = mongoose.model('queryModel');
+      Test.findById('535a3244df3e28615aa29600', function(err, model) {
+        assert.equal(err, null);
+        assert.equal(model, null);
+        done();
+      });
+    });
+
+    it('should throw error using findByIdAndUpdate', function(done) {
+      var Test = mongoose.model('queryModel');
+      assert.throws(function() {
+        Test.findByIdAndUpdate('535a3244df3e28615aa29604', {number: 5}, function(err, model) {});
+      });
+      done();
+    });
+
+    it('should remove the active document, using findByIdAndRemove', function(done) {
+      var Test = mongoose.model('queryModel');
+      assert.throws(function() {
+        Test.findByIdAndRemove('535a3244df3e28615aa29604', function(err, model) {});
+      });
+      done();
+    });
+
+    it('should not remove a nonactive document, using findByIdAndRemove', function(done) {
+      var Test = mongoose.model('queryModel');
+      assert.throws(function() {
+        Test.findByIdAndRemove('535a3244df3e28615aa29600', function(err, model) {});
+      });
+      done();
+    });
+
+    it('should update the active document, using findOneAndUpdate', function(done) {
+      var Test = mongoose.model('queryModel');
+      assert.throws(function() {
+        Test.findOneAndUpdate({}, {number: 5}, function(err, model) {});
+      });
+      done();
+    });
+
+    it('should remove the active document, using findOneAndRemove', function(done) {
+      var Test = mongoose.model('queryModel');
+      assert.throws(function() {
+        Test.findOneAndRemove({}, function(err, model) {});
+      });
+      done();
+    });
+  });
+
+  describe('playing the README demo', function() {
+
+    before(function(done) {
+      var aSchema = new Schema({
+        name: String,
+        pid: mongoose.Schema.Types.ObjectId
+      }, {
+        collection: 'a'
+      });
+      aSchema.plugin(revisions.versions, {chainId: 'pid'});
+      var A = mongoose.model('A', aSchema);
+
+      var bSchema = new Schema({
+        name: String,
+        pid: mongoose.Schema.Types.ObjectId
+      }, {
+        collection: 'b'
+      });
+      bSchema.plugin(revisions.versions, {chainId: 'pid'});
+      var B = mongoose.model('B', bSchema);
+
+      var cSchema = new Schema({
+        name: String,
+        pid: mongoose.Schema.Types.ObjectId
+      }, {
+        collection: 'c'
+      });
+      cSchema.plugin(revisions.versions, {chainId: 'pid'});
+      var C = mongoose.model('C', cSchema);
+
+      var dSchema = new Schema({
+        name: String,
+        pid: mongoose.Schema.Types.ObjectId
+      }, {
+        collection: 'd'
+      });
+      dSchema.plugin(revisions.versions, {chainId: 'pid'});
+      var D = mongoose.model('D', dSchema);
+
+      var eSchema = new Schema({
+        name: String,
+        pid: mongoose.Schema.Types.ObjectId
+      }, {
+        collection: 'e'
+      });
+      eSchema.plugin(revisions.versions, {chainId: 'pid'});
+      var E = mongoose.model('E', eSchema);
+      done();
+    });
+
+    beforeEach(function(done) {
+      fixtures.clearAllAndLoad(__dirname+'/fixtures/revision-fixtures.js',function(err) {
+        if (err) throw new Error(err);
+        done();
+      });
+    });
+
+    it('should initialize the initial state', function(done) {
+      RM.getRevisions(pid2, function(err, revisions) {
+        assert.equal(err, null);
+        assert.equal(revisions.length, 4);
+        var activeRevision = _.last(revisions);
+        assert.equal(_.difference(_.pluck(activeRevision.versions, 'collection'), ['a','c','e']).length, 0);
+        done();
+      });
+    });
+
+    it('should modify document b', function(done) {
+      RM.start(pid2, 'Erwin', function(err) {
+        var B = mongoose.model('B');
+        B.findOne({}, function(err, b) {
+          assert.equal(err, null);
+          assert.equal(b.get('name'), 'b2');
+          b.set('name', 'b5');
+          b.save(function(err) {
+            assert.equal(err, null);
+            RM.stop(pid2, function(err, rev) {
+              assert.equal(err, null);
+              assert.equal(rev.versions.length, 1);
+              assert.equal(rev.versions[0].docId.toString(), b.get('_id').toString());
+              assert.equal(rev.versions[0].refId.toString(), b.get('_id').toString());
+              assert.equal(b.get('_id').toString(), b.get('__refId').toString());
+              RM.getRevisions(pid2, function(err, revs) {
+                assert.equal(revs.length, 5);
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+
+    it('should restore to snapshot 3', function(done) {
+      var timestamp = new Date('2014-04-29T11:00:30.000Z');
+      RM.restore(pid2, 'Robert', timestamp, function(err) {
+        assert.equal(err, null);
+        var A = mongoose.model('A');
+        var B = mongoose.model('B');
+        var C = mongoose.model('C');
+        var D = mongoose.model('D');
+        A.findOne({}, function(err, a) {
+          assert.equal(err, null);
+          assert.equal(a.get('name'), 'a3');
+          B.findOne({}, function(err, b) {
+            assert.equal(err, null);
+            assert.equal(b.get('name'), 'b2');
+            C.findOne({}, function(err, c) {
+              assert.equal(err, null);
+              assert.equal(c.get('name'), 'c3');
+              D.findOne({}, function(err, d) {
+                assert.equal(err, null);
+                assert.equal(d, null);
+                RM.getRevisions(pid2, function(err, revs) {
+                  assert.equal(revs.length, 5);
+                  var revision = _.last(revs);
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+
+    it('should restore to snapshot 1 with non-existing docs', function(done) {
+      var timestamp = new Date('2014-04-29T11:00:10.000Z');
+      RM.restore(pid2, 'Martijn', timestamp, function(err) {
+        assert.equal(err, null);
+        var A = mongoose.model('A');
+        var B = mongoose.model('B');
+        var C = mongoose.model('C');
+        var D = mongoose.model('D');
+        var E = mongoose.model('E');
+        A.findOne({}, function(err, a) {
+          assert.equal(err, null);
+          assert.equal(a.get('name'), 'a1');
+          assert.equal(a.get('__refId').toString(), a.get('_id').toString());
+          B.findOne({}, function(err, b) {
+            assert.equal(err, null);
+            assert.equal(b.get('name'), 'b1');
+            assert.equal(b.get('__refId').toString(), b.get('_id').toString());
+            C.findOne({}, function(err, c) {
+              assert.equal(err, null);
+              assert.equal(c, null);
+              D.findOne({}, function(err, d) {
+                assert.equal(err, null);
+                assert.equal(d, null);
+                E.findOne({}, function(err, e) {
+                  assert.equal(err, null);
+                  assert.equal(e, null);
+                  RM.getLastRevision(pid2, function(err, rev) {
+                    assert.equal(rev.owner, 'Martijn');
+                    assert.equal(rev.versions.length, 6);
+                    done();
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+
+    it('should remove active document b', function(done) {
+      RM.start(pid2, 'John', function(err) {
+        var B = mongoose.model('B');
+        B.findOne({}, function(err, b) {
+          assert.equal(err, null);
+          assert.equal(b.get('name'), 'b2');
+          var refId = b.get('__refId');
+          var docId = b.get('_id');
+          b.remove(function(err) {
+            RM.stop(pid2, function(err, rev) {
+              assert.equal(err, null);
+              B.findOne({}, function(err, b) {
+                assert.equal(err, null);
+                assert.equal(b, null);
+                assert.equal(rev.versions.length, 1);
+                assert.equal(rev.versions[0].collection, 'b');
+                assert.equal(rev.versions[0].refId.toString(), refId.toString());
+                assert.notEqual(rev.versions[0].docId.toString(), docId.toString());
+                B.collection.findOne({_id: rev.versions[0].docId}, function(err, removed) {
+                  assert.equal(removed.__status, 'removed');
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+
+    it('should restore snapshot 2', function(done) {
+      var timestamp = new Date('2014-04-29T11:00:20.000Z');
+      RM.restore(pid2, 'Flip', timestamp, function(err) {
+        RM.getLastRevision(pid2, function(err, rev) {
+          assert.equal(rev.versions.length, 5);
+          assert.equal(_.difference(_.pluck(rev.versions, 'collection'), ['a', 'c', 'd','e']).length, 0);
+          var A = mongoose.model('A');
+          var B = mongoose.model('B');
+          var C = mongoose.model('C');
+          var D = mongoose.model('D');
+          var E = mongoose.model('E');
+          A.findOne({}, function(err, a) {
+            assert.equal(err, null);
+            assert.equal(a.get('name'), 'a2');
+            assert.equal(a.get('__refId').toString(), a.get('_id').toString());
+            B.findOne({}, function(err, b) {
+              assert.equal(err, null);
+              assert.equal(b.get('name'), 'b2');
+              assert.equal(b.get('__status'), 'active');
+              assert.equal(b.get('__refId').toString(), b.get('_id').toString());
+              C.findOne({}, function(err, c) {
+                assert.equal(err, null);
+                assert.equal(c.get('name'), 'c2');
+                assert.equal(c.get('__refId').toString(), c.get('_id').toString());
+                D.findOne({}, function(err, d) {
+                  assert.equal(err, null);
+                  assert.equal(d.get('name'), 'd2');
+                  assert.equal(d.get('__refId').toString(), d.get('_id').toString());
+                  E.findOne({}, function(err, e) {
+                    assert.equal(err, null);
+                    assert.equal(e, null);
+                    done();
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+  });
+
+  describe('parent-child relation', function() {
+
+    before(function(done) {
+      var mainSchema = new Schema({
+        name: String,
+        chld: [mongoose.Schema.Types.ObjectId],
+        pid: mongoose.Schema.Types.ObjectId
+      }, {
+        collection: 'tree'
+      });
+      mainSchema.plugin(revisions.versions, {chainId: 'pid'});
+      var Tree = mongoose.model('Tree', mainSchema);
+      done();
+    });
+
+    beforeEach(function(done) {
+      fixtures.clearAllAndLoad(__dirname+'/fixtures/revision-fixtures.js',function(err) {
+        if (err) throw new Error(err);
+        done();
+      });
+    });
+
+    it('should have a valid parent-child reference by default', function(done) {
+      var Tree = mongoose.model('Tree');
+      Tree.findOne({name: 'stam'}, function(err, stam) {
+        Tree.findOne({name: 'hoofdtak'}, function(err, tak) {
+          assert.equal(_.first(stam.get('chld')).toString(), tak._id.toString());
+          done();
+        });
+      });
+    });
+
+    it('should restore preexisting documents', function(done) {
+      var Tree = mongoose.model('Tree');
+      var stamp = (new Date("2014-01-01T00:00:00.000Z"));
+      RM.restore(pid4, 'Ghost', stamp, function(err) {
+        Tree.findOne({name: 'stam'}, function(err, stam) {
+          assert.equal(err, null);
+          assert.equal(stam, null);
+          Tree.findOne({name: 'hoofdtak'}, function(err, tak) {
+            assert.equal(err, null);
+            assert.equal(tak, null);
+            RM.getLastRevision(pid4, function(err, rev) {
+              assert.equal(rev.owner, 'Ghost');
+              assert.equal(rev.versions.length, 2);
+              done();
+            });
+          });
+        });
+      });
+    });
+
+    it('should remain a valid parent-child reference after removal and restore', function(done) {
+      var Tree = mongoose.model('Tree');
+      Tree.findOne({name: 'stam'}, function(err, stam) {
+        Tree.findOne({name: 'hoofdtak'}, function(err, tak) {
+          assert.equal(_.first(stam.get('chld')).toString(), tak._id.toString());
+          RM.start(pid4, 'Piet', function(err) {
+            tak.remove(function(err) {
+              assert.equal(err, null);
+              stam.remove(function(err) {
+                assert.equal(err, null);
+                RM.stop(pid4, function(err, rev) {
+                  assert.equal(err, null);
+                  Tree.findOne({name: 'hoofdtak'}, function(err, tak) {
+                    Tree.findOne({name: 'stam'}, function(err, stam) {
+                      assert.equal(tak, null);
+                      assert.equal(stam, null);
+                      assert.equal(rev.owner, 'Piet');
+                      var stamp = (new Date("2014-05-15T10:00:00.000Z"));
+                      RM.restore(pid4, 'Schimmel', stamp, function(err) {
+                        Tree.findOne({name: 'hoofdtak'}, function(err, tak) {
+                          Tree.findOne({name: 'stam'}, function(err, stam) {
+                            assert.equal(_.first(stam.get('chld')).toString(), tak._id.toString());
+                            assert.equal(stam._id.toString(), stam.__refId.toString());
+                            assert.equal(tak._id.toString(), tak.__refId.toString());
+                            done();
+                          });
+                        });
+                      });
+                    });
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+  });
+
+  describe('with multiple chains', function() {
+
+    before(function(done) {
+      var testSchema = new Schema({
+        name: String,
+        number: Number,
+        pid: mongoose.Schema.Types.ObjectId
+      }, {
+        collection: 'realestate'
+      });
+      testSchema.plugin(revisions.versions, {chainId: 'pid'});
+      var Test = mongoose.model('RealEstate', testSchema);
+      done();
+    });
+
+    beforeEach(function(done) {
+      fixtures.clearAllAndLoad(__dirname+'/fixtures/revision-fixtures.js',function(err) {
+        if (err) throw new Error(err);
+        done();
+      });
+    });
+
+    it('should have an status active by default', function() {
+      var Test = mongoose.model('RealEstate');
+      var test = new Test();
+      assert.equal(test.get('__status'), 'active');
+    });
+
+    it('should register a new document on different chain', function(done) {
+      var Test = mongoose.model('RealEstate');
+      var test = new Test();
+      RM.start(pid, owner, function(err) {
+        assert.equal(err, null);
+        test.set('name', 'Torenzicht');
+        test.set('pid', pid);
+        test.save(function(err) {
+          RM.stop(pid, function(err, rm) {
+            RM.getRevisions(pid, function(err, revisions) {
+              assert.equal(revisions.length, 1);
+              assert.equal(revisions[0].status, 'closed');
+              assert.equal(revisions[0].versions.length, 1);
+              assert.equal(revisions[0].versions[0].refId, test._id.toString());
+              assert.equal(revisions[0].versions[0].docId, test._id.toString());
+              assert.equal(revisions[0].versions[0].collection, 'realestate');
+              done();
+            });
+          });
+        });
+      });
+    });
+
+    it('should register a change of an active document', function(done) {
+      var Street = mongoose.model('RealEstate');
+      //get current, active document
+      Street.findOne({}, function(err, house) {
+        assert.equal(err, null);
+        assert.equal(house.get('name'), 'House');
+        assert.equal(house.get('number'), 2);
+        RM.start(pid3, 'Erwin', function(err) {
+          house.set('name', 'Villa');
+          house.save(function(err) {
+            RM.stop(pid3, function(err, rev) {
+              Street.findOne({}, function(err, villa) {
+                assert.equal(err, null);
+                assert.equal(villa.get('name'), 'Villa');
+                assert.equal(villa.get('number'), 2);
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+
+    it('should go back in time to a precious version', function(done) {
+      var Street = mongoose.model('RealEstate');
+      var history = (new Date("2014-04-29T10:57:29.708Z"));
+      RM.restore(pid3, 'Jones', history, function(err) {
+        assert.equal(err, null);
+        Street.findOne({},function(err, house) {
+          assert.equal(err, null);
+          assert.equal(house.get('name'), 'House');
+          assert.equal(house.get('number'), 1);
+          done();
+        });
+      });
+    });
+
+    it('should go back in time to the final frontier', function(done) {
+      var Street = mongoose.model('RealEstate');
+      var history = (new Date("2014-04-29T10:57:29.000Z"));
+      RM.restore(pid3, 'Jones', history, function(err) {
+        assert.equal(err, null);
+        Street.findOne({},function(err, house) {
+          assert.equal(err, null);
+          assert.equal(house, null);
+          done();
+        });
+      });
+    });
+  });
+
+  describe('with default chain id', function() {
+
+    before(function(done) {
+      var testSchema = new Schema({
+        name: 'string',
+        pid: mongoose.Schema.Types.ObjectId
+      });
+      testSchema.plugin(revisions.versions, {chainId: 'pid'});
+      var Test = mongoose.model('VersionedModel', testSchema);
+      done();
+    });
+
+    beforeEach(function(done) {
+      fixtures.clearAllAndLoad(__dirname+'/fixtures/revision-fixtures.js',function(err) {
+        if (err) throw new Error(err);
+        done();
+      });
+    });
+
+    it('should have an status active by default', function() {
+      var Test = mongoose.model('VersionedModel');
+      var test = new Test();
+      assert.equal(test.get('__status'), 'active');
+    });
+
+    it('should register a new document with default chain', function(done) {
+      var Test = mongoose.model('VersionedModel');
+      var test = new Test();
+      RM.start(owner, function(err) {
+        test.set('name', 'Eerste');
+        test.save(function(err) {
+          RM.stop(function(err, rm) {
+            RM.getRevisions(function(err, revisions) {
+              assert.equal(revisions.length, 1);
+              done();
+            });
+          });
+        });
+      });
+    });
+
+    it('should create three revisions of a document', function(done) {
+      var Test = mongoose.model('VersionedModel');
+      var test = new Test();
+
+      RM.start(owner, function(err){
+        test.set('name', 'Eerste');
+        test.save(function(err) {
+          RM.stop(function(err) {
+            assert.equal(test.get('name'), 'Eerste');
+            assert.equal(test.get('__status'), 'active');
+            RM.start(owner, function(err){
+              test.set('name', 'Tweede');
+              test.save(function(err) {
+                RM.stop(function(err) {
+                  assert.equal(test.get('name'), 'Tweede');
+                  RM.start(owner, function(err){
+                    test.set('name', 'Derde');
+                    test.save(function(err) {
+                      RM.stop(function(err) {
+                        assert.equal(test.get('name'), 'Derde');
+                        RM.getRevisions(function(err, revisions) {
+                          assert.equal(revisions.length, 3);
+                          done();
+                        });
+                      });
+                    });
+                  });
+                });
+              });
+            });
+          });
+        });
+
+      });
+    });
+
+    it('should create and restore revisions of two models', function(done) {
+      var Test = mongoose.model('VersionedModel');
+      var test1 = new Test();
+      var test2 = new Test();
+
+      RM.start(owner, function(err) {
+        test1.set('name', 'Eerste');
+        test2.set('name', 'First');
+        test1.save(function(err) {
+          test2.save(function(err) {
+            RM.stop(function(err, rev) {
+              assert.equal(test1.get('name'), 'Eerste');
+              assert.equal(test2.get('name'), 'First');
+              assert.equal(test1.get('__status'), 'active');
+              assert.equal(test2.get('__status'), 'active');
+              var stamp = rev.get('timestamp');
+              RM.start(owner, function(err){
+                test1.set('name', 'Tweede');
+                test2.set('name', 'Second');
+                test1.save(function(err) {
+                  test2.save(function(err) {
+                    RM.stop(function(err) {
+                      RM.start(owner, function(err) {
+                        test2.set('name', 'Third');
+                        test2.save(function(err) {
+                          RM.stop(function(err) {
+                            RM.start(owner, function(err) {
+                              test1.set('name', 'Derde');
+                              test1.save(function(err) {
+                                RM.stop(function(err) {
+                                  RM.restore('Jody', stamp, function(err) {
+                                    test1.refresh(function(err, test1) {
+                                      assert.equal(test1.get('name'), 'Eerste');
+                                      done();
+                                    });
+                                  });
+                                });
+                              });
+                            });
+                          });
+                        });
+                      });
+                    });
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+
+    it('should restore the current revision (do nothing)', function(done) {
+      var Test = mongoose.model('VersionedModel');
+      var test = new Test();
+
+      RM.start(owner, function(err) {
+        test.set('name', 'Eerste');
+        test.save(function(err) {
+          RM.stop(function(err, rev) {
+            var stamp = rev.get('timestamp');
+            RM.restore('Chris', stamp, function(err) {
+              test.refresh(function(err, test) {
+                assert.equal(test.get('name'), 'Eerste');
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+
+    it('should restore the previous revision', function(done) {
+      var Test = mongoose.model('VersionedModel');
+      var test = new Test();
+
+      RM.start(owner, function(err) {
+        test.set('name', 'Eerste');
+        test.save(function(err) {
+          RM.stop(function(err, rev) {
+            var stamp = rev.get('timestamp');
+            RM.start(owner, function(err) {
+              test.set('name', 'Tweede');
+              test.save(function(err) {
+                RM.stop(function(err) {
+                  RM.getRevisions(function(err, revisions) {
+                    assert.equal(revisions.length, 2);
+                    RM.restore('Leo', stamp, function(err) {
+                      test.refresh(function(err, test) {
+                        assert.equal(test.get('name'), 'Eerste');
+                        done();
+                      });
+                    });
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+
+    it('should restore a previous revision and recover the active one again', function(done) {
+      var Test = mongoose.model('VersionedModel');
+      var test = new Test();
+
+      RM.start(owner, function(err) {
+        test.set('name', 'Eerste');
+        test.save(function(err) {
+          RM.stop(function(err, rev) {
+            var stamp = rev.timestamp;
+            RM.start(owner, function(err) {
+              test.set('name', 'Tweede');
+              test.save(function(err) {
+                RM.stop(function(err, rev) {
+                  RM.getRevisions(function(err, revisions) {
+                    assert.equal(revisions.length, 2);
+                    var stampPrev = rev.timestamp;
+                    RM.restore('Erwin', stamp, function(err) {
+                      RM.getRevisions(function(err, revisions) {
+                        assert.equal(revisions.length, 3);
+                        test.refresh(function(err, test) {
+                          assert.equal(test.get('name'), 'Eerste');
+                          // restore the previous active one again
+                          RM.restore('Aaron', stampPrev, function(err) {
+                            test.refresh(function(err, test) {
+                              assert.equal(test.get('name'), 'Tweede');
+                              RM.getRevisions(function(err, revisions) {
+                                assert.equal(revisions.length, 4);
+                                done();
+                              });
+                            });
+                          });
+                        });
+                      });
+                    });
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+
+    it('should restore a previous deleted revision', function(done) {
+      var Test = mongoose.model('VersionedModel');
+      var test = new Test();
+
+      RM.start(pid, owner, function(err) {
+        test.set('name', 'Eerste');
+        test.set('pid', pid);
+        test.save(function(err) {
+          assert.equal(err, null);
+          RM.stop(pid, function(err, rev) {
+            var stamp1 = rev.get('timestamp');
+            RM.start(pid, owner, function(err) {
+              test.set('name', 'Tweede');
+              test.save(function(err) {
+                RM.stop(pid, function(err, rev) {
+                  var stamp2 = rev.get('timestamp');
+                  RM.getRevisions(pid, function(err, revisions) {
+                    assert.equal(revisions.length, 2);
+                    // delete test
+                    RM.start(pid, owner, function(err) {
+                      test.remove(function(err) {
+                        assert.equal(err, null);
+                        RM.stop(pid, function(err) {
+                          assert.equal(err, null);
+                          RM.getRevisions(pid, function(err, revisions) {
+                            assert.equal(revisions.length, 3);
+                            test.refresh(function(err, test) {
+                              assert.equal(test, null);
+                              // restore deleted item
+                              RM.restore(pid, 'Charles', stamp2, function(err) {
+                                Test.find({}, function(err, tests) {
+                                  assert.equal(tests.length, 1);
+                                  assert.equal(tests[0].name, 'Tweede');
+                                  RM.restore(pid, 'Charles', stamp1, function(err) {
+                                    Test.find({__status: 'active'}, function(err, tests) {
+                                      assert.equal(tests.length, 1);
+                                      assert.equal(tests[0].name, 'Eerste');
+                                      done();
+                                    });
+                                  });
+                                });
+                              });
+                            });
+                          });
+                        });
+                      });
+                    });
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+
+    it('should restore a previous revision with preexist doc', function(done) {
+      var Test = mongoose.model('VersionedModel');
+      var test1 = new Test();
+      var test2 = new Test();
+
+      async.waterfall([
+        function(cb) {
+          RM.start(owner, function(err) {
+            test1.set('name', 'Eerste');
+            test1.save(function(err) {
+              RM.stop(function(err, revision) {
+                var stamp1 = revision.get('timestamp');
+                return cb(err, stamp1);
+              });
+            });
+          });
+        },
+        function(stamp1, cb) {
+          RM.start(owner, function(err) {
+            test2.set('name', 'Tweede');
+            test2.save(function(err) {
+              RM.stop(function(err) {
+                return cb(err, stamp1);
+              });
+            });
+          });
+        },
+        function(stamp1, cb) {
+          RM.getRevisions(function(err, revisions) {
+            assert.equal(revisions.length, 2);
+              RM.restore('Charles', stamp1, function(err) {
+                test1.refresh(function(err, test1) {
+                  assert.equal(test1.name, 'Eerste');
+                  test2.refresh(function(err, test2) {
+                    assert.equal(test2, null);
+                    Test.findOne({name:'Tweede'}).exec(function(err, res) {
+                      assert.equal(res, null);
+                      return cb(null);
+                    });
+                  });
+                });
+              });
+          });
+        }
+      ], function(err){
+        done();
+      });
+    });
+
+    it('should return documents with __status "active" only', function(done) {
+      var Test = mongoose.model('VersionedModel');
+      var test = new Test();
+      var test2 = new Test();
+      var test3 = new Test();
+      var stamp = null;
+
+      async.waterfall([
+        function(cb) {
+          RM.start(owner, function(err) {
+            test.set('name', 'Dit is de eerste poging');
+            test2.set('name', 'Dit is de eerste poging, deel 2');
+            test3.set('name', 'Dit is de eerste poging, deel 3');
+            test.save(function(err) {
+              test2.save(function(err) {
+                test3.save(function(err) {
+                  RM.stop(function(err) {
+                    assert.equal(test.name, 'Dit is de eerste poging');
+                    Test.findOne({_id: test._id}, function(err, res) {
+                      assert.equal(res.name, 'Dit is de eerste poging');
+                      return cb(err);
+                    });
+                  });
+                });
+              });
+            });
+          });
+        },
+        function(cb) {
+          RM.start(owner, function(err) {
+            test.set('name', 'Dit is de tweede poging');
+            test3.set('name', 'Dit is de tweede poging, deel 3');
+            test.save(function(err) {
+              test3.save(function(err) {
+                RM.stop(function(err) {
+                  assert.equal(test.name, 'Dit is de tweede poging');
+                  Test.find({_id: {$in:[test._id, test3._id]}}, function(err, res) {
+                    assert.equal(res[0].__status, 'active');
+                    assert.equal(res[1].__status, 'active');
+                    assert.ok(/Dit is de tweede poging(, deel 3)?/.test(res[0].name));
+                    assert.ok(/Dit is de tweede poging(, deel 3)?/.test(res[1].name));
+                    return cb(err);
+                  });
+                });
+              });
+            });
+          });
+        },
+        function(cb) {
+          RM.getRevisions(function(err, revisions) {
+            assert.equal(err, null);
+            stamp = revisions[0].timestamp;
+            RM.restore('Charles', stamp, function(err) {
+              Test.findOne({_id: test2._id}, function(err, res) {
+                test2.refresh(function(err, test) {
+                  assert.equal(test.name, 'Dit is de eerste poging, deel 2');
+                  assert.equal(res.name, 'Dit is de eerste poging, deel 2');
+                  return cb(err);
+                });
+              });
+            });
+          });
+        }
+      ], function(err) {
+        done();
+      });
+    });
+
+    it('should reference the correct document', function(done) {
+      var SourceSchema = new Schema({
+        name: 'string',
+        target: [{ type: mongoose.Schema.Types.ObjectId, ref:'Source'}]
+      });
+      SourceSchema.plugin(revisions.versions);
+
+      var Source = mongoose.model('Source', SourceSchema);
+      var Target = mongoose.model('VersionedModel');
+      var target;
+      var source;
+
+      async.waterfall([
+        function(cb) {
+          var stamp;
+          target = new Target({ name: "doelwit"});
+          source = new Source();
+          source.name = 'schutter';
+          source.target.push(target);
+          RM.start(owner, function(err) {
+            source.save(function(err) {
+              target.save(function(err) {
+                RM.stop(function(err, rev) {
+                  stamp = rev.get('timestamp');
+                  return cb(err, stamp);
+                });
+              });
+            });
+          });
+        },
+        function(stamp, cb) {
+          RM.start(owner, function(err) {
+            source.name = 'pijl';
+            source.save(function(err) {
+              RM.stop(function(err) {
+                source.refresh(function(err, source) {
+                  assert.equal(source.name, 'pijl');
+                  Target.findById(source.target[0], function(err, target) {
+                    assert.equal(target.name, 'doelwit');
+                    return cb(err, stamp);
+                  });
+                });
+              });
+            });
+          });
+        },
+        function(stamp, cb) {
+          RM.start(owner, function(err) {
+            target.name = 'bord';
+            target.save(function(err) {
+              RM.stop(function(err) {
+                Target.findById(source.target[0], function(err, result) {
+                  assert.equal(result.name, 'bord');
+                  return cb(err, stamp);
+                });
+              });
+            });
+          });
+        },
+        function(stamp, cb) {
+          RM.restore('Joe', stamp, function(err) {
+            source.refresh(function(err, s) {
+              Target.findById(s.target[0], function(err, t) {
+                assert.equal(s.name, 'schutter');
+                assert.equal(t.name, 'doelwit');
+                return cb(err);
+              });
+            });
+          });
+        }
+      ], function(err) {
+        done();
+      });
+    });
+
+    it('should return a json object with revision informatie', function(done) {
+      var Test = mongoose.model('VersionedModel');
+      var test = new Test();
+      var owner = 'Erwin Poeze';
+
+      async.series([
+        function(cb) {
+          test._name = 'Eerste';
+          RM.start(owner, function(err) {
+            test.save(function(err) {
+              RM.stop(function(err) {
+                return cb(err);
+              });
+            });
+          });
+        },
+        function(cb) {
+          test._name = 'Tweede';
+          RM.start(owner, function(err) {
+            test.save(function(err) {
+              RM.stop(function(err) {
+                return cb(err);
+              });
+            });
+          });
+        },
+        function(cb) {
+          test._name = 'Derde';
+          RM.start(owner, function(err) {
+            test.save(function(err) {
+              RM.stop(function(err) {
+                return cb(err);
+              });
+            });
+          });
+        },
+        function(cb) {
+          test._name = 'Vierde';
+          RM.start(owner, function(err) {
+            test.save(function(err) {
+              RM.stop(function(err) {
+                return cb(err);
+              });
+            });
+          });
+        }
+      ], function(err) {
+        RM.getRevisions(function(err, revisions) {
+          assert.equal(revisions.length, 4);
+          assert.ok(revisions[0].timestamp);
+          assert.ok(revisions[0].owner);
+          done();
+        });
+      });
+    });
+
+    it('should rollback an revision after error or alike', function(done) {
+      var Test = mongoose.model('VersionedModel');
+      var test1 = new Test();
+      var test2 = new Test();
+      var test3 = new Test();
+
+      async.waterfall([
+        function(cb) {
+          RM.start(owner, function(err) {
+            test1.set('name', 'Eerste');
+            test1.save(function(err) {
+              RM.stop(function(err, revision) {
+                var stamp = revision.get('timestamp');
+                return cb(err, stamp);
+              });
+            });
+          });
+        },
+        function(stamp, cb) {
+          RM.start(owner, function(err) {
+            test2.set('name', 'Tweede');
+            test2.save(function(err) {
+              test3.set('name','Derde');
+              test3.save(function(err) {
+                RM.rollback(function(err) {
+                  return cb(err, stamp);
+                });
+              });
+            });
+          });
+        },
+        function(stamp, cb) {
+          RM.getRevisions(function(err, revisions) {
+            assert.equal(revisions.length, 1);
+            test1.refresh(function(err, test1) {
+              assert.equal(test1.name, 'Eerste');
+              test2.refresh(function(err, test2) {
+                assert.equal(test2, null);
+                Test.findOne({name:'Tweede'}).exec(function(err, res) {
+                  assert.equal(res, null);
+                  assert.equal(res, null);
+                  test3.refresh(function(err, test3) {
+                    assert.equal(test3, null);
+                    Test.findOne({name:'Derde'}).exec(function(err, res) {
+                      assert.equal(res, null);
+                      return cb(null);
+                    });
+                  });
+                });
+              });
+            });
+          });
+        }
+      ], function(err){
+        done();
+      });
+    });
+  });
+
+  describe('Extended restoring', function() {
+    before(function(done) {
+      var mainSchema = new Schema({
+        name: String,
+        chld: [mongoose.Schema.Types.ObjectId],
+        pid: mongoose.Schema.Types.ObjectId
+      }, {
+        collection: 'tree'
+      });
+      mainSchema.plugin(revisions.versions, {chainId: 'pid'});
+      var Oak = mongoose.model('Oak', mainSchema);
+      done();
+    });
+
+    beforeEach(function(done) {
+      fixtures.clearAllAndLoad(__dirname+'/fixtures/revision-fixtures.js',function(err) {
+        if (err) throw new Error(err);
+        done();
+      });
+    });
+
+    it('oscillating remove restore' , function(done) {
+      var s1, s2, s3, s4;
+      var refIdTree, refIdLeaf;
+      var Oak = mongoose.model('Oak');
+      var tree = new Oak();
+      var leaf = new Oak();
+      async.waterfall([
+        function(cb) {
+          tree.set('name', 'alpha');
+          leaf.set('name', 'left');
+          tree.chld.push(leaf);
+          RM.start(function() {
+            tree.save(function(err) {
+              leaf.save(function(err) {
+                RM.stop(function(err, rev) {
+                  assert.equal(err, null);
+                  s1 = rev.timestamp;
+                  Oak.findOne({name: 'alpha'}, function(err, t) {
+                    assert.equal(err, null);
+                    assert.equal(t.name, 'alpha');
+                    refIdTree = t.__refId;
+                    Oak.findOne({name: 'left'}, function(err, t) {
+                      assert.equal(err, null);
+                      refIdLeaf = t.__refId;
+                      return cb(null);
+                    });
+                  });
+                });
+              });
+            });
+          });
+        },
+        function(cb) {
+          tree.set('name', 'beta');
+          RM.start(function() {
+            tree.save(function(err) {
+              assert.equal(err, null);
+              RM.stop(function(err, rev) {
+                assert.equal(err, null);
+                s2 = rev.timestamp;
+                return cb(null);
+              });
+            });
+          });
+        },
+        function(cb) {
+          // remove item
+          RM.start(function() {
+            tree.remove(function(err) {
+              assert.equal(err, null);
+              RM.stop(function(err, rev) {
+                assert.equal(err, null);
+                s3 = rev.timestamp;
+                return cb(null);
+              });
+            });
+          });
+        },
+        function(cb) {
+          // restore last active item
+          RM.restore(s2, function(err, results) {
+            assert.equal(err, null);
+            var result = _.first(results);
+            assert.equal(result.action, 'updated');
+            var item = result.doc;
+            assert.equal(item.name, 'beta');
+            assert.equal(item.__status, 'active');
+            return cb(null);
+          });
+        },
+        function(cb) {
+          // restore removed status
+          RM.restore(s3, function(err, results) {
+            assert.equal(err, null);
+            assert.equal(results.length, 1);
+            var result = _.first(results);
+            assert.equal(result.action, 'deleted');
+            return cb(null);
+          });
+        },
+        function(cb) {
+          RM.getRevisions(function(err, revs) {
+            assert.equal(err, null);
+            assert.equal(revs.length, 5);
+            console.log(revs)
+            s4 = _.last(revs).timestamp;
+            return cb(null);
+          });
+        },
+        function(cb) {
+          // restore the current status => do nothing
+          RM.restore(s3, function(err, results) {
+            assert.equal(err, null);
+            assert.equal(results.length, 0);
+            return cb(null);
+          });
+        },
+        function(cb) {
+          // restore preexist status
+          var history = new Date("2014-04-29T10:57:29.708Z");
+          RM.restore(history, function(err, results) {
+            // only leaf needs removal, tree is already removed
+            assert.equal(err, null);
+            assert.equal(results.length, 1);
+            var result = _.first(results);
+            assert.equal(result.action, 'deleted');
+            return cb(null);
+          });
+        },
+        function(cb) {
+          RM.getRevisions(function(err, revs) {
+            assert.equal(err, null);
+            assert.equal(revs.length, 7);
+            return cb(null);
+          });
+        },
+        function(cb) {
+          // restore first active item
+          RM.restore(s1, function(err, results) {
+            assert.equal(err, null);
+            // both tree and leaf are restored again
+            assert.equal(results.length, 2);
+            var item = _.first(results).doc;
+            assert.equal(item.__status, 'active');
+            assert.equal(_.union([_.first(results).doc.name, _.last(results).doc.name], ['alpha', 'left']).length, 2);
+            return cb(null);
+          });
+        },
+        function(cb) {
+          Oak.where({__refId: refIdTree}).sort({timestamp:1}).select('name __status').exec(function(err, results) {
+            assert.deepEqual(_.pluck(results, 'name'), [
+              'alpha',     'beta',      'beta',    'beta',      'beta',    'beta',    'beta',     'alpha']);
+            assert.deepEqual(_.pluck(results, '__status'), [
+              'nonactive', 'nonactive', 'removed', 'nonactive', 'removed', 'removed', 'preexist', 'active']);
+            return cb(null);
+          });
+        },
+        function(cb) {
+          Oak.where({__refId: refIdLeaf}).sort({timestamp:1}).select('name __status').exec(function(err, results) {
+            assert.deepEqual(_.pluck(results, 'name'), [
+              'left',     'left',      'left']);
+            assert.deepEqual(_.pluck(results, '__status'), [
+              'nonactive', 'preexist', 'active']);
+            return cb(null);
+          });
+        },
+      ], function(err) {
+        done();
+      });
+
+    });
+  });
+
+});

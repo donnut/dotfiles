@@ -1,0 +1,14 @@
+var Twitter = require('twitter');
+
+var client = new Twitter({
+    consumer_key: 'cWN3UpsbOqG7jn0m8EmvoqtSV',
+    consumer_secret: 'e5Ep2oM1FRVHXgXKiEJwGEZasytAuNDv6h69XS0nPLGmDLx3gz',
+    access_token_key: '15123362-RkHEznCU2x8RhIhu4vWNEzb5BETha2nsLIp7M0vXf',
+    access_token_secret: 't9GeqpH4ufn2fix14BEdM5EKrrOHGGYUDVVbVFkeENsYy'
+});
+
+
+client.get('application/rate_limit_status', {resources: 'statuses'}, function (err, response) {
+    console.log(JSON.stringify(response));
+});
+

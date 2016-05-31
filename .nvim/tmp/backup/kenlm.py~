@@ -1,0 +1,14 @@
+import kenlmc
+import re
+
+class KenLM:
+
+    def __init__(self):
+        self.lm = kenlm.LanguageModel('/home/donnut/lm/nl.2012.2013.trie')
+
+    def query(self, text):
+        return self.lm.score(text)
+        #return float(re.search(r': (.*?) OOV', str(outs)).group(1))
+
+    def known(self, word):
+        return self.lm.score(word)

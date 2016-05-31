@@ -1,0 +1,151 @@
+module Store {
+
+    /**
+     * Store is the getter/setter for individual pips in the globals pips object.
+     * Each pip has an unique address that reflects the address of the DOM
+     * element the pip is associated with and the special characteristics of
+     * the pip, like being a state of even pip.
+     *
+     * An example of a pip address is "#todo-list.events.click touch" which
+     * points to a event Pip associated with DOM element is "todo-list" and
+     * the events 'click' and 'touch'.
+     *
+     * Store analyses the given address and transforms it using the following
+     * rules:
+     * - terms are split on the dot '.'
+     * - class names may start with a dot '.', so double e.g. dot 'state..color'
+     *   indicates a state, the dot separator and the class '.color'
+     * - terms between dots that are separated by whitespace are camel cased
+     *   and concatinated on alphabetical order. E.g. '.touch click' becomes
+     *   '.clickTouch'
+     */
+    declare var DEBUG;
+
+    import mergeTerms = Utils.mergeTermsCamelCase;
+
+    type Pip = any;
+
+    interface Store {
+        [index:string]: Pip;
+    }
+
+    export interface IStorage {
+        set: Function;
+        get: Function;
+        getAll: Function;
+        exists: Function;
+        remove: Function;
+    }
+
+    export function Storage() {
+
+        var store: Store = {};
+        var idCounter = 0;
+
+        function splitter(address: string): string[] {
+            var len = address.length;
+            var matches = [];
+            var p = 0, word = '';
+            var start = true;
+            while (p < len) {
+                if (address[p] !== '.') {
+                    word += address[p];
+                    start = false;
+                } else {
+                    if (start) {
+                        word += address[p];
+                        start = false;
+                    } else {
+                        matches.push(mergeTerms(word));
+                        word = '';
+                        start = true;
+                    }
+                }
+                p++;
+            }
+            matches.push(mergeTerms(word));
+            return matches;
+        }
+
+        function extend(st: any, chunks: string[]): void {
+            var ad = chunks.shift();
+            if (ad) {
+                st[ad] = st[ad] || {};
+                extend(st[ad], chunks);
+            }
+        }
+
+        function save(chunks: string[], pl: Pip): void {
+            var ref = store;
+            var len = chunks.length;
+            for (var i = 0; i < len - 1; i++) {
+                ref = ref[chunks[i]];
+            }
+            ref[chunks[i]].__pip = pl;
+        }
+
+        function set(address: string, pip: Pip): void {
+            if (!address || address.length === 0 || !pip) throw new TypeError('Arguments do not match specification');
+            var splitAddress = splitter(address);
+            extend(store, R.clone(splitAddress));
+            save(splitAddress, pip);
+        }
+
+        function get(address: string): Pip {
+            let ref = pathToPip(address);
+            return ref ? ref['__pip'] : null;
+        }
+
+        function remove(address: string): void {
+            let ref = pathToPip(address);
+            if (ref) delete ref['__pip'];
+        }
+
+        function pathToPip(address: string): Store {
+            if (!address) return;
+            var chunks = splitter(address);
+            var ref = store;
+            var len = chunks.length;
+            var i = 0;
+            while (i < len) {
+                if (!ref[chunks[i]]) return null;
+                ref = ref[chunks[i]];
+                i++;
+            }
+            return ref;
+        }
+
+        function exists(address: string): boolean {
+            return get(address) != null;
+        }
+
+        var returnObj: any = {
+            set: set,
+            get: get,
+            exists: exists,
+            remove: remove
+        };
+
+        // if (DEBUG) {
+        returnObj.getAll = function() {
+            return store;
+        }
+        returnObj.getAllLinks = function() {
+            function show(type, links) {
+                R.forEach(function(link: Globals.ILink) {
+                    console.log('pub: ' + type + ', sub: ' + link.sub);
+                }, links);
+            }
+            function getPips(st) {
+                R.mapObjIndexed(function(val: any, key, obj) {
+                    if (key === '__pip') show(val.getType(), val.getLinks());
+                    if (R.is(Object, val)) getPips(val);
+                }, st);
+            }
+            getPips(store);
+        }
+        // }
+
+        return returnObj;
+    }
+}

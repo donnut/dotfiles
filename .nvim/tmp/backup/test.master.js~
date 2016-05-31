@@ -1,0 +1,103 @@
+var mongoose = require('mongoose'),
+    assert = require('assert'),
+    async = require('async'),
+    _ = require('lodash'),
+    requirejs = require('requirejs');
+
+requirejs.config({
+  baseUrl: __dirname+'/..',
+  nodeRequire: require
+});
+
+
+var fixtures = null;
+mongoose.set('debug', false);
+mongoose.connection.on('error', function() {});
+mongoose.connect('localhost/wbbit');
+
+describe('Master', function() {
+
+  beforeEach(function(done) {
+    fixtures = require('pow-mongodb-fixtures').connect('wbbit');
+    fixtures.clearAllAndLoad(__dirname + '/fixtures/master-fixtures.js', function() {
+      done();
+    });
+  });
+
+  describe('containing two pages and one menu', function() {
+
+    it('initialize', function(done) {
+      requirejs([
+        'lib/schemas/project/appDefinition/AppElement',
+        'lib/schemas/project/appDefinition/MasterWidget',
+        'lib/schemas/project/appDefinition/NavigationTree',
+        'lib/schemas/project/appDefinition/Menu',
+        'lib/schemas/project/appDefinition/MenuRoot',
+        'lib/schemas/project/appDefinition/MenuItem',
+        'lib/schemas/project/appDefinition/Page'
+      ],
+      function(
+        AppElement, MasterWidget, NavTree, Menu, MenuRoot, MenuItem, Page
+      ) {
+        console.log("here");
+        async.waterfall([
+          function(cb) {
+            MasterWidget.Model.find({}, function(err, masterWidget) {
+              assert.equal(err, null);
+              assert.equal(masterWidget.length, 1);
+              assert.equal(masterWidget[0].DOMId, 'outerscope');
+              return cb(err, masterWidget[0]);
+            });
+          },
+          function(masterWidget, cb) {
+            Menu.Model.find({}, function(err, menu) {
+              assert.equal(err, null);
+              assert.equal(menu.length, 1);
+              assert.equal(menu[0].DOMId, 'menu');
+              assert.ok(_(masterWidget.chld).map(function(item) {
+                return item.toString();
+              }).contains(menu[0]._id.toString()));
+              return cb(null, menu[0]);
+            });
+          },
+          function(menu, cb) {
+            MenuRoot.Model.find({}, function(err, menuRoot) {
+              assert.equal(err, null);
+              assert.equal(menuRoot.length, 1);
+              assert.equal(menuRoot[0].DOMId, 'menuRoot');
+              assert.ok(menu.chld[0].toString() === menuRoot[0]._id.toString());
+              return cb(null, menuRoot[0]);
+            });
+          },
+          function(menuRoot, cb) {
+            MenuItem.Model.find({}, function(err, menuItems) {
+              assert.equal(err, null);
+              assert.equal(menuItems.length, 2);
+              return cb(null, menuRoot, menuItems);
+            });
+          }
+        ], function(err) {
+          done();
+        });
+      });
+    });
+
+    it('swap page 1 and 2', function(done) {
+      requirejs([
+        'lib/schemas/project/appDefinition/AppElement',
+        'lib/schemas/project/appDefinition/MasterWidget',
+        'lib/schemas/project/appDefinition/NavigationTree',
+        'lib/schemas/project/appDefinition/Menu',
+        'lib/schemas/project/appDefinition/MenuRoot',
+        'lib/schemas/project/appDefinition/MenuItem',
+        'lib/schemas/project/appDefinition/Page'
+      ],
+      function(
+        AppElement, MasterWidget, NavTree, Menu, MenuRoot, MenuItem, Page
+      ) {
+
+        done();
+      });
+    });
+  });
+});

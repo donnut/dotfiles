@@ -1,0 +1,311 @@
+module Pip.Interpret {
+    import G = Globals;
+    import PT = G.PipType;
+    import ACT = G.Action;
+    import MK = G.MessageKey;
+    import ELM = G.Element;
+    import AK = G.AddressKey;
+    import PC = G.PipClass;
+    import IStorage = Store.IStorage;
+
+    export function base(address, pipProps, storage: IStorage) {
+        // Assembles the arguments for the function that mutates the pip register
+        var assembleRegMutator = ((pipProps) => {
+            var defaultValue = pipProps.values.defaultValue(/*oldRegister, itemId*/);
+
+            return function(regDiff: boolean, mutator: Function, action: string, desiredValue: any|any[], oldRegister: G.IRegister<any>, itemId?: string)  {
+                //var defaultValue = pipProps.values.defaultValue(/*oldRegister, itemId*/); hier als wel argumenten
+                var oldRegisterValue = pipProps.itType ? oldRegister.value[itemId] : oldRegister.value;
+                if (regDiff || ((action === ACT[ACT.remove] || action === ACT[ACT.delete]) /*&& desiredValue === defaultValue && desiredValue === oldRegisterValue*/))
+                    return {
+                        mutator: mutator,
+                        action: action,
+                        desiredValue: desiredValue,
+                        itemId: itemId,
+                        old: oldRegister
+                    };
+                else
+                    return void 0;
+            }
+        })(pipProps);
+
+        return function interpret(pipIn: G.IMessage, register, it?: string) {
+
+            var outAction = pipProps.outActions(pipIn),
+                regAction = pipProps.regActions(pipIn),
+                desiredValue;
+
+            switch (pipIn[MK[MK.action]]) {
+                case ACT[ACT.create]: desiredValue = pipProps.values.create(pipIn, register, it); break;
+                case ACT[ACT.insert]: desiredValue = pipProps.values.insert(pipIn, register, pipProps.values.defaultValue(/*register, it*/), it); break;
+                case ACT[ACT.update]: desiredValue = pipProps.values.update(pipIn, register, it); break;
+
+                default: desiredValue = it ? pipProps.values.defaultValue(/*register, it*/) : pipProps.values.reg();
+                // default: desiredValue = it || pipProps.itType ? pipProps.values.defaultValue(/*register, it*/) : pipProps.values.reg();
+            }
+
+            // TODO regDiff is true if desiredValue and register both are {} (e.g. initialize stateItem). Calculating
+            //    regDiff is probably not necessary in that case and could be skipped (optimalization)
+            var regDiff = pipProps.diffTest(desiredValue, register, it);
+            //var diff = regDiff || pipProps.pipType === PT[PT.select] || pipProps.pipType === PT[PT.targetItem]; //select always emit! not always setReg
+            var diff = regDiff || pipIn.emit === true; // || pipProps.pipType === PT[PT.select] || pipProps.pipType === PT[PT.targetItem]; //select always emit! not always setReg
+
+            // TODO mogelijk dubbel, zie 135, empty, nee hoor emptytest test empty als pipIn array
+            var empty = !it && (pipIn[MK[MK.action]] === ACT[ACT.delete] || pipIn[MK[MK.action]] === ACT[ACT.remove]);
+
+            var DOMInstances: Globals.IDOMInstances = {
+                $anc: getAncestor(storage, address, pipIn, pipProps, it), //address[AK[AK.anc]], pipIn[MK[MK.value]],pipProps.pipType,it
+                $root: getRoot(storage, address, pipProps), //address[AK[AK.root]],pipProps.pipClass
+                $el: getElement(storage, address, pipProps, pipIn[MK[MK.action]], it) //address, pipProps.pipType, outAction, it
+            };
+            var oldRegister = R.clone(register);
+            var result: G.IResult = {
+                pipOut: createPipOut(pipIn, diff, empty, outAction, desiredValue, pipProps, register),
+                reg: assembleRegMutator(regDiff, pipProps.setReg, regAction, desiredValue, oldRegister, it),
+                oldRegister: oldRegister,
+                emit: pipProps.emitTest(diff, pipIn[MK[MK.action]], empty, DOMInstances.$anc),
+                effectData: void 0,
+                //root: void 0,//bij list, sub, evt event en eventitem als delegated
+                //anc:  void 0,
+                //el:   void 0,//evt list, event en eventitem als delegated
+            };
+
+            if (!pipIn.init && pipProps.switchFn && (diff || pipIn[MK[MK.action]] === ACT[ACT.insert] || pipIn[MK[MK.action]] === ACT[ACT.delete])) {
+                result.effectData = {
+                    effect: pipProps.pipFn,
+                    diff: diff,
+                    empty: empty,
+                    action: pipIn[MK[MK.action]],
+                    DOMInstances: DOMInstances,
+                    it: it
+                };
+                // var fn = pipProps.switchFn(pipProps.pipFn, diff, pipIn[MK[MK.action]], empty, DOMIOinstances, oldRegister);
+                // return R.merge(result, fn);
+            }
+            return result;
+        }
+    }
+
+    function getAncestor(storage: IStorage, address: G.IAddresses, pipIn: G.IMessage, pipProps: G.IPipProps, it?: string): DOMIO.Instance {
+        var $anc: DOMIO.Instance;
+        if (address[AK[AK.anc]]) { //  && (!empty || !pipProps.itType)) {
+            if (pipIn[MK[MK.action]] === ACT[ACT.insert]) {
+                $anc = pipIn[MK[MK.value]]; //listItem gaat altijd via deze route
+            } else if (it && pipProps.pipType !== PT[PT.list] && pipProps.pipType !== PT[PT.select] && pipProps.pipType !== PT[PT.targetItem]){
+                $anc = storage.get(address[AK[AK.anc]]).unsafeGet(it)
+            } else {
+                //kan deze ook arg it als undefined aan? evt voor list en select? scheelt if-else-tak
+                $anc = storage.get(address[AK[AK.anc]]).unsafeGet();
+            }
+            // make sure $anc is an instance of DOMIO
+            //ZOU liever throw error willen doen in debug: dit mag niet
+            if (!$anc || !$anc.fn) $anc = void 0;
+        }
+        return $anc;
+    }
+
+    /**
+     * Returns the register of `root` if it exists, otherwise undefined
+     */
+    function getRoot(storage: IStorage, address: G.IAddresses, pipProps: G.IPipProps): DOMIO.Instance {
+        var $root: DOMIO.Instance; //alleen relevant voor events (event of eventItem: delegationRoot)
+        if (pipProps.pipClass === PC[PC.enable] && address[AK[AK.root]]) {
+            $root = storage.get(address[AK[AK.root]]).unsafeGet();
+            // make sure $root is an instance of DOMIO
+            //ZOU liever throw error willen doen in debug: dit mag niet
+            if (!$root || !$root.fn) $root = void 0;
+        }
+        return $root;
+    }
+
+    /**
+     * getElement returns
+     */
+    function getElement(storage: IStorage, address: G.IAddresses, pipProps: G.IPipProps, action: string, it?: string): DOMIO.Instance {
+        var $el: DOMIO.Instance;
+        if (pipProps.pipType === PT[PT.list] && (action === ACT[ACT.delete] || action === ACT[ACT.update]) && it) {
+            ///ja voorlopig alleen nodig voor pipFn.D van listPip, misschien later alsnog ook  voor pipFn.U??(filter, sort) wws niet
+            $el = storage.get(address[AK[AK.el]]).unsafeGet(it);
+            // make sure $el is an instance of DOMIO
+            //ZOU liever throw error willen doen in debug: dit mag niet
+            if (!$el || !$el.fn) $el = void 0;
+        } else if (address[AK[AK.el]] && pipProps.pipClass === PC[PC.enable]) { //delegation : of event of eventItem
+            switch (pipProps.pipType){
+                case PT[PT.event]:
+                    //zou deze zelfde mogen zijn als eventItemmet it undefined als argument
+                    //dan geen switch nodig
+                    $el = storage.get(address[AK[AK.el]]).unsafeGet();
+                    break;
+                case PT[PT.eventItem]:
+                    $el = storage.get(address[AK[AK.el]]).unsafeGet(it);
+                    break;
+                default:
+                    throw new Error('unexpected case in interpret::getElement');
+            }
+        }
+        return $el;
+    }
+
+    /**
+     * Returns a pipOut in the following cases:
+     *   - if an xxxItemPip is set to empty
+     *   - if the register is changed or if there is an insert or delete action
+     *   - otherwise return undefined
+     */
+    function createPipOut(pipIn, diff: boolean, empty: boolean, action: string, desiredValue,  pipProps, register) {
+        if (empty && pipProps.itType) {
+            //TODO pasop als geen diff, blijft pipOut lege array en wordt lege message verzonden???
+            if (R.is(Array, register.value)) {
+                return R.map((regVal) => {
+                    return {
+                        action: action,
+                        it: regVal,
+                        value: pipProps.values.defaultValue(/*register, regVal*/)
+                    }
+                }, register.value);
+            }
+            else {
+                // for (let itId in register.value) {
+                  // if (pipProps.diffTest(pipProps.values.defaultValue(/*register, itId*/), register, itId)) {
+                //     obj[MK[MK.action]] = action;
+                //     obj[MK[MK.it]] = itId;
+                //     if ((pipProps.pipClass === PC[PC.attr] && pipIn[MK[MK.emit]])) {
+                //       pipOut.emit = false;
+                //     }
+                    // obj[MK[MK.value]] = pipProps.values.defaultValue(/*register, itId*/);
+                //     pipOut.push(obj);
+                //   }
+                // }
+                let pipOut = [];
+                for (let itId in register.value) {
+                    if (pipProps.diffTest(pipProps.values.defaultValue(/*register, itId*/), register, itId)) {
+                        let obj = {};
+                        obj[MK[MK.action]] = action;
+                        obj[MK[MK.it]] = itId;
+                        // if ((pipProps.pipClass === PC[PC.attr] && !pipIn[MK[MK.emit]])) {
+                        //     obj[MK[MK.emit]] = false;
+                        // }
+                        obj[MK[MK.value]] = pipProps.values.defaultValue(/*register, itId*/);
+                        if (pipProps.pipType === PT[PT.router] && pipIn[MK[MK.value]].anc) obj[MK[MK.value]].anc = pipIn[MK[MK.value]].anc;
+                        pipOut.push(obj);
+                    }
+                }
+                return <G.IMessage[]>pipOut;
+            }
+        }
+        else if (diff || pipIn[MK[MK.action]] === ACT[ACT.insert] || pipIn[MK[MK.action]] === ACT[ACT.delete]) {
+          //  if (pipIn[MK[MK.action]] !== ACT[ACT.remove] && pipIn[MK[MK.action]] !== ACT[ACT.delete] && R.is(Object, desiredValue) && R.keys(desiredValue).length === 0) {
+                //return void 0;
+            //}
+            let pipOut = {};
+            pipOut[MK[MK.action]] = action;
+            pipOut[MK[MK.value]] = desiredValue;
+            if (pipProps.pipType === PT[PT.router] && pipIn[MK[MK.action]] === ACT[ACT.remove] && pipIn[MK[MK.value]].anc ) desiredValue.anc = pipIn[MK[MK.value]].anc;
+            if (pipProps.pipClass === PC[PC.attr] && pipIn[MK[MK.emit]] === void 0) pipOut[MK[MK.emit]] = true;
+            return <G.IMessage>pipOut;
+
+            //TODO handig of niet?
+            // if(!empty && pipOut && [MK[MK.el]]){
+            //   pipOut.el = [MK[MK.el]];
+            // }
+        }
+        else return void 0;
+    }
+
+    export function item(address, pipProps, storage: IStorage) {
+        var baseFn = base(address, pipProps, storage);
+        function itemFn(pipIn: G.IMessage|G.IMessage[], register: G.IRegister<any>) {
+            if (pipIn instanceof Array) {
+                return emptyTest(<G.IMessage[]>pipIn, register, pipProps.defineItemId)
+                    ? (pipProps.emptyInput instanceof Array)
+                        ? multiFn(pipProps.emptyInput, register)
+                        : baseFn(pipProps.emptyInput, register)
+                    : multiFn(<G.IMessage[]>pipIn, register);
+
+            } else {
+                if (pipIn[MK[MK.action]] === ACT[ACT.delete] || pipIn[MK[MK.action]] === ACT[ACT.remove]) {
+                    var itemIds: string[] = R.is(Array, register.value)
+                        ? register.value
+                        : R.keys(register.value);
+
+                    //als pipProps.emptyTest(pipIn, register) hoeft er niks te gebeuren: niet interessant voor subPips
+                    return multiFn(R.map(function(itemId) {
+                        return <G.IMessage>R.zipObj(
+                                [MK[MK.action], MK[MK.it]],
+                                [pipIn[MK[MK.action]], itemId] //, R.is(Array, register) ? true : register.value[itemId]]
+                                );
+                    }, itemIds), register);
+                } else {
+                    return null;
+                }
+            }
+        }
+
+        function multiFn(pipIn: G.IMessage[], register) {
+            return R.map(function(pipInp) {
+                var itemId = pipProps.defineItemId(pipInp, register);
+                var aObj = baseFn(pipInp, register, itemId);//itemId of it?
+
+                if (aObj.pipOut) {
+                    aObj.pipOut[MK[MK.it]] = itemId;//kan door mappen anders zijn dan pipIn[i][MK[MK.it]]
+                }
+                return <G.IResult>aObj;
+            }, pipIn);
+        }
+        return itemFn;
+    }
+
+    export function correct(address, pipProps, storage: IStorage) {
+        var baseFn = base(address, pipProps, storage);
+        var itemFn = pipProps.itType ? item(address, pipProps, storage) : null;
+        var correctFn = function(pipIn, register) {
+            var correctedInput = pipProps.correctInput.define(pipIn, register, pipProps.defineItemId);
+            if (correctedInput) {
+                return itemFn? itemFn(correctedInput, register): baseFn(correctedInput, register);
+            }
+        };
+
+        return function(pipIn: any /*G.IMessage|G.IMessage[]*/, register) {
+            if (pipIn instanceof Array) {
+                return pipProps.pipType === PT[PT.listItem] ? itemFn(pipIn, register) : correctFn(pipIn, register);
+            } else if (pipProps.correctInput.baseActionTest(pipIn[MK[MK.action]])) {
+                return pipProps.pipType === PT[PT.listItem] ? correctFn(pipIn, register): baseFn(pipIn, register);
+            }
+            else if (pipProps.correctInput.emptyActionTest(pipIn[MK[MK.action]])) {
+                return baseFn(pipProps.emptyInput, register);
+            }
+            else {
+                throw new Error('correct can not interpret given input');
+            }
+        };
+    }
+
+
+    function emptyTest(pipIn: G.IMessage[], register: G.IRegister<any>|G.IRegister<string[]>, defineItemId: Function): boolean {
+        if (!(pipIn instanceof Array)) throw new Error('emptyTest requires a array of pipIn');
+
+        var empty = false,
+        itemIds = R.is(Array, register.value)
+            ? register.value
+            : R.keys(register.value),
+            nrOfItems = itemIds.length,
+            len = pipIn.length;
+
+        if (len === nrOfItems) { // er zijn evenveel pipInitems als itemds in het register
+            var actionValues = R.uniq(R.pluck(MK[MK.action], pipIn));
+
+            if (actionValues.length === 1 && (actionValues[0] === ACT[ACT.delete] || actionValues[0] === ACT[ACT.remove])) {
+                //probablyEmpty = true; //alle pipIn items worden gedelete of removed
+                //niet loopen: ook checken of itemIds overeenkomen? en dan emptyInput afdwingen, zodat beter beheerst een enkele DOMFn
+                var pipInItems = R.map(function(inp) {
+                    return defineItemId(inp, register);
+                }, pipIn);
+
+                if ((R.union(pipInItems, itemIds)).length === nrOfItems) {//empty!!
+                    empty = true;
+                }
+            }
+        }
+        return empty;
+    }
+}

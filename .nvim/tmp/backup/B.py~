@@ -1,0 +1,376 @@
+import A
+from sklearn.feature_extraction import DictVectorizer
+from sklearn import svm
+from nltk import word_tokenize
+from nltk.corpus import stopwords
+import nltk
+from collections import Counter
+import re
+
+
+# You might change the window size
+window_size = 10
+
+# A.1
+def build_s(data, lang):
+    '''
+    Compute the context vector for each lexelt
+    :param data: list of instances with the following structure:
+        {
+			[(instance_id, left_context, head, right_context, sense_id), ...],
+			...
+        }
+    :return: dic s with the following structure:
+        {
+			[w1,w2,w3, ...],
+			...
+        }
+
+    '''
+
+    # implement your code here
+    words = []
+    for instance in data:
+        left = word_tokenize(instance[1])
+        right = word_tokenize(instance[3])
+
+        left_words = left[-window_size:]
+        right_words = right[0:window_size]
+
+        if lang == 'Catalan':
+            words += remove_stop_words(left_words + right_words, 'Spanish')
+        else:
+            words += remove_stop_words(left_words + right_words, lang)
+
+    s = set(words)
+
+    return s
+
+def vectorizeA(data, s, lang):
+    '''
+    :param data: list of instances for a given lexelt with the following structure:
+        {
+			[(instance_id, left_context, head, right_context, sense_id), ...]
+        }
+    :param s: list of words (features) for a given lexelt: [w1,w2,w3, ...]
+    :return: vectors: A dictionary with the following structure
+            { instance_id: [w_1 count, w_2 count, ...],
+            ...
+            }
+            labels: A dictionary with the following structure
+            { instance_id : sense_id }
+
+    '''
+    vectors = {}
+    labels = {}
+
+    # implement your code here
+
+    for instance in data:
+
+        instance_id = instance[0]
+        left = word_tokenize(instance[1])
+        right = word_tokenize(instance[3])
+        sense_id = instance[4]
+
+        labels[instance_id] = sense_id
+
+        left_words = left[-window_size:]
+        right_words = right[0:window_size]
+
+        wc = {}
+        counts = {}
+
+        if lang == 'Catalan':
+            words = remove_stop_words(left_words + right_words, 'Spanish')
+        else:
+            words = remove_stop_words(left_words + right_words, lang)
+
+        for word in words:
+            if word in s:
+                if word in wc:
+                    wc[word] +=1
+                else:
+                    wc[word] = 1
+
+        for word in s:
+            if word in wc:
+                counts[word] = wc[word]
+            else:
+                counts[word] = 0
+
+        vectors[instance_id] = counts
+
+    return vectors, labels
+
+# B.1.a,b,c,d
+
+def remove_stop_words(words, lang):
+    return [word for word in words if word not in stopwords.words(lang.lower())]
+
+def remove_punctuation(words):
+    return [word for word in words if word not in ['.', ',', '?', '!', '-']]
+
+def collocation_bigrams(data):
+    features = {}
+    labels = {}
+
+    feature_list = []
+
+    # implement your code here
+    # collocational features
+    for instance in data:
+
+        instance_id = instance[0]
+        left = word_tokenize(instance[1])
+        right = word_tokenize(instance[3])
+        sense_id = instance[4]
+
+        labels[instance_id] = sense_id
+
+        bigrams = nltk.bigrams(remove_stop_words(left[-window_size:] + right[:window_size], 'English'))
+
+    for big in bigrams:
+        feature_list.append(big)
+
+    feature_set = set(feature_list)
+
+    for instance in data:
+        instance_id = instance[0]
+        left = word_tokenize(instance[1])
+        right = word_tokenize(instance[3])
+
+        bigrams = nltk.bigrams(remove_stop_words(left[-window_size:] + right[:window_size], 'English'))
+        list = {}
+        for f in feature_set:
+            if f in bigrams:
+                list[f] = 1
+            else:
+                list[f] = 0
+
+        features[instance_id] = list
+
+    return features, labels
+
+def collocation_feature(data):
+    features = {}
+    labels = {}
+
+    feature_list = []
+
+    # implement your code here
+    # collocational features
+    for instance in data:
+
+        instance_id = instance[0]
+        left = word_tokenize(instance[1])
+        head = instance[2]
+        right = word_tokenize(instance[3])
+        sense_id = instance[4]
+
+        labels[instance_id] = sense_id
+
+        #tags = pos_tag(left[-1:] + [head] + right[0:1])
+        #tags = pos_tag(right[:1])
+        #feature = " ".join([ "%s/%s" % tuple for tuple in tags])
+        tags = right[:1]
+        feature = "colr-" + " ".join(tags)
+        feature_list.append(feature)
+
+        # if instance is an adjective, skip left coll
+        if not re.search(r'[^\.]*?\.a\.', instance_id): 
+            tags = left[-1:]
+            feature = "coll-" + " ".join(tags)
+            feature_list.append(feature)
+
+    feature_set = set(feature_list)
+
+    for instance in data:
+        instance_id = instance[0]
+        left = word_tokenize(instance[1])
+        head = instance[2]
+        right = word_tokenize(instance[3])
+
+        #tags = pos_tag(left[-1:] + [head] + right[0:1])
+        #tags = pos_tag(right[:1])
+        #feature = " ".join([ "%s/%s" % tuple for tuple in tags])
+        tags = right[:1]
+        feature_r = "colr-" + " ".join(tags)
+        # if instance is an adjective, skip left coll
+        if not re.search(r'[^\.]*?\.a\.', instance_id): 
+            tags = left[-1:]
+            feature_l = "coll-" + " ".join(tags)
+        else:
+            feature_l = ""
+        list = {}
+        for f in feature_set:
+            if f == feature_l or f == feature_r:
+                list[f] = 1
+            else:
+                list[f] = 0
+
+        features[instance_id] = list
+
+    return features, labels
+
+def extract_features(data, lang):
+    '''
+    :param data: list of instances for a given lexelt with the following structure:
+        {
+			[(instance_id, left_context, head, right_context, sense_id), ...]
+        }
+    :return: features: A dictionary with the following structure
+             { instance_id: {f1:count, f2:count,...}
+            ...
+            }
+            labels: A dictionary with the following structure
+            { instance_id : sense_id }
+    '''
+
+    # assignment A
+    s = build_s(data, lang)
+    f1, labels = vectorizeA(data, s, lang)
+
+    f2, _ = collocation_feature(data)
+    for id in f1:
+        f1[id].update(f2[id])
+
+    #f3, _ = collocation_bigrams(data)
+    #for id in f1:
+        #f1[id].update(f3[id])
+
+    features = f1
+    #features = {}
+    #labels = {}
+
+    # implement your code here
+
+    return features, labels
+
+# implemented for you
+def vectorize(train_features,test_features):
+    '''
+    convert set of features to vector representation
+    :param train_features: A dictionary with the following structure
+             { instance_id: {f1:count, f2:count,...}
+            ...
+            }
+    :param test_features: A dictionary with the following structure
+             { instance_id: {f1:count, f2:count,...}
+            ...
+            }
+    :return: X_train: A dictionary with the following structure
+             { instance_id: [f1_count,f2_count, ...]}
+            ...
+            }
+            X_test: A dictionary with the following structure
+             { instance_id: [f1_count,f2_count, ...]}
+            ...
+            }
+    '''
+    X_train = {}
+    X_test = {}
+
+    vec = DictVectorizer()
+    vec.fit(train_features.values())
+    for instance_id in train_features:
+        X_train[instance_id] = vec.transform(train_features[instance_id]).toarray()[0]
+
+    for instance_id in test_features:
+        X_test[instance_id] = vec.transform(test_features[instance_id]).toarray()[0]
+
+    return X_train, X_test
+
+#B.1.e
+def feature_selection(X_train,X_test,y_train):
+    '''
+    Try to select best features using good feature selection methods (chi-square or PMI)
+    or simply you can return train, test if you want to select all features
+    :param X_train: A dictionary with the following structure
+             { instance_id: [f1_count,f2_count, ...]}
+            ...
+            }
+    :param X_test: A dictionary with the following structure
+             { instance_id: [f1_count,f2_count, ...]}
+            ...
+            }
+    :param y_train: A dictionary with the following structure
+            { instance_id : sense_id }
+    :return:
+    '''
+
+    # implement your code here
+
+    #return X_train_new, X_test_new
+    # or return all feature (no feature selection):
+    return X_train, X_test
+
+# B.2
+def classify(X_train, X_test, y_train):
+    '''
+    Train the best classifier on (X_train, and y_train) then predict X_test labels
+
+    :param X_train: A dictionary with the following structure
+            { instance_id: [w_1 count, w_2 count, ...],
+            ...
+            }
+
+    :param X_test: A dictionary with the following structure
+            { instance_id: [w_1 count, w_2 count, ...],
+            ...
+            }
+
+    :param y_train: A dictionary with the following structure
+            { instance_id : sense_id }
+
+    :return: results: a list of tuples (instance_id, label) where labels are predicted by the best classifier
+    '''
+
+    results = []
+
+    # implement your code here
+    svm_clf = svm.LinearSVC(C=0.3)
+
+    X = []
+    y = []
+    Xt = []
+
+    # implement your code here
+    for instance_id, counts in X_train.iteritems():
+        X.append(counts)
+        y.append(y_train[instance_id])
+
+    instance_array = []
+    for instance_id, counts in X_test.iteritems():
+        Xt.append(counts)
+        instance_array.append(instance_id)
+
+    svm_clf.fit(X, y)
+    labels = svm_clf.predict(Xt)
+
+    for id, instance_id in enumerate(instance_array):
+        results.append((instance_id, labels[id]))
+
+    return results
+
+# run part B
+def run(train, test, language, answer):
+    results = {}
+
+    #lexelt = train.keys()[4]
+
+    #train_features, y_train = extract_features(train[lexelt])
+    #test_features, _ = extract_features(test[lexelt])
+
+    #X_train, X_test = vectorize(train_features,test_features)
+    #X_train_new, X_test_new = feature_selection(X_train, X_test,y_train)
+    #results[lexelt] = classify(X_train_new, X_test_new,y_train)
+
+    for lexelt in train:
+        train_features, y_train = extract_features(train[lexelt], language)
+        test_features, _ = extract_features(test[lexelt], language)
+
+        X_train, X_test = vectorize(train_features,test_features)
+        X_train_new, X_test_new = feature_selection(X_train, X_test,y_train)
+        results[lexelt] = classify(X_train_new, X_test_new,y_train)
+    A.print_results(results, answer)

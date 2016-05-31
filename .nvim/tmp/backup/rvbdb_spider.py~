@@ -1,0 +1,83 @@
+import scrapy
+import re
+
+from rvbdb.items import RvbdbItem
+
+class Rechtvanbijdeboer(scrapy.Spider):
+    name = "rvbdb"
+    allowed_domains = ["www.rechtvanbijdeboer.be"]
+
+    def start_requests(self):
+        return [scrapy.FormRequest("http://www.rechtvanbijdeboer.be/nl/zoek-een-verkooppunt",
+                                   formdata={'postalcode':'3000', 'range':'10', 'product':'0', 'productionmethod':'Biologisch', 'locationtype':'0', 'submit':'Zoeken'},
+                                   callback=self.parse)]
+
+    def parse(self, response):
+        for section in response.xpath("//div[@id='contentLarge']/div[@class='results']/article"):
+            item = RvbdbItem()
+
+            item['cert_bioboer'] = section.xpath("h3/img[@title='biologisch']").extract_first(default='NA')
+            item['cert_biogarantie'] = section.xpath("h3/img[@title='Recht van bij de boer']").extract_first(default='NA')
+
+            item['name'] = section.xpath("h3/text()").extract()
+
+            address_phone = section.xpath("div[@class='address']/p").extract()
+            item['address'] = address_phone[0]
+            item['phone'] = address_phone[1]
+
+            more_addresses = section.xpath("./div/div[@class='moreAddresses']/div/p")
+            item['more_name'] = []
+            item['more_addresses'] = []
+            for more_address in more_addresses:
+                item['more_name'] = section.xpath("./div/div[@class='moreAddresses']/div/p/strong/text()").extract()
+                item['more_addresses'] = section.xpath("./div/div[@class='moreAddresses']/div/p/text()").extract()
+
+            products = section.xpath(".//div[@class='icons']")
+            item['fruit'] = len(products.xpath(".//img[@alt='Fruit']")) != 0
+            item['fruitsap'] = len(products.xpath(".//img[@alt='Fruitsap']")) != 0
+            item['groente'] = len(products.xpath(".//img[@alt='Groenten']")) != 0
+            item['wijn'] = len(products.xpath(".//img[re:test(@alt,'^Wijn')]")) != 0
+            item['lam_en_schaap'] = len(products.xpath(".//img[re:test(@alt,'^Lams')]")) != 0
+            item['rund_en_kalf'] = len(products.xpath(".//img[re:test(@alt,'^Rund')]")) != 0
+            item['varken'] = len(products.xpath(".//img[re:test(@alt,'^Varkens')]")) != 0
+            item['pluimvee'] = len(products.xpath(".//img[@alt = 'Pluimvee']")) != 0
+            item['zuivel'] = len(products.xpath(".//img[@alt = 'Zuivel']")) != 0
+            item['ei'] = len(products.xpath(".//img[@alt = 'Eieren']")) != 0
+            item['aardappelen'] = len(products.xpath(".//img[@alt = 'Aardappelen']")) != 0
+            item['kruiden'] = len(products.xpath(".//img[@alt = 'Kruiden']")) != 0
+
+
+            ## get details
+            item_url = section.xpath("./a[@class='button1_light']/@href").extract_first()
+            if item_url != None:
+                request = scrapy.Request( "http://www.rechtvanbijdeboer.be%s" % item_url, callback=self.parse_item)
+                request.meta['item'] = item
+                yield request
+            else:
+                yield item
+
+        #for page in response.xpath('//li[@class="pager-next"]/a/@href').extract():
+            #yield scrapy.Request("http://www.biomijnnatuur.be%s" % page, callback=self.parse)
+
+    def parse_item(self, response):
+        item = response.meta['item']
+        content = response.xpath("//div[@id='contentSmall']")
+        userContact = content.xpath(".//div[@id='userContact']")
+        item['email'] = userContact.xpath(".//span[@itemprop='email']/text()").extract()
+        phones = userContact.xpath(".//span[@itemprop='telephone']/text()").extract()
+        for phone in phones:
+            item['phone'] += ";%s" % phone
+        item['url'] = userContact.xpath(".//a[@itemprop='sameAs']/@href").extract()
+        item['facebook'] = userContact.xpath(".//a[@class='facebook']/@href/text()").extract()
+        item['description'] = content.xpath("//div[@id='detailtxt']").extract()
+        days = content.xpath(".//span[@class='detail_titel']/strong/text()").extract()
+        hours = content.xpath(".//span[@class='detail_titel']/following-sibling::text()").extract()
+        item['openinghours'] = []
+        for i, day in enumerate(days):
+            item['openinghours'].append("%s %s" % (day, hours[i]))
+        #try:
+            #latlong = response.xpath("//div[@class='content']/script/text()").extract()[0]
+            #item['lat'], item['long'], key = re.findall('(\d\d.\d*?),(\d.\d*?),(\d+)', latlong)[0]
+        #except:
+            #pass
+        return item

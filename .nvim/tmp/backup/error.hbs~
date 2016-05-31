@@ -1,0 +1,45 @@
+    <style>
+    body{
+      font-family: Helvetica, Arial, sans-serif;
+      background-color:#390F39;
+      color:#fff;
+      width:100%;
+      height:100%;
+       position:absolute;
+       top:0;
+       bottom:0;
+    }
+    .wrap{
+      position:absolute;
+      top:50%;
+      margin-top: -150px;
+      height:300px;
+      width:100%;
+    }
+    h1{
+      margin:0;
+      padding:0;
+      line-height:200px;
+      display:block;
+      text-align:center;
+      font-size:100px;
+      height:200px;
+      text-transform: uppercase;
+      font-weight:bolder;
+    }
+    p{
+      margin:0;
+      padding:0;
+      line-height:50px;
+      display:block;
+      text-align:center;
+      font-size:50px;
+      height:50px;
+      text-transform: uppercase;
+      font-weight:bold;
+    }
+    </style>
+    <div class = 'wrap'>
+      <h1>Oops!</h1>
+      <p>404 not found</p>
+    </div>

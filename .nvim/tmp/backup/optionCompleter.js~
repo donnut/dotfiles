@@ -1,0 +1,36 @@
+var R = require('ramda');
+
+var translationTable = {
+    ajax:       'ajax',
+    xhr:        'ajax/xhr',
+    script:     'ajax/script',
+    jsonp:      'ajax/jsonp',
+    ready:      'core/ready',
+    deprecated: 'deprecated',
+    dimensions: 'dimensions',
+    effects:    'effects',
+    event:      'event',
+    offset:     'offset',
+    wrap:       'wrap',
+    deferred:   'deferred',
+    css:        'css',
+    amd:        'exports/amd',
+    global:     'exports/global',
+    exports:    'exports',
+    sizzle:     'sizzle'
+};
+
+function translate(option) {
+    return translationTable[option];
+}
+
+function extractOptions(options) {
+    console.log(options);
+    return R.reduce(function(acc, x) {
+        var opt = translate(x);
+        if (opt) acc.push(opt);
+        return acc;
+    }, [], R.keys(options));
+}
+
+exports.extract = extractOptions;

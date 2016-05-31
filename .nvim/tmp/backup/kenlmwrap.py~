@@ -1,0 +1,16 @@
+import kenlm
+import re
+
+class KenLMWrap:
+
+    def __init__(self):
+        c = kenlm.Config()
+        c.load_method = kenlm.LoadMethod.LAZY
+        self.lm = kenlm.Model('/home/donnut/lm/nl.2012.2013.trie', c)
+
+    def query(self, text):
+        return self.lm.score(text)
+        #return float(re.search(r': (.*?) OOV', str(outs)).group(1))
+
+    def known(self, word):
+        return self.lm.__contains__(word)

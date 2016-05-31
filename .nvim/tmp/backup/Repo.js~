@@ -1,0 +1,822 @@
+define(['require'], function(require) {
+
+  var
+    mongoose          = require('mongoose'),
+    // Proto        = require('lib/schemas/repo/AppPrototype').Schema,
+    Theme           = require('lib/schemas/repo/style/Theme').Schema,
+
+    TagSet          = require('lib/schemas/repo/component/TagSet').Schema,
+    ContentSet      = require('lib/schemas/repo/component/ContentSet').Schema,
+
+MasterMap        = require('lib/schemas/repo/style/MasterMap').Schema,
+
+    ColorMap        = require('lib/schemas/repo/style/ColorMap').Schema,
+    SizeMap         = require('lib/schemas/repo/component/SizeMap').Schema,
+    AreaMap         = require('lib/schemas/repo/style/AreaMap').Schema,
+    FontMap         = require('lib/schemas/repo/style/FontMap').Schema,
+    IconMap         = require('lib/schemas/repo/style/IcontMap').Schema,
+
+    StyleSet        = require('lib/schemas/repo/style/StyleSet').Schema,
+
+    DeviceDimension = require('lib/schemas/repo/style/DeviceDimension').Schema,
+    Unit            = require('lib/schemas/repo/style/Unit').Schema,
+    Grid            = require('lib/schemas/repo/style/Grid').Schema,
+    //ZIndex          = require('lib/schemas/repo/style/ZIndex').Schema,
+
+    ColorSelection  = require('lib/schemas/repo/style/ColorSelection').Schema,
+    FontSelection   = require('lib/schemas/repo/style/FontSelection').Schema,
+    AreaSelection   = require('lib/schemas/repo/style/AreaSelection').Schema,
+    // IconSelection  = require('lib/schemas/repo/style/IconSelection').Schema,
+
+    ColorSet        = require('lib/schemas/repo/style/ColorSet').Schema,
+    FontSet         = require('lib/schemas/repo/style/FontSet').Schema,
+    AreaSet         = require('lib/schemas/repo/style/AreaSet').Schema,
+    Component       = require('lib/schemas/repo/component/Component').Schema,
+
+    // Shape           = require('lib/schemas/repo/style/Shape').Schema,//geen schema maar default object
+    Font            = require('lib/schemas/repo/style/Font').Schema,
+    Palet           = require('lib/schemas/repo/style/Palet').Schema;
+    AreaStyle       = require('lib/schemas/repo/style/AreaStyle').Schema;
+    // Icons           = require('lib/schemas/repo/style/Icons').Schema,
+    // IconSet         = require('lib/schemas/repo/style/IconSet').Schema,
+
+  var RepoSchema = new mongoose.Schema({
+    name: 'string',//default 'wbbit'
+    pId: 'string',
+
+    Proto           : [{ type: mongoose.Schema.Types.ObjectId, ref: 'AppPrototype'}],
+    Theme           : [{ type: mongoose.Schema.Types.ObjectId, ref:'Theme'}],
+
+    MasterMap  : [{ type: mongoose.Schema.Types.ObjectId, ref:'MasterMap'}],
+
+    SizeMap    : [{ type: mongoose.Schema.Types.ObjectId, ref:'SizeMap'}],
+    ColorMap   : [{ type: mongoose.Schema.Types.ObjectId, ref:'ColorMap'}],
+    AreaMap    : [{ type: mongoose.Schema.Types.ObjectId, ref:'AreaMap'}],
+    FontMap    : [{ type: mongoose.Schema.Types.ObjectId, ref:'FontMap'}],
+    IconMap    : [{ type: mongoose.Schema.Types.ObjectId, ref:'IconMap'}],
+
+    TagSet          : [{ type: mongoose.Schema.Types.ObjectId, ref:'TagSet'}],
+    ContentSet      : [{ type: mongoose.Schema.Types.ObjectId, ref:'ContentSet'}],
+
+    Component       : [{ type: mongoose.Schema.Types.ObjectId, ref:'Component'}],
+    ComponentSet    : [{ type: mongoose.Schema.Types.ObjectId, ref:'ComponentSet'}],
+
+    StyleSet        : [{ type: mongoose.Schema.Types.ObjectId, ref:'StyleSet'}],
+
+    DeviceDimension : [{ type: mongoose.Schema.Types.ObjectId, ref:'DeviceDimension'}],
+    Unit            : [{ type: mongoose.Schema.Types.ObjectId, ref:'Unit'}],
+    ZIndex          : [{ type: mongoose.Schema.Types.ObjectId, ref:'ZIndex'}],
+    Grid           : [{ type: mongoose.Schema.Types.ObjectId, ref:'Grid'}],
+
+    Palet           : [{ type: mongoose.Schema.Types.ObjectId, ref:'Palet'}],
+    ColorSelection  : [{ type: mongoose.Schema.Types.ObjectId, ref:'ColorSelection'}],
+    ColorSet        : [{ type: mongoose.Schema.Types.ObjectId, ref:'ColorSet'}],
+
+    Font            : [{ type: mongoose.Schema.Types.ObjectId, ref:'Font'}],
+    FontSelection   : [{ type: mongoose.Schema.Types.ObjectId, ref:'FontSelection'}],
+    FontSet         : [{ type: mongoose.Schema.Types.ObjectId, ref:'FontSet'}],
+
+    //Shape           : [{ type: mongoose.Schema.Types.ObjectId, ref:'Shape'}],
+    AreaStyle       : [{ type: mongoose.Schema.Types.ObjectId, ref:'AreaStyle'}],
+    AreaSet         : [{ type: mongoose.Schema.Types.ObjectId, ref:'AreaSet'}],
+    AreaSelection  : [{ type: mongoose.Schema.Types.ObjectId, ref:'AreaSelection'}],
+
+    // Icons           : [{ type: mongoose.Schema.Types.ObjectId, ref:'Icons'}],
+    // OF: IconSet         : [{ type: mongoose.Schema.Types.ObjectId, ref:'IconSet'}],
+    // IconSelection  : [{ type: mongoose.Schema.Types.ObjectId, ref:'IconSelection'}],
+  }, {
+    collection       : 'repos',
+    //discriminatorKey : '_type',
+    strict           : true,
+  });
+
+  this.repoTypeObject = {
+
+    //STONES: keihard, niet bedoeld om te wijzigen
+    //en eigenlijk alleen door MOPE aan te maken
+    //mss in de toekomst, maar dan nooit écht eenvoudig ooit ook door klant aan te maken
+    stones : {
+      unit: {//OK
+        model: require('lib/schemas/repo/style/Unit').Model,
+        path: 'Unit'
+      },
+      // zIndex: {
+      //   model:require('lib/schemas/repo/style/ZIndex').Model,
+      //   path: 'ZIndex'
+      // },
+      grid: {
+        model:require('lib/schemas/repo/style/Grid').Model,
+        path: 'Grid'
+      },
+      font: { //OK
+        model:require('lib/schemas/repo/style/Font').Model,
+        path: 'Font'
+      },
+      palet: { //OK
+        model:require('lib/schemas/repo/style/Palet').Model,
+        path: 'Palet'
+      },
+      // shape: {//niet nodig in database oproepen als valueset eigenlijk boulder, maar aanmaak via stones
+      //   model:require('lib/schemas/repo/style/Shape').Model,
+      //   path: 'Shape'
+      // },
+      // iconSet :{
+      //   model:require('lib/schemas/repo/style/IconSet').Model,//Icons
+      //   path: 'IconSet'
+      // },//Icons
+    },
+    //nog harder dan stones: er bestaan namelijk een klein- eindig -aantal hiervan
+    boulders: {
+      areaStyle: {
+        model:require('lib/schemas/repo/style/AreaStyle').Model,
+        path: 'AreaStyle'
+      },
+    },
+    //GEMS,  bijzondere maar ook harde stones: waarvan de methoden zeer belangrijk zijn
+    gems : {//OK
+        // 'root': require('lib/schemas/repo/component/ListMap').Model
+        master: require('lib/schemas/repo/component/Master').Model,
+        layout: require('lib/schemas/repo/component/Layout').Model,
+        list: require('lib/schemas/repo/component/List').Model,
+        // 'head',
+        // 'nav',
+        // 'par',
+        // 'action'
+        // 'map',
+        // 'soc',
+        // 'form',
+        // 'table',
+        // 'med',
+        // 'grph',
+        // 'gal'
+    },
+    //SKINS
+    //styleobjects, juist bedoeld
+    //om door klant variabelen te laten veranderen of als variant een nieuwe op te slaan
+    // opgebouwd als een soort recept
+    skins : {
+      colorSet: { //OK
+        model:require('lib/schemas/repo/style/ColorSet').Model,
+        path: 'ColorSet'
+      },
+      fontSet: { //OK
+        model:require('lib/schemas/repo/style/FontSet').Model,
+        path: 'FontSet'
+      },
+      areaSet: {
+        model:require('lib/schemas/repo/style/AreaSet').Model,
+        path: 'AreaSet'
+      },
+    },
+    maps: { //was onderdeel gemskins maar niveau ertussen
+      sizeMap: { //OK voor listmap en mastermap
+        path: 'SizeMap',
+        model:require('lib/schemas/repo/component/SizeMap').Model
+      },
+      masterMap:{
+        path: 'MasterMap',
+        model:require('lib/schemas/repo/component/MasterMap').Model
+      },
+      colorMap: {
+        path: 'ColorMap',
+        model: require('lib/schemas/repo/component/ColorMap').Model
+      },
+      areaMap: {
+        path: 'AreaMap',
+        model: require('lib/schemas/repo/component/AreaMap').Model
+      },
+      fontMap: {
+        path: 'FontMap',
+        model: require('lib/schemas/repo/component/FontMap').Model
+      },
+      iconMap: {
+        path: 'IconMap',
+        model: require('lib/schemas/repo/component/IconMap').Model
+      },
+      // mediamaps: {img video?
+      //   path: 'MediaMap',
+      //   model: require('lib/schemas/repo/component/MediaMap').Model
+      // },
+    },
+     //GEMSKINS
+    //styleobjecten die beperkt per kind=fnType /cat toepasbaar zijn
+    //niet zeker of shape werkelijk nodig
+    //bijzondere categorie styleobjecten,
+    //want niet algemeen inzetbaar maar alleen voor bepaalde fnType of cat
+    //variabel hoe sterk het mag worden gewijzigd/default is
+    gemskins: {
+      tagsets: { //OK voor master layout en list
+        path: 'TagSet',
+        model:{
+          // 'root': require('lib/schemas/repo/component/ListMap').Model
+          masterTagSet: require('lib/schemas/repo/component/TagSet').Model,
+          layoutTagSet: require('lib/schemas/repo/component/TagSet').Model,
+          listTagSet: require('lib/schemas/repo/component/TagSet').Model,
+          // 'head',
+          // 'nav',
+          // 'par',
+          // 'action'
+          // 'map',
+          // 'soc',
+          // 'form',
+          // 'table',
+          // 'med',
+          // 'grph',
+          // 'gal'
+        }
+      },
+      contentsets: { //OK voor  list
+        path: 'ContentSet',
+        model:{
+          // 'root': require('lib/schemas/repo/component/ListMap').Model
+          //masterContentSet: require('lib/schemas/repo/component/ContentSet').Model,
+          //layoutContentSet: require('lib/schemas/repo/component/ContentSet').Model,
+          listContentSet: require('lib/schemas/repo/component/ContentSet').Model,
+          // 'head',
+          // 'nav',
+          // 'par',
+          // 'action'
+          // 'map',
+          // 'soc',
+          // 'form',
+          // 'table',
+          // 'med',
+          // 'grph',
+          // 'gal'
+        }
+      }
+    },
+
+    //WALL verzameling maar niet willekeurig nauwgezet samengevoegde stenen met cement
+    //gestructureerde bundeling van stones en/of styleobjecten
+    walls : {
+      colorSelection: { //OK
+        model:require('lib/schemas/repo/style/ColorSelection').Model,
+        stone: 'palet',
+        path: 'ColorSelection'
+      },
+      fontSelection: { //OK
+        model:require('lib/schemas/repo/style/FontSelection').Model,
+        stone: 'font',
+        path: 'FontSelection'
+      },
+      // IconSelection: {
+      //   model:require('lib/schemas/repo/style/IconSelections').Model,
+      //   stone: 'icons',
+      //   path: 'IconSelection'
+      // },
+      areaSelection: {
+        model:require('lib/schemas/repo/style/AreaSelection').Model,
+        stone: areaStyle,//boulder
+        path: 'AreaSelection'
+      },
+      deviceDimension: {
+        path  : 'DeviceDimension',
+        // //stones:[ 'unit', 'zIndex', 'grid'],
+        // unit  :  require('lib/schemas/repo/style/DeviceDimension').Model,
+        // //zIndex:  require('lib/schemas/repo/style/ZIndex').Model,
+        // grids :  require('lib/schemas/repo/style/Level').Model
+      }
+    },
+
+    //NECKLACE  aaneenrijging van  GEMS
+    //die beperkt per kind=fnType /cat toepassbaar zijn
+    //necklaces : {
+      componentSet: {
+        // model: require('lib/schemas/repo/component/componentSet').Model,
+        // path: 'ComponentSet'
+      },
+      styleSet: {
+        // model:require('lib/schemas/repo/style/StyleSet').Model,
+        // path: 'StyleSet'
+        fm: require('lib/schemas/repo/style/FontMap').Model,
+        cm: require('lib/schemas/repo/style/ColorMap').Model,
+        am: require('lib/schemas/repo/style/AreaMap').Model,
+        im: require('lib/schemas/repo/style/IconMap').Model,
+        sm: require('lib/schemas/repo/component/SizeMap').Model,
+        mm: require('lib/schemas/repo/component/MasterMap').Model,
+      },
+
+      //bricks??? tbv theme? niet echt vereist...
+      theme: {
+        //bricks  : require('lib/schemas/project/Brick').Model,
+        comps   : require('lib/schemas/repo/ComponentSet').Model,
+        style   : require('lib/schemas/repo/style/StyleSet').Model,// moet eigenlijk lib/schemas/repo/StyleSet worden
+
+        colors : require('lib/schemas/repo/style/ColorSelection').Model,
+        areas : require('lib/schemas/repo/style/AreaSelection').Model,
+        fonts  : require('lib/schemas/repo/style/FontSelection').Model,
+        //icons  : require('lib/schemas/repo/style/IconSelection').Model,
+
+        devdims  : require('lib/schemas/repo/style/DeviceDimension').Model,
+      },
+      // proto: {
+      //   model:require('lib/schemas/repo/AppPrototype').Model,
+      //   path: 'Proto'
+      // },
+    //}
+  };
+
+  RepoSchema.methods.createStonesAndSkins = function(parentname, objectname, cb){//parentname = stones
+    var RepoObject = this.repoTypeObject[parentname][objectname].model;//simpeler zoeken met via _type
+    var repoPath = this.repoTypeObject[parentname][objectname].path;
+    var defaultObjects = require(filePath + objectname + 'Defaults');
+    var keys = _.keys(defaultObjects);
+
+    async.forEach(keys, function(key, cb){
+      RepoObject.make(permission, projectId, defaultObjects[key], defaultObjects[key].name, function(err, object){
+        if (err) return cb(err);
+        repo[repoPath].addToSet(object);
+        return cb(err);//, object
+      });
+    }, function(err){//, objects
+      //if (err) return cb(err);
+      //repo[repoPath].addToSet(objects);
+      return cb(err);
+    });
+  };
+  RepoSchema.methods.createBoulders = function(parentname, objectname, cb){//parentname = stones
+    var Object = this.repoTypeObject[parentname][objectname].model;
+    var repoPath = this.repoTypeObject[parentname][objectname].path;
+    Object.createDefaults(function(err, boulders){
+      if (err) return cb(err);
+      repo[repoPath].addToSet(boulders);
+      return cb(err);
+    });
+  };
+  //embedden van stones in wall
+  RepoSchema.methods.buildWalls = function(parentname, objectname, cb){//parentname = walls
+    var RepoObject = this.repoTypeObject[parentname][objectname].model;
+    var repoPath = this.repoTypeObject[parentname][objectname].path;
+    var defaultQuerySets = require(filePath + objectname + 'Defaults');
+    var setkeys = _.keys(defaultQuerySets);
+    var stonename = (objectname !== 'deviceDimension')? this.repoTypeObject[parentname][objectname].stone: null;
+    var StoneObject = (objectname !== 'deviceDimension')? this.repoTypeObject.stones[stonename].model: null;
+
+    async.forEach(setkeys, function(setkey, cb){
+      var defaultQuerySet = defaultQuerySets[setkey];
+      RepoObject.make(permission, projectId,{}, defaultQuerySet.name, function(err, repoObject){
+        if (err) return cb(err);
+        var querykeys = _.keys(defaultQuerySet);
+        querykeys = _.without(querykeys, 'name');
+        async.forEach(querykeys, function(querykey, cb){
+          var query;
+          switch(objectname){
+            case 'colorSelection':
+              var paletDefinitions = defaultQuerySets[setkey][querykey];
+              var extension = -1;
+              async.forEach(paletDefinitions, function(paletDefinition, cb){
+                extension = extension + 1;
+                query = paletDefinition.query;
+                var saturation = paletDefinition.sat;
+                StoneObject.findOne(query, function(err, palet) {
+                  if (err) return cb(err);
+                  if(saturation){
+                    palet.set('sat', saturation);
+                  }
+                  repoObject[querykey].addToSet(palet);
+                  palet.embed(querykey, extension, function(err, paletValues){
+                    if (err) return cb(err);
+                    valueObject = repoObject.get('values') || {};
+                    extend(valueObject, paletValues);
+                    repoObject.set('values', valueObject);
+                    return cb(err);
+                  });
+                });
+              }, function(err){
+                return cb(err);
+              });
+              break;
+            case 'deviceDimension':
+              switch(querykey){
+                case 'd':
+                  repoObject.set('d', defaultQuerySet.d);
+                  break;
+                case 'u':
+                  StoneObject = this.repoTypeObject.stones['unit'].model;
+                  query = defaultQuerySet.u;
+                  StoneObject.find(query, function(err, stones) {//kunnen meerdere stones zijn
+                    if (err) return cb(err);
+                    repoObject[querykey].addToSet(stones);
+                    return cb(err);
+                  });
+                  break;
+                case 'z':
+                  StoneObject = this.repoTypeObject.stones['zIndex'].model;
+                  query = defaultQuerySet.z;
+                  StoneObject.find(query, function(err, stones) {//kunnen meerdere stones zijn
+                    if (err) return cb(err);
+                    repoObject[querykey].addToSet(stones);
+                    return cb(err);
+                  });
+                  break;
+                default: //'g'
+                  StoneObject = this.repoTypeObject.stones['grid'].model;
+                  var typeKeys = _.keys(defaultQuerySet.g);
+                  async.forEach(typeKeys, function(typekey, cb){
+                    query = defaultQuerySet.g[typekey];
+                    StoneObject.find(query, function(err, stones) {//kunnen meerdere stones zijn
+                      if (err) return cb(err);
+                      repoObject[querykey][typekey].addToSet(stones);
+                      return cb(err);
+                    });
+                  }, function(err){
+                    return cb(err);
+                  });
+              }
+              break;
+            default://alleen nog uitgewerkt voor fontSelection
+              query = defaultQuerySet[querykey];
+              StoneObject.find(query, function(err, stones) {//kunnen meerdere stones zijn
+                if (err) return cb(err);
+                repoObject[querykey].addToSet(stones);
+                return cb(err);
+              });
+          }
+        }, function(err){
+          if (err) return cb(err);
+          repoObject.save(function(err){
+            if (err) return cb(err);
+            repo[repoPath].addToSet(repoObject);
+            return cb(err);//, object
+          });
+        });
+      });
+    },function(err){//, objects
+      //repo[repoPath].addToSet(objects);
+      return cb(err);
+    });
+  };
+  RepoSchema.methods.createGems = function(parentname, objectname, repoPath, cb){//parentname = gems
+    var RepoObject = this.repoTypeObject[parentname][objectname];
+    var defaultObjects = require(filePath + objectname + 'Defaults');
+
+    var keys = _.keys(defaultObjects);
+    async.forEach(keys, function(key, cb){
+      RepoObject.make(permission, projectId, defaultObjects[key], defaultObjects[key].name, function(err, object){
+        if(err) cb(err);
+        repo[repoPath].addToSet(object);
+        return cb(err);//, object
+      });
+    }, function(err){//, objects
+      // if (err) return cb(err);
+      // repo[repoPath].addToSet(objects);
+      return cb(err);
+    });
+  };
+  RepoSchema.methods.createMaps = function(parentname, mapName, cb){//parentname = map
+    var repoPath = this.repoTypeObject[parentname][mapName].path;
+    var valueset = require('lib/schemas/defaults/valueset').values;
+    var fnTypes = valueset.functiontype;
+
+    async.forEach(fnTypes, function(fnType, cb){
+      var RepoObject = this.repoTypeObject[parentname][mapName].model;
+      var defaultObjects = require('../schemas/defaults/' + fnType + 'Defaults');//   filePath
+      var keys = _.keys(defaultObjects);
+
+      if(mapName === 'masterMap') {
+        if(fnType === 'mas') {
+          var Layout = require('lib/schemas/repo/component/Layout').Model;
+          async.forEach(keys, function(key, cb){
+            var layoutQueries = defaultObjects[key].lay;
+            var masterMapObject = defaultObjects[key];// _.omit(defaultObjects[key], 'lay');
+            var layKeys= _.keys(layoutQueries);
+            async.forEach(layKeys, function(layKey,cb) {
+              var layoutQuery = layoutQueries[layKey];
+              Layout.findOne(layoutQuery, function(err, layoutModel){
+                if (err) return cb(err);
+                masterMapObject.lay[layKey] = [] || masterMapObject.lay[layKey];
+                masterMapObject.lay[layKey].push(layoutModel);
+                return cb(err);
+              });
+            }, function(err){
+              if (err) return cb(err);
+              repo[repoPath].addToSet(masterMapObject);
+              return cb(err);//, object
+            });
+          }, function(err){//, objects
+            //if (err) return cb(err);
+            //repo[repoPath].addToSet(objects);
+            return cb(err);
+          });
+        }
+        else {
+          return cb(null);
+        }
+      }
+      else {
+        var SkinModel, basicObject;
+        switch(mapName){
+          case 'colorMap':
+            SkinModel = require('lib/schemas/repo/style/ColorSet').Model;
+            break;
+          case 'areaMap':
+            SkinModel = require('lib/schemas/repo/style/AreaSet').Model;
+            break;
+          case 'fontMap':
+            SkinModel = require('lib/schemas/repo/style/FontSet').Model;
+            break;
+          default://niks
+        }
+        async.forEach(keys, function(key, cb){
+          if(SkinModel) {
+            var skinQuery = defaultObjects[key].set; //letop mv las(mapName === 'areaMap') && fnType === 'mas')
+            basicObject = _.omit(defaultObjects[key], 'set');
+            if(mapName === 'areaMap' && fnType === 'mas'){
+                var areaKeys= _.keys(skinQuery);
+                async.forEach(areaKeys, function(areaKey,cb) {
+                  var areaSetQuery = skinQuery[areaKey];
+                    skinModel.findOne(areaSetQuery, function(err, areaSet){
+                      if (err) return cb(err);
+                      basicObject.set = basicObject.set || {};
+                      basicObject.set[areaKey] = areaSet;
+                    });
+                }, function(err){
+                  if (err) return cb(err);
+                  RepoObject.make(permission, projectId, basicObject, basicObject.name, function(err, object){
+                    if (err) return cb(err);
+                    repo[repoPath].addToSet(object);
+                    return cb(err);//, object
+                  });
+              });
+            }
+            else {
+              SkinModel.findOne(skinQuery, function(err, skinSet){
+                if (err) return cb(err);
+                basicObject.set = skinSet;
+                RepoObject.make(permission, projectId, basicObject, basicObject.name, function(err, object){
+                  if (err) return cb(err);
+                  repo[repoPath].addToSet(object);
+                  return cb(err);
+                });
+              });
+            }
+          }
+          else {
+            basicObject = defaultObjects[key];
+            RepoObject.make(permission, projectId, basicObject, basicObject.name, function(err, object){
+              if (err) return cb(err);
+              repo[repoPath].addToSet(object);
+              return cb(err);
+            });
+          }
+        }, function(err){
+          return cb(err);
+        });
+      }
+    }, function(err){
+      return cb(err);
+    });
+  };
+  RepoSchema.methods.createGemSkins = function(parentname, clustername, cb){//parentname = gemskins
+    var clusterkeys = _.keys(this.repoTypeObject[parentname][clustername].model);
+    var repoPath = this.repoTypeObject[parentname][clustername].path;
+    async.forEach(clusterkeys, function(clusterKey, cb){
+      var RepoObject = this.repoTypeObject[parentname][clustername].model[clusterKey];
+      var defaultObjects = require('../schemas/defaults/' + clusterKey + 'Defaults');//   filePath
+      var keys = _.keys(defaultObjects);
+        async.forEach(keys, function(key, cb){
+          // console.log(clusterKey, key, defaultObjects[key],RepoObject);
+          RepoObject.make(permission, projectId, defaultObjects[key], defaultObjects[key].name, function(err, object){
+            // console.log('gemskin', key, err, repoObject);
+            if (err) return cb(err);
+            repo[repoPath].addToSet(object);
+            return cb(err);//, object
+          });
+        }, function(err){//, objects
+          //if (err) return cb(err);
+          //repo[repoPath].addToSet(objects);
+          return cb(err);
+        });
+    }, function(err){//, objects
+      return cb(err);
+    });
+  };
+  RepoSchema.methods.createComponentSets = function(cb){
+    var repoPath = 'ComponentSet';
+    var ComponentSet = require('lib/schemas/repo/ComponentSet').Model;
+    var ComponentModel = require('lib/schemas/repo/component/Component').Model;
+
+    var defaultObjects = require(filePath + 'componentSet' + 'Defaults');
+    var keys = _.keys(defaultObjects);
+    async.forEach(keys, function(key, cb){
+      var componentSetObject =_.omit(defaultObjects[key], 'cid');
+      ComponentSet.make(permission, projectId,componentSetObject, componentSetObject.name, function(err, componentSet){
+        if(err) return  cb(err);
+        var componentQueries = defaultObjects[key].cid;
+        async.forEach(componentQueries, function(query,cb) {
+          ComponentModel.findOne(query, function(err, component){
+            if (err) return cb(err);
+            componentSet.cid.addToSet(component);
+            return cb(err);
+          });
+        }, function(err){
+            if (err) return cb(err);
+            componentSet.save(function(err){
+              repo[repoPath].addToSet(componentSet);
+              return cb(err);//, object
+            });
+        });
+      });
+    }, function(err){
+      return cb(err);
+    });
+  };
+  RepoSchema.methods.createStyleSets = function(cb){
+    var repoPath = 'StyleSet';
+    var StyleSet = require('lib/schemas/repo/style/StyleSet').Model;
+    var defaultObjects = require(filePath + 'styleSet' + 'Defaults');
+    var keys = _.keys(defaultObjects);
+    var i = 0;
+    async.forEach(keys, function(key, cb){
+      var styleSetObject = defaultObjects[key];
+      var queryKeys = _.without(_.keys(styleSetObject), 'kind', 'name');
+      StyleSet.make(permission, projectId, { kind: styleSetObject.kind }, styleSetObject.name, function(err, styleSet){
+        if (err) return cb(err);
+        async.forEach(queryKeys, function(queryKey, cb) {
+          var StyleObject = this.repoTypeObject.styleSet[queryKey];
+          async.forEach(styleSetObject[queryKey], function(query,cb) {
+            StyleObject.findOne(query, function(err, styleObject){
+              if (err) return cb(err);
+              styleSet[queryKey].addToSet(styleObject);
+              return cb(err);
+            });
+          }, function(err){
+            return cb(err);
+          });
+        }, function(err){
+          if (err) return cb(err);
+          styleSet.save(function(err){
+            if (err) return cb(err);
+            repo[repoPath].addToSet(styleSet);
+            return cb(err);//, object
+          });
+        });
+      });
+    }, function(err){
+      return cb(err);
+    });
+  };
+  RepoSchema.methods.createThemes = function(cb){
+    var repoPath = 'Theme';
+    var Theme = require('lib/schemas/repo/style/Theme').Model;
+    var defaultObjects = require(filePath + 'theme' + 'Defaults');
+    var keys = _.keys(defaultObjects);
+    async.forEach(keys, function(key, cb){
+      var themeObject = defaultObjects[key] ;
+      Theme.make(permission, projectId, {}, themeObject.name, function(err, theme){
+        if (err) return cb(err);
+        var themePaths = _.without(_.keys(themeObject), 'name');
+        async.forEach(themePaths, function(themePath, cb) {
+          var RepoObject = this.repoTypeObject.theme[themePath];
+          var pathQueries = themeObject[themePath];
+          async.forEach(pathQueries, function(query, cb) {
+            RepoObject.findOne(query, function(err, repoObject){
+              if (err) return cb(err);
+              theme[themePath].addToSet(repoObject);
+              return cb(err);
+            });
+          }, function(err){
+            return cb(err);
+          });
+        }, function(err){
+          if (err) return cb(err);
+          theme.save(function(err){
+            if (err) return cb(err);
+            console.log('theme', theme);
+            repo.Theme.addToSet(theme);
+            return cb(err);
+          });
+        });
+      });
+    }, function(err){
+      return cb(err);
+    });
+  };
+
+  RepoSchema.methods.addRepoObject = function(objectDefinition, objectType, cb){
+
+  };
+  RepoSchema.statics.make = function(filePath, name, cb) { //dit zijn de defaults voor deze repo-omgeving, bijcoorbeeld wbbit!
+    var async    = require('async');
+    var _        = require('lodash');
+    var extend   = require('node.extend');
+    var defaultFilePath    = '../schemas/defaults/';
+    var valueset = require(defaultFilePath + 'valueset').values;
+      // fnTypes  = valueset.functiontype;
+    var repo = new this();
+
+    repo.set('name', name);
+    filePath = filePath || defaultFilePath;
+    var permission = 'default';
+    var projectId = repo._id;
+
+    async.auto({
+      stones: function(cb) { //ok voor unit, font, palet
+        var stoneKeys = _.keys(this.repoTypeObject.stones);
+        async.forEach(stoneKeys, function(stoneKey, cb){
+          repo.createStonesAndSkins('stones', stoneKey, function(err){
+            return cb(err);
+          });
+        }, function(err){
+          return cb(err);
+        });
+      },
+      boulders: function(cb){
+        var boulderKeys = _.keys(this.repoTypeObject.boulders);
+        async.forEach(boulderKeys, function(boulderKey, cb){
+          repo.createBoulders('boulders', boulderKey, function(err){
+            return cb(err);
+          });
+        }, function(err){
+          return cb(err);
+        });
+      },
+      gems: function(cb) { //ok voor master, layout en list
+        var gemKeys = _.keys(this.repoTypeObject.gems);
+        async.forEach(gemKeys, function(gemKey, cb){
+          repo.createGems('gems', gemKey, 'Component', function(err){
+            return cb(err);
+          });
+        }, function(err){
+          return cb(err);
+        });
+      },
+      skins: function(cb){ //ok voor fontSet, colorSet, areaSet
+        var skinKeys = _.keys(this.repoTypeObject.skins);
+        async.forEach(skinKeys, function(skinKey, cb){
+          repo.createStonesAndSkins('skins',skinKey, function(err){
+            return cb(err);
+          });
+        }, function(err){
+          return cb(err);
+        });
+      },
+      wall: ['stones', 'boulders', function(cb) { //ok voor fontSelection, ColorSelection
+        var wallKeys = _.keys(this.repoTypeObject.walls);
+        async.forEach(wallKeys, function(wallKey, cb){
+          repo.buildWalls('walls', wallKey, function(err){
+            return cb(err);
+          });
+        }, function(err){
+          return cb(err);
+        });
+      }],
+      maps: ['skins', function(cb) { //vrij zware eis zodat layoutComponent is gegenereert vóór masterMap
+        var mapNames = _.keys(this.repoTypeObject.maps);
+        async.forEach(mapNames, function(mapName, cb){
+          repo.createMaps('maps',  mapName, function(err){
+            return cb(err);
+          });
+        }, function(err){
+          return cb(err);
+        });
+      }],
+      gemskins: ['gems', function(cb) { //vrij zware eis zodat layoutComponent is gegenereert vóór masterMap
+        var gemskinClusterNames = _.keys(this.repoTypeObject.gemskins);
+        async.forEach(gemskinClusterNames, function(gemskinClusterName, cb){
+          repo.createGemSkins('gemskins',  gemskinClusterName, function(err){
+            return cb(err);
+          });
+        }, function(err){
+          return cb(err);
+        });
+      }],
+      componentsets: ['gems', function(cb){
+        repo.createComponentSets( function(err){
+          return cb(err);
+        });
+      }],
+      stylesets: [/*'skins', */'maps', 'gemskins',  function(cb){
+        repo.createStyleSets( function(err){
+          return cb(err);
+        });
+      }]
+    }, function(err){
+      if (err) cb(err);
+      //async.serie({
+        //themes: function(cb){
+        repo.createThemes( function(err){
+          if(err) return cb(err);
+          repo.save(function(err){
+            //console.log('648', repo);
+            return cb(err);
+          });
+        });
+
+        //},
+        //protos: function(cb){},
+
+
+      // }, function(err){
+      //   return cb(err);
+      // });
+    });
+  };
+
+  return {
+    Schema: RepoSchema,
+    Model : mongoose.model('Repo', RepoSchema)
+  };
+
+});

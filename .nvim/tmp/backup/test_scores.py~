@@ -1,0 +1,15 @@
+import pytest
+
+from ocr.scores import Scores
+
+@pytest.fixture
+def sents():
+    return [
+        'This is a list containing the tallest buildings in San Francisco :'.split(),
+        'The Transamerica Pyramid is the tallest building in San Francisco .'.split(),
+        '555 California Street is the 2nd-tallest building in San Francisco .'.split(),
+    ]
+
+def test_transition_score_bigram(sents):
+    scores = Scores(sents)
+    assert scores.transition('list', ['This', 'is', 'a']) == -1

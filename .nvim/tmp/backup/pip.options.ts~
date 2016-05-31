@@ -1,0 +1,185 @@
+module Pip.Options {
+    import G = Globals;
+    import D = DefaultValues;
+    import PT = G.PipType;
+    import MK = G.MessageKey;
+    import ELM = G.Element;
+    import ON = G.OptionName;
+    import OV = G.OptionValue;
+    import AK = G.AddressKey;
+
+    declare var DEBUG;
+
+
+    //tot hier validation for fred?
+    export var defaults = {
+        event:
+            //function(options: G.IEventPipOptions): string[] {return
+             {
+                events: D.DEFAULTEVENTS,
+                enable: true,//initValue
+                preventDefault: true,
+                delegation: false,
+                //bindFn:    null;
+            //};
+        },
+        eventItem:
+        //function(options: G.IEventItemPipOptions): string[] {return
+             {
+                events: D.DEFAULTEVENTS,
+                enable: true,//initValue
+                preventDefault: true,
+                delegation: true,
+                //bindFn:    null;
+            //};
+        },
+        state:
+        //function(options: G.IStatePipOptions): string[] { return
+            {//};
+        },
+        stateItem:
+        //function(options: G.IStateItemPipOptions): string[] {return
+             {//};
+        },
+        template:
+        //function(options: G.ITemplatePipOptions): string[] {return
+             {
+               attr: 'html',
+               method: 'html',
+               empty: '',//initValue
+            //};
+        },
+        templateItem:
+        //function(options: G.ITemplateItemPipOptions): string[] {return
+             {
+               attr: 'html',
+               method: 'html',
+               empty: '',//initValue
+            //};
+        },
+        element:
+        //function(options: G.IElementPipOptions): string[] {return
+            {//};
+        },
+        shadowElement:
+        //function(options: G.IShadowElementPipOptions): string[] {return
+             {
+              //attr: 'nth'//id
+              //value: 0
+            //};
+        },
+        listItem:
+        //function(options: G.IListItemPipOptions): string[] {return
+             {//};
+        },
+        itemElement:
+        //function(options: G.IItemElementPipOptions): string[] {return
+             {//};
+        },
+        sub:
+        //function(options: G.ISubPipOptions): string[] {return
+             {
+                //* required tpl:  string,
+                method: 'html',
+                empty: '',//initValue
+            //};
+        },
+        list:
+        //function(options: G.IListPipOptions): string[] {return
+             {
+                //* required tpl:  string,
+                method: 'html',
+                empty: '',//initValue
+                //idKey: null;
+                it: 'li',
+                //sort: null;
+                //filter: null;
+            //};
+        },
+        select:
+        //function(options: G.ISelectPipOptions): string[] {return
+            //TODO hoe select naam geven??
+            //meerdere states mogelijk maken!!
+             {
+                one: true,//TODO??
+                required: true,//TODO??
+                reselectable: false,
+                //default: //initValue
+                states:  D.STATES_SELECT
+            //};
+        },
+        target:
+        //function(options: G.ITargetPipOptions): string[] {return
+             {
+               router: true,
+               //default: //initValue
+               states: D.STATES_TARGET
+            //};
+        },
+        targetItem:
+        //function(options: G.ITargetItemPipOptions): string[] {return
+             {
+                router: true,
+                one: true,
+                required: true,
+                reselectable: false,
+                 //default: //initValue
+                states: D.STATES_TARGET
+            //};
+        },
+        router:
+            //function(options): string[] {return
+             {
+                rules: 'path',
+                initValue: 'index',
+                error: '404',//empty?
+            //};
+        },
+        navTree:
+            //function(options): string[] {return
+             {//};
+        },
+        model:
+            //function(options: G.IModelPipOptions): string[] {return
+             {
+                //name* required:   string;
+                // model        : any;//was //initValue?
+                //keys?:  string[];
+
+                //index: serverIndexAttr,
+                // emit: false,
+                // server: false,
+                //serverIO?: ServerIO.Server
+            //};
+        },
+        collection:
+            //function(options: G.ICollectionPipOptions): string[] {return
+            {
+                //name* required:   string;
+                // model        : any;//was //initValue?
+                //keys?:  string[];
+
+                //index: serverIndexAttr,
+                // emit: false,
+                // server: false,
+                //serverIO?: ServerIO.Server
+           //};
+        },
+        tree:
+            //function(options: G.ISubPipOptions): string[] {return
+            {
+                empty: '',//initValue
+                idKey: 'id',
+                childKey:'children'
+                //};
+        },
+        nest:
+            //function(options: G.ISubPipOptions): string[] {return
+        {
+            empty: '',//initValue
+            idKey: 'id',
+            childKey:'children'
+                //};
+        }
+    };
+}

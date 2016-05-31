@@ -1,0 +1,26 @@
+import os
+import sys
+import logging
+import time
+
+import sendmail
+
+log = logging.getLogger("custom.sendmail")
+
+args = sys.argv
+
+if len(args) == 4:
+    destination = args[1]
+    filename = args[2]
+    options = args[3]
+
+    # storage directory for jquery archives
+    storageDir = "%s/storage" % os.getcwd()
+
+    try:
+        sendmail.send(destination, "%s/%s" % (storageDir, filename), options)
+    except:
+        log.error('sending mail failed')
+else:
+    log.error('prepmail called with wrong number of arguments: %d' % (len(args)-1))
+

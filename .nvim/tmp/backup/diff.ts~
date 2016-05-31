@@ -1,0 +1,61 @@
+/// <reference path="./utils"/>
+
+module TreeDiff {
+
+    class Leaf {
+        selected: string;
+        it: string;
+        constructor(operator: string, it?: string) {
+            this.selected = operator;
+            this.it = it ? it : Utils.uniqueId();
+        }
+    }
+
+    class Node extends Leaf {
+        children: (Tree)[];
+        constructor(operator: string, it: string, left: Tree, right?: Tree) {
+            super(operator, it);
+            this.children = [left];
+            if (right) this.children.push(right);
+        }
+    }
+
+    export type Tree = Node | Leaf;
+
+    export function reshape(from: Tree, to: Tree, tplKey, idKey, childKey) {
+        let recipe = [];
+        function walk(n1, n2) {
+            if (!(equalConstructor(n1, n2) && equalValue(n1, n2, tplKey) && equalNrChildren(n1, n2, childKey))) {
+               recipe.push([n1,n2]);
+               return false
+            } else if (n1[childKey]) {
+                let i = -1;
+                while (++i < n1[childKey].length) {
+                    walk(n1[childKey][i], n2[childKey][i]);
+                }
+            }
+        }
+        walk(tree1, tree2);
+        return recipe;
+    }
+
+
+    function equalConstructor(n1, n2) {
+        return n1.constructor.name === n2.constructor.name;
+    }
+
+    function equalValue(n1, n2, key) {
+        return n1[key] === n2[key];
+    }
+
+    function equalNrChildren(n1, n2, key) {
+        if (n1[key] && n2[key]) {
+            if (n1[key].length !== n2[key].length) {
+                return false;
+            }
+        } else if (n1[key] || n2[key]) {
+            return false;
+        }
+        return true;
+    }
+}

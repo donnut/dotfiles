@@ -1,0 +1,7 @@
+/// <reference path="node.d.ts" />
+
+import {parse} from "url";
+
+const createObject = x => x < 10;
+
+let url = parse("/status?name=ryan", createObject());

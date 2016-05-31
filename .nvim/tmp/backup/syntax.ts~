@@ -1,0 +1,503 @@
+/// <reference path="../dts/ramda.d.ts" />
+/// <reference path="./lb-globals"/>
+/// <reference path="./utils"/>
+/// <reference path="./objectid"/>
+
+import G = LBGlobals;
+import CMP = LBGlobals.Comparators;
+import Subject = LBGlobals.Subject;
+import ISubjectBasics = LBGlobals.ISubjectBasics;
+import MK = LBGlobals.Action;
+
+module Syntax {
+    const smallChunks = {
+        //with templatePips for setting content and eventPips for triggering userinteraction
+        'operator':         "<button class='operator'></button>",
+            //fixedOperator:    "<p class ='operator'></p>",
+        'comparator':       "<button class='comparator'></button>",
+            //with templatePip and statePip: state = free or source of value: color?
+        'value':            "<button class='value'></button>",
+
+            //no templatePip, eventual statePip, and id (theoretical not needed)?
+        'subjectWrap':      "<div class='subject'></div>",
+            // caseWrap:         "<div class= 'case'></div>",
+        'initCaseWrap':     "<div class='cases'></div>",
+        'variableWrap':     "<div class='variable'></div>",
+        'comma':            "<span>&#44;</span>",//class optional for optionalReduce
+
+            //fixed, without templatePip
+        'leftAdd':          "<button class='add-left'>&#8230;</button>",
+        'rightAdd':         "<button class='add-right'>&#8230;</button>",
+
+        'leftParenthesis':  "<i class='parenthesis'>&#40;</i>",
+        'rightParenthesis': "<i class='parenthesis'>&#41;</i>",
+        'outerCondition':   "<p class='operator'>&#63;</p>",
+        'default':        "<p class='operator'>default</p>",
+        'return':         "<p class='return'>-&#187;</p>",
+        'caseOperator':     "<button class='operator'>case</button>",
+
+            //wrappingtags for seperate use
+        'closeTag':         "</div>",
+        'conditonOpenTag':  "<div class='condition'>",
+        'valueOpenTag':     "<div class='value'>",
+        'outerConditionOpenTag':"<div class='subject outer-condition'>",
+        'caseOpenTag':      "<div class='case'>"
+    };
+
+    //const grammarDef = {
+        //andOrConditionRightWrapper: {
+            //wrap:     ['subjectWrap'],
+            //append:   ['operator', 'leftParenthesis', 'basicCondition', 'rightParenthesis', 'rightAdd'],
+            //operator: ['operator'],
+            //right:    ['condition'],
+        //},
+        //andOrConditionLeftWrapper: {
+            //wrap:     ['subjectWrap'],
+            //prepend:  ['operator', 'leftParenthesis', 'basicCondition', 'rightParenthesis', 'rightAdd'],
+            //left:     ['condition'],
+            //operator: ['operator']
+        //},
+        //not: {
+            //wrap:     ['subjectWrap'],
+            //prepend:  ['leftAdd', 'operator', 'leftParenthesis'],
+            //append:   ['rightParenthesis', 'rightAdd'],
+            //operator: ['operator'] //LETOP alleen via left-add toegankelijk
+        //},
+        //singleLeft: {
+            //wrap:     ['subjectWrap'],
+            //prepend:  ['leftAdd', 'leftParenthesis', 'valueBody', 'operator'],
+            //append:   ['rightParenthesis', 'rightAdd'],
+            //left:     [ 'valueBody'],
+            //operator: ['operator'],
+        //},
+        //singleRight: {
+            //wrap:     ['subjectWrap'],
+            //prepend:  ['leftAdd', 'leftParenthesis'],
+            //append:   ['operator', 'valueBody', 'rightParenthesis', 'rightAdd'],
+            //operator: ['operator'],
+            //right:    ['valueBody']
+        //},
+        //optionalReduce: {
+            //wrap:     ['subjectWrap'],
+            //prepend:  ['leftAdd', 'operator', 'leftParenthesis'],
+            //append:   ['comma', 'leftAdd', 'rightParenthesis', 'rightAdd'],
+            //operator: ['operator'],
+                ////right: ['comma']//special comma??
+        //},
+        //multipleCondition: {
+            //wrap:     ['subjectWrap'],
+            //prepend:  ['leftAdd', 'operator', 'leftParenthesis'],
+            //append:   ['comma', 'basicCondition' , 'rightParenthesis', 'rightAdd'],
+            //operator: ['operator'],
+            //right:    ['condition']
+        //},
+        //multipleRange: {
+            //wrap:     ['subjectWrap'],
+            //prepend:  ['leftAdd', 'operator', 'leftParenthesis'],
+            //append:   ['comma', 'basicCondition' , 'comma', 'valueBody', 'rightParenthesis', 'rightAdd'],
+            //operator: ['operator'],
+            //right:    ['condition', 'valueBody', 'valueBody']
+        //},
+        //valueBody: {
+            ////wrap: ['valueWrap'],
+            //html: ['valueOpenTag', 'leftAdd', 'value', 'rightAdd', 'closeTag']
+        //},
+        //condition: {
+            //children: ['comparison', 'valueBody', 'valueBody']
+        //},
+        //comparison: {
+            //operator: ['operator'],
+            //children: ['valueBody', 'valueBody']
+        //},
+
+        ////basicCase: {
+            //////wrap:    'subjectWrap',
+            ////append:   ['caseBody'],
+            //////geen operator?? of operator == casebody? KEUZE geen operator//operator: ['caseBody']
+            ////left:     ['caseBody'],
+        ////},
+        ////initCase: {// let keuze niet ERNA caseBody initieren om casebody buitne defaultwrap, maar caseBody via prepend binnen wrap
+            ////wrap:     ['initCaseWrap'],
+            ////prepend:  ['caseBody', 'dflt'/*=operator hier!*/],
+            ////left:     ['case'],
+            ////operator: ['branch']/*=operator hier! */
+        ////},
+        //'case': {
+            ////operator:['caseOperator'],
+            //left: ['condition', 'valueBody'],
+        //},
+        //branch: {
+            //children: ['return']
+        //},
+        //'return': {
+            //children: ['valueBody'],
+            //operator: ['operator']
+        //}
+    //};
+    var grammarDef = {//tbv standaardisatie anroep warp ook een array al mag lengte niet langer dan 1 zijn
+        'andOrConditionRightWrapper': {
+            'type': 'subject',//condition
+            //operator = if, and, or
+            'right': ['comparison'],
+        },
+        'andOrConditionLeftWrapper': {
+            'type': 'subject',//condition
+            'left': ['comparison'],
+            //operator = if, and, or
+        },
+        'not': {
+            'type': 'subject',
+            //operator: not
+        },
+        'singleLeft': {
+            'type': 'subject',
+            'left': ['value'],
+            //operator: //+, - ,*, /,
+        },
+        'singleRight': {
+            'type': 'subject',
+            //operator: //+, - ,*, /,
+            'right': ['value']
+        },
+        'reduce': {
+            'type': 'subject',
+            //operator: 'operator', //count, min, max
+            //right: ['comma']//special comma??
+        },
+        'arrayCondition': {
+            'type': 'subject',
+            //operator: 'operator',//findone, filter, sort
+            'right': ['condition']
+        },
+        // multipleRange: { find(n)
+        //     operator: 'operator', find(n)
+        //     right: ['condition', 'value', 'value']
+        // }
+        'value': {
+            'type':'value',
+        },
+        'condition': {
+            'type': 'subject',
+            //operator:'operator' //if and or
+            'children': ['comparison']
+        },
+        'comparison': {
+            'type': 'comparison',//'condition'->
+            //comparator: 'comparator,
+            'children': ['value', 'value'],
+        },
+        'case': {
+            'type': 'subject',
+            //operator = case || if elsecasebody? KEUZE geen
+            //operator, //operator: ['caseBody']
+            //'left': ['case'],
+            'children': ['condition', 'branch']
+        },
+        'branch': {
+            'type': 'subject',
+            //operator = return
+            'children': ['value']
+        }
+    };
+
+    export const locationSpecRequired = function(operator: string): boolean {
+        return R.contains(operator, ['and', 'or', 'plus', 'minus', 'multiply', 'divide']);
+    };
+
+    export function defineGrammar(subjectSpecificator: string, locationSpecification?: string): string {
+        var grammar;
+        switch (subjectSpecificator) {
+            case 'branch':
+                grammar = 'branch';
+                break;
+            case 'case':
+                grammar = 'case';
+                break;
+            case 'and':
+            case 'or':
+                grammar = (locationSpecification === 'left') ? 'andOrConditionLeft' : 'andOrConditionRight';
+                break;
+            case 'plus':
+            case 'minus':
+            case 'multiply':
+            case 'divide':
+                grammar = (locationSpecification === 'left') ? 'singleLeft' : 'singleRight';
+                break;
+            case 'not':
+                grammar = 'not';
+                break;
+            case 'count':
+            case 'minimum':
+            case 'maximum':
+                grammar = 'reduce';
+                break;
+            case 'findone':
+            case 'filter':
+            case 'sort':
+                grammar = 'arrayCondition';
+                break;
+            case 'findn':
+                grammar ='arrayRange';
+                break;
+            default://niks
+        }
+        return grammar;
+    };
+
+    const composedChunks = ['value', 'condition', 'comparison', 'case', 'branch']
+    const chunkDefinitionKeys = ['wrap', 'prepend', 'append'];
+
+    // Uses the subject specification to construct html snippets that represent the subject
+    export function defineChunk(subjectSpecificator) {
+        var addChunk = function(recipe) {
+            var subChunk = '';
+            for (var i = 0, len = recipe.length; i < len; i++) {
+                // if(R.contains(R.keys(composedChunks), recipe[i]))
+                //  subChunk = subChunk + addChunk(composedChunks[recipe[i]]);
+                if (R.contains(recipe[i], composedChunks)){
+                    subChunk = subChunk + addChunk(grammarDef[recipe[i]].html);
+                } else {
+                    subChunk = subChunk + smallChunks[recipe[i]];
+                }
+            }
+            return subChunk;
+        };
+
+        const grammarToUse = defineGrammar(subjectSpecificator);
+        let chunk = {};
+        for (let i = 0; i < chunkDefinitionKeys.length; i++){
+            if (grammarDef[grammarToUse][chunkDefinitionKeys[i]]) {
+                chunk[chunkDefinitionKeys[i]] = addChunk(grammarDef[grammarToUse][chunkDefinitionKeys[i]]);
+            }
+        }
+        return chunk;
+    }
+
+    const composeMessage = function(action: string, it: string, messageValue?) {
+        return {
+            action: action,
+            value: messageValue,
+            it: it
+        };
+    };
+
+    interface Subjects {
+        [subjectId:string]: G.IValue|G.IOperator|G.IComparator
+    }
+
+    export function createSubTree(recipe, subSpec, parentIt, childIt) {
+        // gebruik subSpec om recursief de subject subtree te bouwen
+        // de root subject (= subSpec) moet worden gekoppeld met subject parentIt
+        // childIt moet worden gekoppeld en een van de children van de 
+        // subtree, maar welke? Als het recipe een left/right bevat, is dat het punt
+        // Komen er niet meerdere left/rights voor?
+
+    }
+    //
+    // creates a new subject and positions it in the current subject collection
+    // referenceIt is the reference subject in the collection
+    // subjectSpecificator is the new subject specificator, like 'minus'
+    export function createSubjects1(subjects: Subjects[], pinIt: string, subjectSpecificator: string, locationSpecificator?: string) {
+        let messages = [],
+            subjectIt = ObjectId.create();
+            pin = R.find(R.propEq('it', pinIt), subjects),
+            areaName = pin.areaName,
+            grammarToUse = defineGrammar(subjectSpecificator, locationSpecificator);
+
+        // use the recipe to add subjects as messages
+        // `pin` is the `it` of the reference the new subjects are added to using left/right - pin can be undefined
+        // in case of internal subjects like branch and condition
+        function addSubjects(recipe: string[], parentIt: string, subjectIt: string, pin?: string, leftOrRight?: string) {//, isInitiatingSubject
+            // create the subject, the parent of the recipe
+            // find subject message
+            let subjectMessage = R.find(R.propEq('it', subjectIt), messages);
+            if (!subjectMessage) {
+                // create the message for the subject
+                subjectMessage = {
+                    'value': {
+                        'areaName': areaName,
+                        'it': subjectIt,
+                        'children': [pin],
+                        'selected': subjectSpecificator,
+                        'parent': parentIt
+                    },
+                    'it': subjectIt
+                };
+            }
+            messages.push(composeMessage(MK[MK.create], subjectIt, subjectMessage));
+
+            for (let i = 0; i < recipe.length; i++) {
+
+                const subSubjectIt = ObjectId.create();
+
+                let messageValue: any = {
+                    areaName: areaName,
+                    it: subSubjectIt
+                };
+
+                if (recipe[i] !== 'value') {
+                    messageValue.children = [];
+                }
+
+                // .. and position the new subSubjectIt in the subject collection tree
+                if (subjectMessage) {
+                    // add message to parent's children, head or tail depending on leftOrRight
+                    let subjectMessageValue = subjectMessage.value;
+                    if (leftOrRight === 'left') {
+                        //omdat als left array.length nooit >1 gaat dit goed
+                        subjectMessageValue.children.unshift(subSubjectIt);
+                    } else {
+                        subjectMessageValue.children.push(subSubjectIt);
+                    }
+                    messageValue.parent = subjectIt;
+                }
+
+                // add `type`, `selected` and `enum` to the message
+                switch (recipe[i]) {
+                    case 'value':
+                        messageValue = R.merge(messageValue, {
+                            'type': 'value',
+                            'selected': findDefaultValue('context') || this.pub.args,
+                            // 'selected': findDefaultValue(context) || this.pub.args,
+                            //defaultValue: beter definieren in subjectCollection?: nee dat moet hier, met een globale functie die werkt met subjects en subjectId
+                            //'default': args.pub.value, //als 2e van condition: kijken numbebr, text of boolean?
+                            // 'enum': R.keys(args), //possibleValues, contextafhankelijk,
+                            'enum': ['minus', 'plus'], //possibleValues, contextafhankelijk,
+                            //R.keys(args) = allpossiblevalues inthis context
+                        });
+                        break;
+                    case 'comparison':
+                        //var comparators = ['&#61;','&ne;','&lt;','&gt;','&le;','&ge;'];
+                        messageValue = R.merge(messageValue, {
+                            'type': 'comparator',
+                            'selected': CMP[CMP.eq],//'&#61;'
+                            'enum': CMP,//all comparators are allowed
+                        });
+                        break;
+                    case 'condition':
+                        messageValue = R.merge(messageValue, {
+                            'type': 'subject',
+                            'selected': '?',
+                            'enum': ['delete'],//empty: no other operators allowed, only delete?
+                        });
+                        break;
+                    case 'case':
+                        messageValue = R.merge(messageValue, {
+                            'type': 'subject',
+                            'selected': 'case',
+                            'enum': ['delete', 'case'],//empty: no other operators allowed, only delete?
+                        });
+                        break;
+                    case 'branch' :
+                        messageValue = R.merge(messageValue, {
+                            'type': 'subject',
+                            'selected': 'case',
+                            'enum': ['delete', 'case'],//empty: no other operators allowed, only delete?
+                        });
+                        break;
+                    default://case 'operator':
+                        messageValue = R.merge(messageValue, {
+                            'type': 'subject',
+                            'selected': subjectSpecificator,
+                            'enum': (findInterchangeableOperators(subjectSpecificator)).concat(findDeleteOperators(subjectSpecificator)),//empty: no other operators allowed, only delete?
+                        });
+                }
+                // transform the messageValue into a pipIn/pipOut format
+                messages.push(composeMessage(MK[MK.create], subSubjectIt, messageValue));
+
+                //onderstaande moet NAdat messageValue gepusht: die moet beschikbaar zijn als earlierDefinedParentMessage
+                if (recipe[i] === 'condition'  || recipe[i] ===  'comparison' || recipe[i] ===  'case' || recipe[i] ===  'branch'){
+                    //dus (recipe[i] !== 'operator' && recipe[i] !== 'valueBody' && recipe[i] !=='dflt')
+                    //for (let sc = 0, sclen = grammarDef[recipe[i]].children.length; sc < sclen; sc++) {
+                        //const childRecipe = grammarDef[recipe[i]].children[sc];
+                        //messages.concat(addSubjects(childRecipe, subSubjectIt, 'right'));
+                    //}
+                        const childRecipe = grammarDef[recipe[i]].children;
+                        messages.concat(addSubjects(childRecipe, subSubjectIt, recipe[i]));
+                }
+            }
+        }
+
+        // insert the new operator inbetween the reference and the parent of the reference by ...
+        // ...setting the new parent for reference, which is the new operator
+        messages.push(composeMessage(MK[MK.update], pinIt, {'parent': subjectIt}));
+
+        // ...adding the new child to the old parent of the reference, so insert the new operator
+        if (pin.parent) {
+            // var parentSubject = R.find(R.propEq('id', subject.parent), subjects);
+            let pinParent = <G.IOperator|G.IComparator>R.find(R.propEq('it', pin.parent), subjects);
+            if (pinParent) {
+                let siblings = pinParent.children,
+                    position = R.indexOf(pin.it, siblings);
+                siblings[position] = subjectIt;
+                messages.push(composeMessage(MK[MK.update], pin.parent, {children: siblings}));
+            }
+        }
+
+        var subjectDefinitionKeys = ['left' ,'right'];
+        //var subjectDefinitionKeys = ['operator', 'left' ,'right'];
+
+        for (let s = 0; s < subjectDefinitionKeys.length; s++) {
+            if (grammarDef[grammarToUse][subjectDefinitionKeys[s]]) {
+                let leftOrRight = subjectDefinitionKeys[s];
+                addSubjects(grammarDef[grammarToUse][leftOrRight], pin.parent, subjectIt, pinIt, leftOrRight);
+            }
+        }
+
+        return messages;
+    };
+
+    function findDefaultValue(context) {
+        return 'defaultValue';
+    }
+
+    function findInterchangeableOperators(operator): string[] {
+        return [];
+    }
+
+    function findDeleteOperators(operator): string[] {
+        return [];
+    }
+
+    export function deleteSubjects(subjects: ISubjectBasics[], subjectId: string, locationSpecification: string){
+        var messages = [],
+            subject = subjects[subjectId],
+            parentSubject = R.find(R.propEq('id', subject.parent), subjects),
+            siblings = parentSubject.children;
+
+        function deleteChildSubjects(subj, locSpec?) {
+            var children = subj.children;
+            if(children){
+                var len = children.length;
+                if (!locSpec){
+                    for(var i = 0; i<len; i++){
+                        let subChild = R.find(R.propEq('id', subj.children[i]), subjects);
+                        if(subChild){
+                            deleteChildSubjects(subChild);
+                        }
+                        messages.push(composeMessage(MK[MK.delete], subj.it));
+                    }
+                } else if (len === 2){
+                    var siblingToRemove  = (locSpec === 'left') ? subj.children[0]: subj.children[1],
+                        remainingSibling = (locSpec === 'left') ? subj.children[1]: subj.children[0];
+                    deleteChildSubjects(siblingToRemove);
+                    siblings.push(remainingSibling);
+                    messages.push(composeMessage(MK[MK.delete], subj.it));
+                } else {//len !== 2
+                    //eventueel bij and en or het geval?: dan mss behoefte anders opbouwen?
+                    throw new Error('unable to handle delete of operator: ' + subject.selected +
+                            ' with locationspecification: '+ locationSpecification + 'and id: ' + subject.id);
+                }
+            }
+        }
+
+        deleteChildSubjects(subject, locationSpecification);
+        messages.push(MK[MK.update], {
+            id: subject.parent,
+            children: R.filter(function(sibling) {
+                return !R.propEq('it', subjectId, sibling);
+            }, siblings)
+        });
+        return messages;
+    }
+}

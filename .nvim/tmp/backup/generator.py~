@@ -1,0 +1,106 @@
+from itertools import dropwhile
+
+class Generator:
+
+    def __init__(self, service):
+        self.service = service
+        self.threshold = 1
+        self.alphabet = ' abcdefghijklmnopqrstuvwxyz'
+
+    def inword(self, word, ed=0):
+        """Returns candidate words based on word and the edit distance, ed <= 2
+           Scope: public
+        """
+        if ed == 0:
+            return list(set(self.known(self.edits0(word))))
+        elif ed == 1:
+            return list(set(self.known(self.edits1(word)) + self.known(self.edits0(word))))
+        elif ed == 2:
+            return list(set(self.known(self.edits2(word))))
+
+    def known(self, words):
+        """Returns the set from words that are contained by the lexicon"""
+        #keep the empty space as a candidate
+        return [w for w in words if w == "" or self.service.known(w)]
+
+    def splits(self, word):
+        """Return a list of all possible (first, rest) pairs that comprise word."""
+        return [(word[:i], word[i:]) for i in range(len(word)+1)]
+
+    def edits0(self, word):
+        return [word]
+
+    def edits1(self, word):
+        """Return all strings that are one edit away from word"""
+        pairs      = self.splits(word)
+        deletes    = [a+b[1:]           for (a, b) in pairs if b]
+        transposes = [a+b[1]+b[0]+b[2:] for (a, b) in pairs if len(b) > 1]
+        replaces   = [a+c+b[1:]         for (a, b) in pairs for c in self.alphabet if b]
+        inserts    = [a+c+b             for (a, b) in pairs for c in self.alphabet]
+        return deletes + transposes + replaces + inserts
+
+    def edits2(self, word):
+        """Return all strings that are two edits away from this word."""
+        return [e2 for e1 in self.edits1(word) for e2 in self.edits1(e1)]
+
+    def merge(self, word, context, scope=10):
+        """Return longest possible known word based merging words with previous words
+           Scope: public
+           word: word to merge with
+           history: list of words to merge with word
+           scope: number of words in history to try to merge
+        """
+        n = min(len(context), scope)
+        compound = word
+        known_compounds = []
+        nr_merged_words = 0
+        for i in range(n-1, -1, -1):
+            compound = context[i] + compound
+            nr_merged_words += 1
+            if len(self.known([compound])) > 0:
+                known_compounds.append((compound, nr_merged_words))
+
+        return known_compounds
+
+    def split(self, word, min_len=2):
+        """Return two parts of word that form a set of known words"""
+        splitted = []
+        for i in range(min_len, len(word)-1):
+            if len(self.known(self.edits0(word[:i]))) > 0 and len(self.known(self.edits0(word[i:]))) > 0:
+                splitted.append("%s %s" % (word[:i], word[i:]))
+        return splitted
+
+    def candidates(self, word, context, ed=2):
+        """Returns candidate states by inword transformations of word, by splitting word
+           and by merging word with words in the context. The context consists of the
+           original words. If word is in the lexicon...
+           If no candidate is found...
+        """
+        candidates = []
+
+        cands = self.inword(word, 1)
+        if len(cands) > 0:
+            candidates.extend(cands)
+
+        print(len(cands))
+        if len(candidates) < 30:
+            print('more')
+            cands = self.inword(word, ed=ed)
+            if len(cands) > 0:
+                candidates.extend(cands)
+
+        # add possible candidates from merging word with the context
+        cands = self.merge(word, context)
+        if len(cands) > 0:
+            candidates.extend(cands)
+
+        # add possible candidates by splitting word
+        cands = self.split(word)
+        if len(cands) > 0:
+            candidates.extend(cands)
+
+        # handle null candidates case
+        if len(candidates) == 0:
+            candidates.append(word)
+
+        return list(set(candidates))

@@ -1,0 +1,1026 @@
+var LBGlobals;
+(function (LBGlobals) {
+    LBGlobals.idCounter = 0;
+    (function (Subject) {
+        Subject[Subject["areaName"] = 0] = "areaName";
+        Subject[Subject["id"] = 1] = "id";
+        Subject[Subject["type"] = 2] = "type";
+        Subject[Subject["enum"] = 3] = "enum";
+        Subject[Subject["selected"] = 4] = "selected";
+        Subject[Subject["parent"] = 5] = "parent";
+        Subject[Subject["children"] = 6] = "children";
+        Subject[Subject["default"] = 7] = "default";
+    })(LBGlobals.Subject || (LBGlobals.Subject = {}));
+    var Subject = LBGlobals.Subject;
+    (function (SubjectType) {
+        SubjectType[SubjectType["subject"] = 0] = "subject";
+        SubjectType[SubjectType["value"] = 1] = "value";
+        SubjectType[SubjectType["condition"] = 2] = "condition";
+    })(LBGlobals.SubjectType || (LBGlobals.SubjectType = {}));
+    var SubjectType = LBGlobals.SubjectType;
+    (function (Comparators) {
+        Comparators[Comparators["eq"] = 0] = "eq";
+        Comparators[Comparators["ne"] = 1] = "ne";
+        Comparators[Comparators["lt"] = 2] = "lt";
+        Comparators[Comparators["gt"] = 3] = "gt";
+        Comparators[Comparators["lte"] = 4] = "lte";
+        Comparators[Comparators["gte"] = 5] = "gte";
+    })(LBGlobals.Comparators || (LBGlobals.Comparators = {}));
+    var Comparators = LBGlobals.Comparators;
+    (function (Operators) {
+        Operators[Operators["delete"] = 0] = "delete";
+        Operators[Operators["deleteLeft"] = 1] = "deleteLeft";
+        Operators[Operators["deleteRight"] = 2] = "deleteRight";
+        Operators[Operators["default"] = 3] = "default";
+        Operators[Operators["case"] = 4] = "case";
+        Operators[Operators["or"] = 5] = "or";
+        Operators[Operators["and"] = 6] = "and";
+        Operators[Operators["switch"] = 7] = "switch";
+        Operators[Operators["plus"] = 8] = "plus";
+        Operators[Operators["minus"] = 9] = "minus";
+        Operators[Operators["multiply"] = 10] = "multiply";
+        Operators[Operators["divide"] = 11] = "divide";
+        Operators[Operators["not"] = 12] = "not";
+        Operators[Operators["count"] = 13] = "count";
+        Operators[Operators["minimum"] = 14] = "minimum";
+        Operators[Operators["maximum"] = 15] = "maximum";
+        Operators[Operators["find1"] = 16] = "find1";
+        Operators[Operators["sort"] = 17] = "sort";
+        Operators[Operators["filter"] = 18] = "filter";
+        Operators[Operators["findn"] = 19] = "findn";
+    })(LBGlobals.Operators || (LBGlobals.Operators = {}));
+    var Operators = LBGlobals.Operators;
+    (function (Action) {
+        Action[Action["update"] = 0] = "update";
+        Action[Action["create"] = 1] = "create";
+        Action[Action["remove"] = 2] = "remove";
+        Action[Action["insert"] = 3] = "insert";
+        Action[Action['delete'] = 4] = 'delete';
+    })(LBGlobals.Action || (LBGlobals.Action = {}));
+    var Action = LBGlobals.Action;
+    (function (MessageKey) {
+        MessageKey[MessageKey["update"] = 0] = "update";
+        MessageKey[MessageKey["action"] = 1] = "action";
+        MessageKey[MessageKey["it"] = 2] = "it";
+    })(LBGlobals.MessageKey || (LBGlobals.MessageKey = {}));
+    var MessageKey = LBGlobals.MessageKey;
+    (function (Arguments) {
+        Arguments[Arguments["pub"] = 0] = "pub";
+        Arguments[Arguments["sub"] = 1] = "sub";
+        Arguments[Arguments["drop"] = 2] = "drop";
+        Arguments[Arguments["variables"] = 3] = "variables";
+        Arguments[Arguments["pre"] = 4] = "pre";
+    })(LBGlobals.Arguments || (LBGlobals.Arguments = {}));
+    var Arguments = LBGlobals.Arguments;
+    (function (AreaNames) {
+        AreaNames[AreaNames["subPipClass"] = 0] = "subPipClass";
+        AreaNames[AreaNames["action"] = 1] = "action";
+        AreaNames[AreaNames["it"] = 2] = "it";
+        AreaNames[AreaNames["main"] = 3] = "main";
+        AreaNames[AreaNames["variableName"] = 4] = "variableName";
+        AreaNames[AreaNames["preMain"] = 5] = "preMain";
+        AreaNames[AreaNames["preVariableName"] = 6] = "preVariableName";
+        AreaNames[AreaNames["preSubPipClass"] = 7] = "preSubPipClass";
+        AreaNames[AreaNames["preAction"] = 8] = "preAction";
+        AreaNames[AreaNames["preIt"] = 9] = "preIt";
+    })(LBGlobals.AreaNames || (LBGlobals.AreaNames = {}));
+    var AreaNames = LBGlobals.AreaNames;
+})(LBGlobals || (LBGlobals = {}));
+
+/// <reference path='./lb-globals.ts'/>
+var Utils;
+(function (Utils) {
+    function uniqueId(prefix) {
+        LBGlobals.idCounter++;
+        var idx = LBGlobals.idCounter.toString();
+        return (prefix !== void 0)
+            ? prefix + idx
+            : idx;
+    }
+    Utils.uniqueId = uniqueId;
+    function trim(str) {
+        return str.replace(/^\s+|\s+$/g, '');
+    }
+    Utils.trim = trim;
+    function caseUp(str) {
+        return str.charAt(0).toUpperCase() + str.substring(1);
+    }
+    Utils.caseUp = caseUp;
+    function caseDown(str) {
+        return str.charAt(0).toLowerCase() + str.substring(1);
+    }
+    Utils.caseDown = caseDown;
+    function mergeTermsCamelCase(terms) {
+        return caseDown(R.join('', R.map(caseUp, R.sort(function (a, b) { return a < b ? -1 : a === b ? 0 : 1; }, R.filter(function (a) { return a !== ''; }, terms.split(' '))))));
+    }
+    Utils.mergeTermsCamelCase = mergeTermsCamelCase;
+    function quicksort(items, left, right) {
+        function swap(items, firstIndex, secondIndex) {
+            var temp = items[firstIndex];
+            items[firstIndex] = items[secondIndex];
+            items[secondIndex] = temp;
+        }
+        function partition(items, left, right) {
+            var pivot = items[Math.floor((right + left) / 2)], i = left, j = right;
+            while (i <= j) {
+                while (items[i] < pivot) {
+                    i++;
+                }
+                while (items[j] > pivot) {
+                    j--;
+                }
+                if (i <= j) {
+                    swap(items, i, j);
+                    i++;
+                    j--;
+                }
+            }
+            return i;
+        }
+        var index;
+        if (items.length > 1) {
+            index = partition(items, left, right);
+            if (left < index - 1) {
+                this.quicksort(items, left, index - 1);
+            }
+            if (index < right) {
+                this.quicksort(items, index, right);
+            }
+        }
+        return items;
+    }
+    Utils.quicksort = quicksort;
+    function insert(idx, value, store) {
+        store.splice(idx, 0, value);
+    }
+    Utils.insert = insert;
+    function remove(idx, len, store) {
+        store.splice(idx, len);
+    }
+    Utils.remove = remove;
+    function merge(target, seed) {
+        var props = R.keys(seed);
+        var idx = -1, len = props.length;
+        while (++idx < len) {
+            target[props[idx]] = seed[props[idx]];
+        }
+    }
+    Utils.merge = merge;
+    function branch(cond, arg1, arg2) {
+        if ((R.is(Function, cond) && cond()) || cond !== false) {
+            if (R.is(Function, arg1)) {
+                return arg1();
+            }
+            else {
+                return arg1;
+            }
+        }
+        else {
+            if (R.is(Function, arg2)) {
+                return arg2();
+            }
+            else {
+                return arg2;
+            }
+        }
+    }
+    Utils.branch = branch;
+})(Utils || (Utils = {}));
+
+/// <reference path="./expressionJS.ts" />
+/// <reference path="./utils.ts" />
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var Expression;
+(function (Expression) {
+    var Leaf = (function () {
+        function Leaf(operator, it) {
+            this.selected = operator;
+            this.it = it ? it : Utils.uniqueId();
+        }
+        return Leaf;
+    })();
+    var Node = (function (_super) {
+        __extends(Node, _super);
+        function Node(operator, it, left, right) {
+            _super.call(this, operator, it);
+            this.children = [left];
+            if (right)
+                this.children.push(right);
+        }
+        return Node;
+    })(Leaf);
+    var BlockOperator = (function (_super) {
+        __extends(BlockOperator, _super);
+        function BlockOperator(operator, it, nodes) {
+            _super.call(this, operator, it);
+            this.operator = operator;
+            this.it = it;
+            this.children = nodes;
+        }
+        return BlockOperator;
+    })(Leaf);
+    Expression.BlockOperator = BlockOperator;
+    var NumberOperator = (function (_super) {
+        __extends(NumberOperator, _super);
+        function NumberOperator(operator, it, left, right) {
+            _super.call(this, operator, it, left, right);
+        }
+        return NumberOperator;
+    })(Node);
+    Expression.NumberOperator = NumberOperator;
+    var StringOperator = (function (_super) {
+        __extends(StringOperator, _super);
+        function StringOperator(operator, it, left, right) {
+            _super.call(this, operator, it, left, right);
+        }
+        return StringOperator;
+    })(Node);
+    Expression.StringOperator = StringOperator;
+    var BooleanOperator = (function (_super) {
+        __extends(BooleanOperator, _super);
+        function BooleanOperator(operator, it, node) {
+            _super.call(this, operator, it, node);
+        }
+        return BooleanOperator;
+    })(Node);
+    Expression.BooleanOperator = BooleanOperator;
+    var LogicalOperator = (function (_super) {
+        __extends(LogicalOperator, _super);
+        function LogicalOperator(operator, it, left, right) {
+            _super.call(this, operator, it, left, right);
+        }
+        return LogicalOperator;
+    })(Node);
+    Expression.LogicalOperator = LogicalOperator;
+    var ArrayOperator = (function (_super) {
+        __extends(ArrayOperator, _super);
+        function ArrayOperator(operator, it, left, right) {
+            _super.call(this, operator, it, left, right);
+        }
+        return ArrayOperator;
+    })(Node);
+    Expression.ArrayOperator = ArrayOperator;
+    var ReduceOperator = (function (_super) {
+        __extends(ReduceOperator, _super);
+        function ReduceOperator(operator, it, node) {
+            _super.call(this, operator, it, node);
+        }
+        return ReduceOperator;
+    })(Node);
+    Expression.ReduceOperator = ReduceOperator;
+    var Condition = (function (_super) {
+        __extends(Condition, _super);
+        function Condition(operator, it, left, right) {
+            _super.call(this, operator, it, left, right);
+        }
+        return Condition;
+    })(Node);
+    Expression.Condition = Condition;
+    var Comparators = (function (_super) {
+        __extends(Comparators, _super);
+        function Comparators(operator, it, left, right) {
+            _super.call(this, operator, it, left, right);
+        }
+        return Comparators;
+    })(Node);
+    Expression.Comparators = Comparators;
+    var Value = (function (_super) {
+        __extends(Value, _super);
+        function Value(value, it) {
+            _super.call(this, value, it);
+        }
+        return Value;
+    })(Leaf);
+    Expression.Value = Value;
+    function makeTree(collection) {
+        var index = prepareListForTree(collection);
+        return buildTreeFromCollection(collection, index);
+    }
+    Expression.makeTree = makeTree;
+    function search(tree, it) {
+        var target = null;
+        var ancestor = null;
+        var position;
+        function find(node, it, anc, found, pos) {
+            if (found === void 0) { found = false; }
+            if (node.it === it) {
+                found = true;
+                target = node;
+                position = pos;
+                ancestor = anc;
+            }
+            else {
+                if (node.children && node.children.length > 0) {
+                    var i = -1;
+                    while (++i < node.children.length && !found) {
+                        find(node.children[i], it, node, found, i);
+                    }
+                }
+            }
+        }
+        find(tree, it);
+        return [ancestor, position, target];
+    }
+    Expression.search = search;
+    function insert(tree, nodeName, it, dir) {
+        var _a = search(tree, it), ancestor = _a[0], position = _a[1], insertion = _a[2];
+        var node = makeNode(nodeName, insertion, dir);
+        ancestor.children[position] = node;
+    }
+    Expression.insert = insert;
+    function remove(tree, it, dir) {
+        if (dir === void 0) { dir = 'left'; }
+        var _a = search(tree, it), ancestor = _a[0], position = _a[1], erase = _a[2];
+        if (erase instanceof Node) {
+            if (dir === 'left') {
+                ancestor.children[position] = erase.children[0];
+            }
+            else {
+                ancestor.children[position] = erase.children[1];
+            }
+        }
+    }
+    Expression.remove = remove;
+    function diff(tree1, tree2) {
+        var diffNode = [];
+        function walk(n1, n2) {
+            if (!(equalConstructor(n1, n2) && equalValue(n1, n2) && equalNrChildren(n1, n2))) {
+                diffNode.push([n1, n2]);
+                return false;
+            }
+            else if (n1.children) {
+                var i = -1;
+                while (++i < n1.children.length) {
+                    walk(n1.children[i], n2.children[i]);
+                }
+            }
+        }
+        walk(tree1, tree2);
+        return diffNode;
+    }
+    Expression.diff = diff;
+    function swap(tree, it1, it2) {
+        var _a = search(tree, it1), anc1 = _a[0], pos1 = _a[1], tree1 = _a[2];
+        var _b = search(tree, it2), anc2 = _b[0], pos2 = _b[1], tree2 = _b[2];
+        var clone = R.clone(tree1);
+        anc1.children[pos1] = tree2;
+        anc2.children[pos2] = clone;
+    }
+    Expression.swap = swap;
+    function toString(tree) {
+        var path = '';
+        function print(tree, level) {
+            if (level === void 0) { level = 0; }
+            path += "" + R.join('', R.repeat('>', level)) + tree.constructor.name;
+            if (tree.children && tree.children.length > 0) {
+                var i = -1;
+                while (++i < tree.children.length) {
+                    print(tree.children[i], level + 1);
+                }
+            }
+        }
+        print(tree);
+        return path;
+    }
+    Expression.toString = toString;
+    function prepareListForTree(collection) {
+        var index = {};
+        R.forEachIndexed(function (item, idx) {
+            index[item.it] = idx;
+        }, collection);
+        return index;
+    }
+    function buildTreeFromCollection(coll, index) {
+        var tree = source(coll[0]);
+        return tree;
+        function source(item) {
+            if (item.type === 'subject') {
+                switch (item.selected) {
+                    case 'plus':
+                    case 'minus':
+                    case 'multiply':
+                    case 'divide':
+                        return new NumberOperator(item.selected, item.it, source(coll[index[item.children[0]]]), source(coll[index[item.children[1]]]));
+                        break;
+                    case 'and':
+                    case 'or':
+                        return new LogicalOperator(item.selected, item.it, source(coll[index[item.children[0]]]), source(coll[index[item.children[1]]]));
+                    case 'not':
+                        return new BooleanOperator(item.selected, item.it, source(coll[index[item.children[0]]]));
+                    case 'count':
+                    case 'maximum':
+                    case 'minimum':
+                        return new ReduceOperator(item.selected, item.it, source(coll[index[item.children[0]]]));
+                    case 'findOne':
+                    case 'filter':
+                    case 'sort':
+                        return new ArrayOperator(item.selected, item.it, source(coll[index[item.children[0]]]), source(coll[index[item.children[1]]]));
+                    case 'branch':
+                        return new BlockOperator(item.selected, item.it, R.addIndex(R.map)(function (child, idx, children) { return source(coll[index[children[idx]]]); }, item.children));
+                    case 'case':
+                        return new Condition(item.selected, item.it, source(coll[index[item.children[0]]]), source(coll[index[item.children[1]]]));
+                }
+            }
+            else if (item.type === 'comparison') {
+                switch (item.selected) {
+                    case 'lt':
+                    case 'lte':
+                    case 'gt':
+                    case 'gte':
+                    case 'eq':
+                    case 'neq':
+                        return new Comparators(item.selected, item.it, source(coll[index[item.children[0]]]), source(coll[index[item.children[1]]]));
+                }
+            }
+            else if (item.type === 'value') {
+                return new Value(item.selected, item.it);
+            }
+        }
+    }
+    function makeNode(recipeName, insertion, dir) {
+        var clone = R.clone(insertion);
+        function build(item) {
+            switch (item) {
+                case 'minus':
+                    if (dir === 'left')
+                        return new NumberOperator('minus', Utils.uniqueId(), clone, new Value());
+                    else
+                        return new NumberOperator('minus', Utils.uniqueId(), new Value(), clone);
+                    break;
+                case 'value':
+                    return new Value();
+                    break;
+            }
+        }
+        return build(recipeName);
+    }
+    function equalConstructor(n1, n2) {
+        return n1.constructor.name === n2.constructor.name;
+    }
+    function equalValue(n1, n2) {
+        return n1.selected === n2.selected;
+    }
+    function equalNrChildren(n1, n2) {
+        if (n1.children && n2.children) {
+            if (n1.children.length !== n2.children.length) {
+                return false;
+            }
+        }
+        else if (n1.children || n2.children) {
+            return false;
+        }
+        return true;
+    }
+})(Expression || (Expression = {}));
+
+/// <reference path="../dts/ramda.d.ts"/>
+/// <reference path="./lb-globals"/>
+/// <reference path="./expressionTree"/>
+var Expression;
+(function (Expression) {
+    function ifElse(write, items) {
+        if (items.length === 1) {
+            return "return " + write(items[0]);
+        }
+        else if (items.length === 2) {
+            return write(items[0]) + " else return " + write(items[1]);
+        }
+        else if (items.length === 3) {
+            return write(items[0]) + " else " + write(items[1]) + " else return " + write(items[2]);
+        }
+    }
+    function writeJS(tree) {
+        var args = [];
+        function write(item) {
+            if (item.constructor === Expression.NumberOperator) {
+                switch (item.selected) {
+                    case 'plus':
+                        return "(" + write(item.children[0]) + "+" + write(item.children[1]) + ")";
+                    case 'minus':
+                        return "(" + write(item.children[0]) + "-" + write(item.children[1]) + ")";
+                    case 'multiply':
+                        return "(" + write(item.children[0]) + "*" + write(item.children[1]) + ")";
+                    case 'divide':
+                        return "(" + write(item.children[0]) + "/" + write(item.children[1]) + ")";
+                }
+            }
+            else if (item.constructor === Expression.StringOperator) {
+                switch (item.selected) {
+                    case 'plus':
+                        return "(" + write(item.children[0]) + "+" + write(item.children[1]) + ")";
+                }
+            }
+            else if (item.constructor === Expression.BooleanOperator) {
+                switch (item.selected) {
+                    case 'not':
+                        return "!" + write(item.children[0]);
+                }
+            }
+            else if (item.constructor === Expression.LogicalOperator) {
+                switch (item.selected) {
+                    case 'and':
+                        return "(" + write(item.children[0]) + " && " + write(item.children[1]) + ")";
+                    case 'or':
+                        return "(" + write(item.children[0]) + " || " + write(item.children[1]) + ")";
+                }
+            }
+            else if (item.constructor === Expression.ReduceOperator) {
+                switch (item.selected) {
+                    case 'count':
+                        return "length(" + write(item.children[0]) + ")";
+                    case 'max':
+                        return "max(" + write(item.children[0]) + ")";
+                    case 'min':
+                        return "min(" + write(item.children[0]) + ")";
+                }
+            }
+            else if (item.constructor === Expression.BlockOperator) {
+                switch (item.selected) {
+                    case 'branch':
+                        return ifElse(write, item.children);
+                        break;
+                }
+            }
+            else if (item.constructor === Expression.Condition) {
+                switch (item.selected) {
+                    case 'case':
+                        return "if (" + write(item.children[0]) + ") " + write(item.children[1]);
+                        break;
+                }
+            }
+            else if (item.constructor === Expression.ArrayOperator) {
+                switch (item.selected) {
+                    case 'findOne':
+                        return "find(" + write(item.children[0]) + ", " + write(item.children[1]) + ")";
+                    case 'filter':
+                        return "filter(" + write(item.children[0]) + ", " + write(item.children[1]) + ")";
+                    case 'sort':
+                        return "sort(" + write(item.children[0]) + ", " + write(item.children[1]) + ")";
+                }
+            }
+            else if (item.constructor === Expression.Comparators) {
+                switch (item.selected) {
+                    case 'eq':
+                        return "(" + write(item.children[0]) + " === " + write(item.children[1]) + ")";
+                    case 'ne':
+                        return "(" + write(item.children[0]) + " !== " + write(item.children[1]) + ")";
+                    case 'lt':
+                        return "(" + write(item.children[0]) + " < " + write(item.children[1]) + ")";
+                    case 'lte':
+                        return "(" + write(item.children[0]) + " <= " + write(item.children[1]) + ")";
+                    case 'gt':
+                        return "(" + write(item.children[0]) + " > " + write(item.children[1]) + ")";
+                    case 'gte':
+                        return "(" + write(item.children[0]) + " >= " + write(item.children[1]) + ")";
+                }
+            }
+            else if (item.constructor === Expression.Value) {
+                if (item.selected) {
+                    return item.selected;
+                }
+                else {
+                    return item.it;
+                }
+            }
+        }
+        var exprBody = write(tree);
+        return exprBody;
+    }
+    Expression.writeJS = writeJS;
+})(Expression || (Expression = {}));
+
+/// <reference path="./expressionTree.ts" />
+var Chunk;
+(function (Chunk) {
+    var Node = (function () {
+        function Node() {
+        }
+        return Node;
+    })();
+    var Before = (function () {
+        function Before(type) {
+            var typeStr;
+            switch (type) {
+                case 0:
+                    typeStr = 'number';
+                    break;
+                case 1:
+                    typeStr = 'string';
+                    break;
+                case 2:
+                case 5:
+                case 7:
+                    typeStr = 'logical';
+                    break;
+                case 6:
+                    typeStr = 'factor';
+                    break;
+            }
+            this.tpl = "<button class='before " + typeStr + "'>&#8230;</button>";
+        }
+        return Before;
+    })();
+    var After = (function () {
+        function After(type) {
+            this.type = type;
+        }
+        return After;
+    })();
+    var Left = (function () {
+        function Left() {
+        }
+        return Left;
+    })();
+    var Right = (function () {
+        function Right() {
+        }
+        return Right;
+    })();
+    var Else = (function () {
+        function Else() {
+        }
+        return Else;
+    })();
+    var Return = (function () {
+        function Return() {
+        }
+        return Return;
+    })();
+    var Operator = (function () {
+        function Operator(type) {
+            this.type = type;
+        }
+        return Operator;
+    })();
+    var Factor = (function () {
+        function Factor(node) {
+            this.nid = node.it;
+            this.tpl = "div id='" + node.it + "' class='factor'>" + node.selected + "</div>";
+        }
+        return Factor;
+    })();
+    var C = (function () {
+        function C(node, child1, child2) {
+            this.nid = node.it,
+                this.tpl = "<div id='" + node.it + "' class='block'></div>";
+            this.children.push(new Before(4));
+            this.children.push(new Else());
+            this.children.push(new Return());
+            this.children.push(new Operator(4));
+            this.children.push(child2);
+            this.children.push(new Right());
+            this.children.push(new After(0));
+        }
+        return C;
+    })();
+    var Coc = (function () {
+        function Coc(node, child1, child2) {
+            this.nid = node.it,
+                this.tpl = "<div id='" + node.it + "' class='number'></div>";
+            this.children = [];
+            this.children.push(new Before(0));
+            this.children.push(new Left());
+            this.children.push(child1);
+            this.children.push(new Operator(0));
+            this.children.push(child2);
+            this.children.push(new Right());
+            this.children.push(new After(0));
+        }
+        return Coc;
+    })();
+    function makeTree(expressionTree) {
+        function walk(node) {
+            switch (node.constructor) {
+                case Expression.BlockOperator:
+                    return new C(node, walk(node.children[0]), walk(node.children[1]));
+                case Expression.NumberOperator:
+                    return new Coc(node, walk(node.children[0]), walk(node.children[1]));
+                case Expression.Value:
+                    return new Factor(node);
+            }
+        }
+        return walk(expressionTree);
+    }
+    Chunk.makeTree = makeTree;
+})(Chunk || (Chunk = {}));
+
+/// <reference path="../dts/ramda.d.ts" />
+/// <reference path="./lb-globals"/>
+/// <reference path="./utils"/>
+var G = LBGlobals;
+var CMP = LBGlobals.Comparators;
+var Subject = LBGlobals.Subject;
+var MK = LBGlobals.Action;
+var Syntax;
+(function (Syntax) {
+    var smallChunks = {
+        'operator': "<button class='operator'></button>",
+        'comparator': "<button class='comparator'></button>",
+        'value': "<button class='value'></button>",
+        'subjectWrap': "<div class='subject'></div>",
+        'initCaseWrap': "<div class='cases'></div>",
+        'variableWrap': "<div class='variable'></div>",
+        'comma': "<span>&#44;</span>",
+        'leftAdd': "<button class='add-left'>&#8230;</button>",
+        'rightAdd': "<button class='add-right'>&#8230;</button>",
+        'leftParenthesis': "<i class='parenthesis'>&#40;</i>",
+        'rightParenthesis': "<i class='parenthesis'>&#41;</i>",
+        'outerCondition': "<p class='operator'>&#63;</p>",
+        'default': "<p class='operator'>default</p>",
+        'return': "<p class='return'>-&#187;</p>",
+        'caseOperator': "<button class='operator'>case</button>",
+        'closeTag': "</div>",
+        'conditonOpenTag': "<div class='condition'>",
+        'valueOpenTag': "<div class='value'>",
+        'outerConditionOpenTag': "<div class='subject outer-condition'>",
+        'caseOpenTag': "<div class='case'>"
+    };
+    var grammarDef = {
+        'andOrConditionRightWrapper': {
+            'type': 'subject',
+            'right': ['comparison']
+        },
+        'andOrConditionLeftWrapper': {
+            'type': 'subject',
+            'left': ['comparison']
+        },
+        'not': {
+            'type': 'subject'
+        },
+        'singleLeft': {
+            'type': 'subject',
+            'left': ['value']
+        },
+        'singleRight': {
+            'type': 'subject',
+            'right': ['value']
+        },
+        'reduce': {
+            'type': 'subject'
+        },
+        'arrayCondition': {
+            'type': 'subject',
+            'right': ['condition']
+        },
+        'value': {
+            'type': 'value'
+        },
+        'condition': {
+            'type': 'subject',
+            'children': ['comparison']
+        },
+        'comparison': {
+            'type': 'comparison',
+            'children': ['value', 'value']
+        },
+        'case': {
+            'type': 'subject',
+            'children': ['condition', 'branch']
+        },
+        'branch': {
+            'type': 'subject',
+            'children': ['value']
+        }
+    };
+    Syntax.locationSpecRequired = function (operator) {
+        return R.contains(operator, ['and', 'or', 'plus', 'minus', 'multiply', 'divide']);
+    };
+    function defineGrammar(subjectSpecificator, locationSpecification) {
+        var grammar;
+        switch (subjectSpecificator) {
+            case 'branch':
+                grammar = 'branch';
+                break;
+            case 'case':
+                grammar = 'case';
+                break;
+            case 'and':
+            case 'or':
+                grammar = (locationSpecification === 'left') ? 'andOrConditionLeft' : 'andOrConditionRight';
+                break;
+            case 'plus':
+            case 'minus':
+            case 'multiply':
+            case 'divide':
+                grammar = (locationSpecification === 'left') ? 'singleLeft' : 'singleRight';
+                break;
+            case 'not':
+                grammar = 'not';
+                break;
+            case 'count':
+            case 'minimum':
+            case 'maximum':
+                grammar = 'reduce';
+                break;
+            case 'findone':
+            case 'filter':
+            case 'sort':
+                grammar = 'arrayCondition';
+                break;
+            case 'findn':
+                grammar = 'arrayRange';
+                break;
+            default:
+        }
+        return grammar;
+    }
+    Syntax.defineGrammar = defineGrammar;
+    ;
+    var composedChunks = ['value', 'condition', 'comparison', 'case', 'branch'];
+    var chunkDefinitionKeys = ['wrap', 'prepend', 'append'];
+    function defineChunk(subjectSpecificator) {
+        var addChunk = function (recipe) {
+            var subChunk = '';
+            for (var i = 0, len = recipe.length; i < len; i++) {
+                if (R.contains(recipe[i], composedChunks)) {
+                    subChunk = subChunk + addChunk(grammarDef[recipe[i]].html);
+                }
+                else {
+                    subChunk = subChunk + smallChunks[recipe[i]];
+                }
+            }
+            return subChunk;
+        };
+        var grammarToUse = defineGrammar(subjectSpecificator);
+        var chunk = {};
+        for (var i = 0; i < chunkDefinitionKeys.length; i++) {
+            if (grammarDef[grammarToUse][chunkDefinitionKeys[i]]) {
+                chunk[chunkDefinitionKeys[i]] = addChunk(grammarDef[grammarToUse][chunkDefinitionKeys[i]]);
+            }
+        }
+        return chunk;
+    }
+    Syntax.defineChunk = defineChunk;
+    var composeMessage = function (action, it, messageValue) {
+        return {
+            action: action,
+            value: messageValue,
+            it: it
+        };
+    };
+    function createSubTree(recipe, subSpec, parentIt, childIt) {
+        // gebruik subSpec om recursief de subject subtree te bouwen
+        // de root subject (= subSpec) moet worden gekoppeld met subject parentIt
+        // childIt moet worden gekoppeld en een van de children van de 
+        // subtree, maar welke? Als het recipe een left/right bevat, is dat het punt
+        // Komen er niet meerdere left/rights voor?
+    }
+    Syntax.createSubTree = createSubTree;
+    function createSubjects1(subjects, pinIt, subjectSpecificator, locationSpecificator) {
+        var messages = [], subjectIt = Utils.uniqueId(), pin = R.find(R.propEq('it', pinIt), subjects), areaName = pin.areaName, grammarToUse = defineGrammar(subjectSpecificator, locationSpecificator);
+        function addSubjects(recipe, parentIt, subjectIt, pin, leftOrRight) {
+            var subjectMessage = R.find(R.propEq('it', subjectIt), messages);
+            if (!subjectMessage) {
+                subjectMessage = {
+                    'value': {
+                        'areaName': areaName,
+                        'it': subjectIt,
+                        'children': [pin],
+                        'selected': subjectSpecificator,
+                        'parent': parentIt
+                    },
+                    'it': subjectIt
+                };
+            }
+            messages.push(composeMessage(MK[MK.create], subjectIt, subjectMessage));
+            for (var i = 0; i < recipe.length; i++) {
+                var subSubjectIt = Utils.uniqueId();
+                var messageValue = {
+                    areaName: areaName,
+                    it: subSubjectIt
+                };
+                if (recipe[i] !== 'value') {
+                    messageValue.children = [];
+                }
+                if (subjectMessage) {
+                    var subjectMessageValue = subjectMessage.value;
+                    if (leftOrRight === 'left') {
+                        subjectMessageValue.children.unshift(subSubjectIt);
+                    }
+                    else {
+                        subjectMessageValue.children.push(subSubjectIt);
+                    }
+                    messageValue.parent = subjectIt;
+                }
+                switch (recipe[i]) {
+                    case 'value':
+                        messageValue = R.merge(messageValue, {
+                            'type': 'value',
+                            'selected': findDefaultValue('context') || this.pub.args,
+                            'enum': ['minus', 'plus']
+                        });
+                        break;
+                    case 'comparison':
+                        messageValue = R.merge(messageValue, {
+                            'type': 'comparator',
+                            'selected': CMP[CMP.eq],
+                            'enum': CMP
+                        });
+                        break;
+                    case 'condition':
+                        messageValue = R.merge(messageValue, {
+                            'type': 'subject',
+                            'selected': '?',
+                            'enum': ['delete']
+                        });
+                        break;
+                    case 'case':
+                        messageValue = R.merge(messageValue, {
+                            'type': 'subject',
+                            'selected': 'case',
+                            'enum': ['delete', 'case']
+                        });
+                        break;
+                    case 'branch':
+                        messageValue = R.merge(messageValue, {
+                            'type': 'subject',
+                            'selected': 'case',
+                            'enum': ['delete', 'case']
+                        });
+                        break;
+                    default:
+                        messageValue = R.merge(messageValue, {
+                            'type': 'subject',
+                            'selected': subjectSpecificator,
+                            'enum': (findInterchangeableOperators(subjectSpecificator)).concat(findDeleteOperators(subjectSpecificator))
+                        });
+                }
+                messages.push(composeMessage(MK[MK.create], subSubjectIt, messageValue));
+                if (recipe[i] === 'condition' || recipe[i] === 'comparison' || recipe[i] === 'case' || recipe[i] === 'branch') {
+                    var childRecipe = grammarDef[recipe[i]].children;
+                    messages.concat(addSubjects(childRecipe, subSubjectIt, recipe[i]));
+                }
+            }
+        }
+        messages.push(composeMessage(MK[MK.update], pinIt, { 'parent': subjectIt }));
+        if (pin.parent) {
+            var pinParent = R.find(R.propEq('it', pin.parent), subjects);
+            if (pinParent) {
+                var siblings = pinParent.children, position = R.indexOf(pin.it, siblings);
+                siblings[position] = subjectIt;
+                messages.push(composeMessage(MK[MK.update], pin.parent, { children: siblings }));
+            }
+        }
+        var subjectDefinitionKeys = ['left', 'right'];
+        for (var s = 0; s < subjectDefinitionKeys.length; s++) {
+            if (grammarDef[grammarToUse][subjectDefinitionKeys[s]]) {
+                var leftOrRight = subjectDefinitionKeys[s];
+                addSubjects(grammarDef[grammarToUse][leftOrRight], pin.parent, subjectIt, pinIt, leftOrRight);
+            }
+        }
+        return messages;
+    }
+    Syntax.createSubjects1 = createSubjects1;
+    ;
+    function findDefaultValue(context) {
+        return 'defaultValue';
+    }
+    function findInterchangeableOperators(operator) {
+        return [];
+    }
+    function findDeleteOperators(operator) {
+        return [];
+    }
+    function deleteSubjects(subjects, subjectId, locationSpecification) {
+        var messages = [], subject = subjects[subjectId], parentSubject = R.find(R.propEq('id', subject.parent), subjects), siblings = parentSubject.children;
+        function deleteChildSubjects(subj, locSpec) {
+            var children = subj.children;
+            if (children) {
+                var len = children.length;
+                if (!locSpec) {
+                    for (var i = 0; i < len; i++) {
+                        var subChild = R.find(R.propEq('id', subj.children[i]), subjects);
+                        if (subChild) {
+                            deleteChildSubjects(subChild);
+                        }
+                        messages.push(composeMessage(MK[MK.delete], subj.it));
+                    }
+                }
+                else if (len === 2) {
+                    var siblingToRemove = (locSpec === 'left') ? subj.children[0] : subj.children[1], remainingSibling = (locSpec === 'left') ? subj.children[1] : subj.children[0];
+                    deleteChildSubjects(siblingToRemove);
+                    siblings.push(remainingSibling);
+                    messages.push(composeMessage(MK[MK.delete], subj.it));
+                }
+                else {
+                    throw new Error('unable to handle delete of operator: ' + subject.selected +
+                        ' with locationspecification: ' + locationSpecification + 'and id: ' + subject.id);
+                }
+            }
+        }
+        deleteChildSubjects(subject, locationSpecification);
+        messages.push(MK[MK.update], {
+            id: subject.parent,
+            children: R.filter(function (sibling) {
+                return !R.propEq('it', subjectId, sibling);
+            }, siblings)
+        });
+        return messages;
+    }
+    Syntax.deleteSubjects = deleteSubjects;
+})(Syntax || (Syntax = {}));

@@ -1,0 +1,39 @@
+var assert = require('assert');
+
+var optCompleter = require('../models/optionCompleter');
+
+describe('Complete the options', function() {
+
+    it('known option', function() {
+        assert.deepEqual(optCompleter.extract({ajax: 'on'}), ['ajax']);
+    });
+
+    it('known options', function() {
+        assert.deepEqual(optCompleter.extract({
+            ajax: 'on',
+            global: 'on',
+            ready: 'on',
+            event: 'on',
+            dimensions: 'on',
+            offset: 'on'
+        }), ['ajax', 'exports/global', 'core/ready', 'event', 'dimensions', 'offset']);
+    });
+
+    it('filters out unknown options', function() {
+        var options = {
+            'quick-pick': 'most_used',
+            version: '2.1.4',
+            global: 'on',
+            ready: 'on',
+            event: 'on',
+            dimensions: 'on',
+            offset: 'on',
+            developer: 'on',
+            minified: 'on',
+            release: 'on',
+            email: 'erwin@wbbit.com'
+        };
+        var expected = ['exports/global', 'core/ready', 'event', 'dimensions', 'offset'];
+        assert.deepEqual(optCompleter.extract(options), expected);
+    });
+});

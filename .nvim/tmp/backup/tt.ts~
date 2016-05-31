@@ -1,0 +1,91 @@
+/// <reference path="../dts/ramda.d.ts" />
+/// <reference path="./globals.ts" />
+
+module TreePip {
+    import G = Globals;
+    import ACT = G.Action;
+    import AK = G.AddressKey;
+    import MK = G.MessageKey;
+    import ON = G.OptionName;
+    import OV = G.OptionValue;
+    import PT = G.PipType;
+    import ELM = G.Element;
+
+    import IResult = G.IResult;
+    import IRegister = G.IRegister;
+    import IMessage = G.IMessage;
+
+
+    function treeValues(options) {
+
+        var update = function(pipIn, register) {
+        return R.merge(register.value, pipIn.value);
+        };
+
+        return {
+            defaultValue: function() { return {}; },//defaultModels[0],
+            create: function(pipIn) { // justValueIn
+                return pipIn.value;
+            },
+            update: update,
+            insert: function(pipIn, register, defaultValue) { // basicInsertValue
+                return register.value
+                    ? register.value
+                    : defaultValue;
+            },
+            reg: function() { return {}; }
+        };
+    }(opts);
+
+    export var treeProps = {
+        tree: function(options, address, itType, ns) {
+            return {
+                pipType: options[ON[ON.type]],
+                pipClass: PC[PC.tree],
+                setReg: this.SetReg.basic,
+                values: treeValues(options),
+                emptyInput: this.Input.defineInit(ACT[ACT.remove]),
+
+                outActions: this.Actions.node,
+                regActions: this.Actions.nodeReg,
+
+                interpret: Pip.Interpret.base,
+
+                switchFn: function(options, addresses, nameSpace) {
+
+                    function relay(evaluated: IResult, register) {
+                        let $root = evaluated[ELM[ELM.anc]];
+                        if ($root) {
+                            return Tree.Reshape.morf(evaluated.oldRegister, register, Globals[nameSpace]);
+                        }
+                    }
+
+                    return function(result: IResult, register: IRegister<string[]>): IMessage {
+                        return relay(<IResult>result, register);
+                    }
+                },
+                effect: function(options, address, ns) {
+                    return {
+                        moveAppend: function(evaluated: IResult, $parent: DOMIO.Instance, DOMId: string): G.IMessage {
+                            let $node = pips.getPip(from.node[idKey]);
+                            const $detachedNode = $node.map(n => DOMIO.detach(n));
+                            return DOMIO.manipulate($parent, tpl, OV[OV.prepend]);
+                        },
+                        append: function(evaluated: IResult, $parent: DOMIO.Instance, tpl:string): G.IMessage {
+                            evaluated.pipOut[MK[MK.value]] = DOMIO.manipulate($parent, tpl, OV[OV.append]);
+                            return evaluated.pipOut;//verzoorzaakt emit incl pipOut.el
+                        },
+                        insertAfter: function(evaluated: IResult, $sibling: DOMIO.Instance, tpl:string): G.IMessage {
+                            evaluated.pipOut[MK[MK.value]] = DOMIO.manipulate($sibling, tpl, OV[OV.insertAfter]);
+                            return evaluated.pipOut;//verzoorzaakt emit incl pipOut.el
+                        },
+                        remove: function(evaluated: IResult, $el: DOMIO.Instance): G.IMessage {
+                            $el.map(DOMIO.remove).runIO();
+                            return evaluated.pipOut;
+                        },
+                    }
+                }
+            }
+        }
+    }
+}

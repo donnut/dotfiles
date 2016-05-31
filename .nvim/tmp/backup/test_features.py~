@@ -1,0 +1,80 @@
+import pytest
+import pickle
+from ocr.features import TransitionFeatures, ServiceKenLM, ServiceNgrams
+from ocr.features import EmissionFeatures
+from nltk.util import ngrams
+from nltk.tokenize.punkt import PunktSentenceTokenizer
+from nltk import word_tokenize
+
+@pytest.fixture(scope='session')
+def sents():
+    with open('./ocr/test/fixtures/samanthas-droom.txt', 'r') as f:
+        raw = f.read()
+        sents = PunktSentenceTokenizer().sentences_from_text(raw)
+        tokened_sents = [word_tokenize(s) for s in sents]
+    return tokened_sents
+
+@pytest.fixture(scope='session')
+def CM():
+    with open('./ocr/test/fixtures/confusion.pickle', 'rb') as f:
+        return pickle.load(f)
+
+def test_ngrams(sents):
+    tf = TransitionFeatures(service=ServiceNgrams(sents))
+    assert round(tf.logprob_trans('eerste tweede'), 3) == -3.937
+    assert round(tf.logprob_trans('eerste'), 3) == -3.346
+    assert tf.known('eerste') == True
+    assert tf.known('failxxxx') == False
+
+def test_kenlm(sents):
+    tf = TransitionFeatures(service=ServiceKenLM())
+    assert round(tf.logprob_trans('eerste tweede'), 3) == -8.014
+    assert round(tf.logprob_trans('eerste'), 3) == -3.984
+
+def test_ngrams_weighted(sents):
+    tf = TransitionFeatures(service=ServiceNgrams(sents))
+    assert round(tf.logprob('eerste tweede'), 3) == -3.937
+    assert round(tf.logprob('eerste'), 3) == -3.346
+
+def test_kenlm_weighted(sents):
+    tf = TransitionFeatures(service=ServiceKenLM())
+    assert round(tf.logprob('eerste tweede'), 3) == -8.014
+    assert round(tf.logprob('eerste'), 3) == -3.984
+
+def test_wed_word_fragment():
+    ef = EmissionFeatures()
+    assert round(ef.wed('ii', 'n'), 3) == -1.322
+
+def test_emission_prob_wed():
+    ef = EmissionFeatures()
+    assert ef.logprob_wed('plant', 'plant') == 0.0
+    assert round(ef.logprob_wed('plant', 'pand'), 3) == -2.083
+    assert round(ef.logprob_wed('rat', 'Dit'), 3) == -1.322
+    assert round(ef.logprob_wed('Dit', 'Dit'), 3) == 0.0
+
+def test_emission_prob_merge_1():
+    ef = EmissionFeatures()
+    assert round(ef.logprob_merge(('traptrede', 1)), 3) == -1.041
+
+def test_emission_prob_merge_2():
+    ef = EmissionFeatures()
+    assert round(ef.logprob_merge(('traptrede', 4)), 3) == -1.613
+
+def test_emission_prob_split_1():
+    ef = EmissionFeatures()
+    assert round(ef.logprob_split('new york'), 3) == -1.322
+
+#def test_log_prob_1():
+    #ef = EmissionFeatures()
+    #assert round(ef.logprob_token('new york', 'newyork'), 3) == -1.322
+
+#def test_log_prob_2():
+    #ef = EmissionFeatures()
+    #assert round(ef.logprob_token(('traptrede', 1)), 3) == -1.041
+
+#def test_log_prob_3():
+    #ef = EmissionFeatures()
+    #assert round(ef.logprob_token('plant', 'pand'), 3) == -2.083
+    #assert round(ef.logprob_token('Dit', 'Dit'), 3) == 0.0
+    #assert round(ef.logprob_token('rat', 'Dit'), 3) == -1.322
+

@@ -1,0 +1,515 @@
+/// <reference path="storage.ts" />
+/// <reference path="serverIO.ts" />
+
+namespace Globals {
+    export const
+        IT = '__it' ,
+        POS = '__pos',
+        MERGETOKEN = '%%',/** used to merge the mid and itemId into one string */
+        NO_TARGET ='NO_TARGET',
+        IS_TARGET ='IS_TARGET',
+        IS_UNSELECTED ='IS_UNSELECTED',
+        IS_SELECTED ='IS_SELECTED',
+        serverAddress = "http://localhost:9090/",
+        defaultEvents = 'click touchstart',
+        serverIndexAttr = '_id';
+
+    export interface ICollectedActions {
+        create: any[];
+        update: any[];
+        'delete': any[];
+        empty: any[];
+    }
+
+    export type IServerAction = [string, IMessage];
+    export interface IServer {
+        emit(serverActions: string|ICollectedActions, callback: {(err: string, result?: any): void}): void;
+        createItems(data: Globals.IMessage[]): void;
+        updateItems(data: Globals.IMessage[]): void;
+        deleteItems(data: Globals.IMessage[]): void;
+        deleteAllItems(): void;
+        getCollectionKeys(): void;
+        fetchData(cb: Function): void;
+    }
+
+    export interface Attributes {
+        [index: string]: string;
+    }
+    /**
+     * Global enum definitions
+     */
+    /** @enum {number} */
+    export enum ApplyType {cl, attr, prop, css}
+
+    /** @enum {number} */
+    export enum PipType {state, 'event', template, stateItem, eventItem, templateItem,
+                         element, listItem, itemElement, shadowElement, select, router,
+                         model, collection, sub, list, api, target, targetItem, navTree,
+                         treeModel, nestCollection, tree, nest, treeItem, leaf}
+
+    export enum RegPipType {element, listItem, itemElement, shadowElement}
+
+    /** @enum {number} */
+    export enum PipClass {el, tpl, state, enable, select, attr, list, sub, target, router,
+                          tree, nav, api}
+
+
+    /** @enum {number} */
+    export enum LinkCategory {forbidden, 'default', complex}
+
+    /** @enum {number} */
+    export enum Action {update, create, remove, insert, 'delete'}
+
+    /** @enum {number} */
+    export enum MessageKey {value, it, action, emit, index}
+
+
+
+    /** @enum {number} */
+    export enum Element {anc, root, el}//??item,
+
+    /** @enum {number} */
+    export enum AddressKey {pip, anc, sel, root, item, el, selector}//el tbv delegated event(Item) waarbij el !== sel
+
+    /** @enum {number} */
+    export enum OptionName {
+        root, selector, idType,
+        name, attr, type, method, empty,filter, sort,
+        idKey, tpl, children,
+        model, index, keys, server, // emit,
+        preventDefault, delegation, events, bindFn, enable,
+        'default', value, states,
+        one, required, reselectable, routing, it,//
+    }
+
+    /** @enum {number} */
+    export enum LinkOptionName {
+        pub, sub, binding, drop, pre, filter, sort, value, action, it, variables, auto, refine
+        //key, keys,keyType, selectState, unSelectState, state, input,fn, fnOptions
+    }
+
+    /** @enum {number} */
+    export enum PipProps {
+        pipType, pipClass, itType, initReg, setReg, values, outActions, regActions, diffTest, emptyInput,
+        pipFn, switchFn, defineItemId, correctInput, server,//stateNames?: string[];
+        emitTest, interpret, publicFn
+    }
+
+    /** @enum {number} */
+    export enum OptionValue {
+        append, prepend, html, unAppend, unPrepend, wrap, remove, insertBefore, insertAfter
+    }
+    /**
+     * Global variable definitions
+     */
+    export var conversionTable = {
+        'class': ApplyType[ApplyType.cl],
+        'display': ApplyType[ApplyType.css],
+        'autofocus': ApplyType[ApplyType.prop],
+        'checked': ApplyType[ApplyType.prop],
+        'alt': ApplyType[ApplyType.attr]
+    };
+
+    export var navTree: string[];
+
+    /**
+     * Message interface definition
+     */
+    export interface IMessage {
+        value?:  any;
+        action:  string;
+        it?:   string;
+        emit?: boolean;
+        index?:  string; // database index
+        init?:   boolean;
+        length?: number;
+    }
+
+    export interface IEventObject {
+        evt:   DOMIO.Event;
+        sel?:  DOMIO.Instance;
+        root?:   DOMIO.Instance;
+        item?:   DOMIO.Instance;
+        it?:   string;
+    }
+    export interface IItemEventObject extends IEventObject {
+        root:   DOMIO.Instance;
+        item:   DOMIO.Instance;
+        it:   string;
+    }
+    export interface IValues {
+        defaultValue: Function;
+        insert?: Function;
+        create?: Function;
+        update?: Function;
+        //reg:      any;
+    }
+    export interface IAction {
+        create?: string;
+        update?: string;
+        delete?: string;
+        insert?: string;
+        remove?: string;
+    }
+    export interface IEventPipFn {
+        true:  (evaluated: Globals.IResult) => void;
+        false: (evaluated: Globals.IResult) => void;
+    }
+
+
+    export interface IPipProps {
+        pipClass:  string;
+        itType:    boolean;
+        pipType:  string;//pas later
+        initReg:   any;
+        setReg:    Function;
+        values:    IValues;
+        outActions:  (pipIn: IMessage) => string;
+        regActions:  (pipIn: IMessage) => string;
+        diffTest:  Function;
+        emptyInput:  IMessage;
+        emitTest:  Function;
+        interpret:   Function;
+        publicFn?:   Function;
+    }
+    export interface IEffectPipProps extends IPipProps {
+        switchFn:   Function;
+        pipFn:    any; //IPipFn;//select en regPips niet
+    }
+    export interface IItemPipProps extends IPipProps {
+        defineItemId: Function;
+    }
+    export interface ICorrectInput{
+        define: Function,
+        baseActionTest: Function,
+        emptyActionTest: Function
+    }
+    export interface ICorrectPipProps extends IItemPipProps {//heeft geen effect
+        correctInput: ICorrectInput;
+    }
+    export interface IListPipProps extends IEffectPipProps {//heeft geen effect
+        correctInput: ICorrectInput;
+        defineItemId: Function;
+    }
+    export interface ICollectionPipProps extends IPipProps{
+        defineItemId: Function;
+        server?:  Function;
+        switchFn?:   Function;
+        pipFn?:    any; //IPipFn;//select en regPips niet
+        //keyNames:   string[];
+    }
+
+    export interface IPublicFn {
+        react: Function;
+        getInit: Function;
+
+        getType: Function;
+        get: Function;
+        unsafeGet: Function;
+        addLink: Function;
+        getLinks: Function;
+        addLinks: Function;
+        removeLink: Function;
+    }
+
+    export interface IRegItemPublicFn  extends IPublicFn{
+       getItemId?: Function;
+    }
+
+    export interface IListPublicFn  extends IPublicFn{
+        defineItemId?: Function;
+        getValues : Function;
+    }
+    // export interface IStatePublicFn  extends IPublicFn{
+    //     getDefault: Function;
+    //     getValues : Function;
+    // }
+    export interface IEventPublicFn extends IPublicFn {
+        addBinding: Function;
+        removeBinding: Function;
+        getBindings: Function;
+    }
+    export interface IModelPublicFn extends IPublicFn {
+        //getKeys: Function;
+        //getValues : Function;
+        server?: Function;
+        fetch?: Function;
+        normalizeServerOutput?: Function;
+        addBinding?: Function;
+        removeBinding?: Function;
+        getBindings?: Function;
+    }
+
+
+    export interface IRegister<T> {
+        value: T;
+        //length?: number;
+    }
+    export interface IPipSpec {
+        options: any;
+        addresses: IAddresses;
+    }
+    export interface ILink {//?? verschil  ILinkOption
+        sub:  string;
+        subPip: IPublicFn;
+        fn:   Function;
+        auto?: boolean;//tussen state(Items) en target/select tbv replace, remove
+    }
+
+    /**
+     * Link Options
+     */
+    export interface ILinkOptions {
+        pub:    string;
+        sub:    string;
+        binding?:   boolean;
+        drop?:    string[];
+        variables?: any;
+        pre?:     Function;
+        value?:   Function|string;
+        action?:  Function|string;
+        it?:    Function|string;
+        filter?:    Function|any[];
+        sort?:    Function|any[];
+    }
+
+    export type IPipId = string;
+
+    export interface IRegAddresses {
+        pip:   IPipId;
+        anc?:  IPipId;
+        sel?:  string;   //sel ter onderscheid selector! sel is korter, namelijk de selector binnen context van $anc (of $item of $root)
+    }
+
+    export interface IAddresses {
+        pip:   IPipId;
+        anc?:  IPipId;
+        root?: IPipId;
+        sel?:   string;   //sel ter onderscheid selector! sel is korter, namelijk de selector binnen context van $anc (of $item of $root)
+    }
+
+    export interface ItemAddresses extends IAddresses{
+        root:IPipId;//TODO klopt dit nog of is dit anc?!!!
+        item:IPipId;
+    }
+
+    export interface EventItemAddresses extends ItemAddresses{
+        el:   IPipId;
+    }
+    /**
+     * Option interface definitions
+     */
+
+    //options-basics
+    export interface IPipOptions {
+        type: string;
+    }
+    export interface IElementOptions {
+        selector: string; //string die bedoelde is om IO.instance waar pip aanhangt uniek maakt bienn document
+    }
+    export interface IShadowElementOptions{
+        attr: string; //tbv filteren instance uit itemInstances
+        value: string;
+    }
+    export interface IListItemOptions { //==IItemElementOptions//IItemOptions {//tbv DOMItemPips
+        selector: string;
+        idType?: string;
+    }
+    export interface IItemOptions { //==IItemElementOptions//IItemOptions {//tbv DOMItemPips
+        selector: string;
+        root?: string;
+    }
+    export interface IState {
+        name:    string;
+        attr:    string;
+        value:   string;
+        animated?: any;
+    }
+    export interface IStateOptions {
+        default?:  string;
+        states:   IState[];
+    }
+    export interface IEventOptions{
+        events:     string;
+        enabled?:     boolean;
+        bindFn?:    Function;
+        preventDefault: boolean;
+        delegation:   boolean;
+    }
+    export interface ITemplateOptions {
+        attr:   string;
+        method: string;
+        empty:  string;
+    }
+    export interface ISubOptions {
+        tpl:  string;
+        method: string;
+        empty:  string;
+    }
+    export interface IModelOptions {//model óf keys vereist?
+        model?:  any;
+        keys?:  string[];
+        name:   string;
+        index:  string;
+        emit: boolean;
+        server: boolean;
+        serverIO?: ServerIO.Server
+    }
+    //pipOptions
+    export interface ISelectPipOptions extends IPipOptions, IElementOptions, IStateOptions{
+        one: boolean;
+        required: boolean;
+        reselectable: boolean;
+        it?: string,
+        name?: string;
+    }
+
+    export interface ITargetPipOptions extends IStatePipOptions{
+        routing? : boolean;
+    }
+
+    export interface ITargetItemPipOptions extends ISelectPipOptions{
+        routing? : boolean;
+    }
+
+    export interface IRouterPipOptions extends IPipOptions {
+        navTree: INavModel[];
+    }
+    export interface INavTreePipOptions extends IPipOptions{
+        navTree : any;
+    }
+
+    export enum Direction {ASC, DESC}
+
+    export interface Sort {
+        key: string|string[];
+        dir: Direction;
+    }
+
+    export interface IListPipOptions extends IPipOptions, IElementOptions, ISubOptions {
+        idKey?: string;
+        it: string;
+        sort?: Sort|Sort[];
+        filter?: any;
+    }
+
+    export interface ITreePipOptions extends IPipOptions, IElementOptions {
+        idKey: string;
+        childKey: string;
+        contentKey: string;
+        empty:  string;
+        sort?: Sort|Sort[];
+        filter?: any;
+    }
+
+    export interface ICollectionPipOptions extends IPipOptions, IModelOptions {//model óf keys vereist?
+        model?: any[];
+    }
+
+    export interface IStatePipOptions extends IPipOptions, IElementOptions, IStateOptions {}
+    export interface IStateItemPipOptions extends IPipOptions, IItemOptions, IStateOptions {}
+    export interface ITemplatePipOptions extends IPipOptions, IElementOptions, ITemplateOptions {}
+    export interface ITemplateItemPipOptions extends IPipOptions, IItemOptions, ITemplateOptions {}
+    export interface IEventPipOptions extends IPipOptions, IElementOptions, IEventOptions {}
+    export interface IEventItemPipOptions extends IPipOptions, IItemOptions, IEventOptions {}
+    export interface ISubPipOptions extends IPipOptions, IElementOptions, ISubOptions {}
+    export interface IModelPipOptions extends IPipOptions, IModelOptions {}
+    export interface IElementPipOptions extends IPipOptions, IElementOptions {}
+    export interface IShadowElementPipOptions extends IElementPipOptions, IShadowElementOptions {}
+    export interface IListItemPipOptions extends IPipOptions, IListItemOptions {}
+    export interface IItemElementPipOptions extends IPipOptions, IItemOptions {}
+
+    export type AllPipOptions = IStatePipOptions
+                       | IStateItemPipOptions
+                       | ITemplatePipOptions
+                       | ITemplateItemPipOptions
+                       | IEventPipOptions
+                       | IEventItemPipOptions
+                       | IModelPipOptions
+                       | ICollectionPipProps
+                       | IListPipOptions
+                       | IListItemPipOptions;
+
+    // Pips
+    export interface IStatePipSTRef {
+        reg: string;
+        links: Function[];
+    }
+
+    export interface IItStatePipSTRef {
+        reg: {[index:string]: string};
+        links: Function[];
+    }
+
+    export interface IServerOptions {
+        index?: string;
+    }
+    // export interface IValidateData{
+    //     values?: string[];
+    //     defaultValue?: string;
+    //     keys?: string[];
+    // }
+    export interface IResult {//mmar moet ook ar
+        pipOut: IMessage;
+        emit: boolean;
+        reg: any;
+        oldRegister: any;
+        //el: DOMIO.Instance;
+        //root: DOMIO.Instance;
+        //anc: DOMIO.Instance;
+        effectData: any;
+    }
+    export interface IEffectData {
+        effect: Function;
+        diff: boolean;
+        empty: boolean;
+        action: string;
+        DOMInstances: IDOMInstances;
+        it?: string;
+    }
+
+    export interface IDOMInstances {
+        $anc: DOMIO.Instance;
+        $el: DOMIO.Instance;
+        $root: DOMIO.Instance;
+    }
+
+    export interface INavModel {
+        id: string;//_id,it?
+        type: string;// RegPipType;
+        parent: string;
+        children: string[];
+        target?: boolean;
+    }
+
+    export interface IRegAddressBook {
+        [index: string]: IAddresses;
+    }
+
+    export interface IAppEl{//tbv  Desi
+        path: string;//tagId = extElement.path
+        name: string;// is extElement.name
+        attribs: Attributes;//is extElement.attribs
+
+        element?: string;// is extElement.element.selector === tagId!!
+        listItem?: string;//is extElement.listItem.selector
+        itemElement?: string;//is extElement.itemElement.selector
+        shadowElement?: string;// is extElement.shadowElement.selector
+
+        parent: string;// AppEl.tagId;
+        children: string[];// AppEl.tagId[];G.
+        isRoot: boolean;
+        listItemPath: string[];
+        rootPath: string[];
+    }
+    export interface IDOMSpec {
+        //tagSpec: Tree.ExtElement;
+        navTree: INavModel[];
+        regAddressBook: IRegAddressBook;
+        appEls?: IAppEl[]; // voor Desi
+        rootId?: string;//voor nodes
+        nodeId?: string;//voor nodes
+    }
+
+}
+import PC = Globals.PipClass;

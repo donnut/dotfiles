@@ -1,0 +1,346 @@
+module Links {
+
+    /* aliases */
+    import G = Globals;
+    import PT = G.PipType;
+    import ON = G.OptionName;
+    import LO = G.LinkOptionName;
+    import MK = G.MessageKey;
+    import ACT = G.Action;
+    import IStorage = Store.IStorage;
+
+    const validActions = [ACT[ACT.create], ACT[ACT.update], ACT[ACT.delete], ACT[ACT.insert], ACT[ACT.remove]];
+
+    declare var DEBUG;
+
+    //if in link messages for filtered input are presented as a whole,
+    //also new messages can be added,
+    //because its from current register may be needed to delete
+    function defineFilterMessages(listPip, newFilteredValues){//alleen voor list!!
+        var current = listPip.get();
+        var filteredItems = R.pluck(G.IT, newFilteredValues);
+        var united = R.union(filteredItems, current);
+        var filteredMessages = [];
+
+        R.forEach(function(itId) {
+            let filteredMessage;
+            if (R.contains(itId, filteredItems)) {
+                var message = R.find((f) => f[G.IT] === itId, newFilteredValues);
+                message[MK[MK.it]] = message[G.IT];
+                var itemId = listPip.defineItemId(message, current);
+
+                if(!R.contains(itemId, current)){
+                    filteredMessage = {};
+                    filteredMessage[MK[MK.it]] = itId;
+                    filteredMessage[MK[MK.action]] = ACT[ACT.create];
+                    let keys = R.keys(message);
+                    if (keys.length > 0) {
+                        filteredMessage[MK[MK.value]] = {};
+                        R.forEach(function(key) {
+                            if (!R.contains(key, [ G.IT, MK[MK.it] ])) {
+                                filteredMessage[MK[MK.value]][key] = message[key];
+                            }
+                        }, keys);
+                    }
+                }
+            } else if (R.contains(itId, current)) {
+                filteredMessage = {};
+                filteredMessage[MK[MK.action]] = ACT[ACT.delete];
+                filteredMessage[MK[MK.it]] = itId;
+            }
+            if(filteredMessage){
+               filteredMessages.push(filteredMessage);
+            }
+        }, united);
+        return filteredMessages;
+    }
+
+    function filter(test, collectionPip, listPip){
+        let collection = collectionPip.get();
+        var filteredValues = R.filter((inp) => test.call(this,inp), collection);
+        // if(filteredValues.length>0){
+        collectionPip.resend();
+        return defineFilterMessages(listPip, filteredValues);
+        // }
+    }
+
+
+    function callPre(linkIn: G.IMessage|G.IMessage[], opts: G.ILinkOptions, drop:string[], vars, storage: IStorage) {
+        if (!opts[LO[LO.pre]] && !opts[LO[LO.filter]] && !opts[LO[LO.sort]]) return linkIn;
+        if (opts[LO[LO.pre]]){
+            if (R.is(Function, opts[LO[LO.pre]])) {
+                let context = R.merge(getVariables(vars, storage), getDroppings(drop, storage));
+                return <G.IMessage[]>(opts[LO[LO.pre]].call(context, linkIn));
+            }
+            else {
+                throw new Error('Pre must be a function');
+            }
+        }
+        if (opts[LO[LO.filter]] && linkIn[0]){//test of linkIn niet afkomstig van een resend
+            if(linkIn[0][MK[MK.emit]] === undefined || linkIn[0][MK[MK.emit]] === true){
+                let context = R.merge(getVariables(vars, storage), getDroppings(drop, storage));
+                if (R.is(Function, opts[LO[LO.filter]])) {
+                    let testFunction = opts[LO[LO.filter]];
+                    let collectionPip = storage.get(opts[LO[LO.pub]]);
+                    let listPip = storage.get(opts[LO[LO.sub]]);
+                    return <G.IMessage[]>filter.call(context, testFunction, collectionPip, listPip);
+                } else if(R.is(Array, opts[LO[LO.filter]])){
+                    let testFunction = opts[LO[LO.filter]][0];
+                    let collectionPip = opts[LO[LO.filter]][1] ? storage.get(opts[LO[LO.filter]][1]) : storage.get(opts[LO[LO.pub]]);
+                    let listPip = storage.get(opts[LO[LO.sub]]);
+                    return <G.IMessage[]>filter.call(context, testFunction, collectionPip, listPip);
+                }
+                else {
+                    throw new Error('filterOptions have not the correct syntax');
+                }
+            }
+        }
+        if (opts[LO[LO.sort]]){
+           throw new Error('sortOptions for links are not yet programmed');
+        }
+    }
+
+    function callParameter(parameter:string, linkIn: G.IMessage, opts: G.ILinkOptions, drop:string[], vars, storage: IStorage) {
+        if (!opts[LO[LO[parameter]]]) return linkIn[parameter];
+        if (R.is(Function, opts[LO[LO[parameter]]])) {
+            let context = R.merge(getVariables(vars, storage), getDroppings(drop, storage));
+            return opts[LO[LO[parameter]]].call(context, linkIn);
+        }
+        else {
+            return opts[parameter];
+        }
+    }
+
+    function expand(opts: G.ILinkOptions, storage: IStorage) {
+        const drop = opts[LO[LO.drop]];
+        if (!opts[LO[LO.binding]] && !opts[LO[LO.pre]] && !opts[LO[LO.filter]] && !opts[LO[LO.sort]]) throw new Error("for expand either pre, filter or sort should be defined");
+        //TODO errormessage for filter en sort alleen als sub list
+
+        return function(linkIn: G.IMessage) {
+            let vars = R.clone(opts[LO[LO.variables]]);
+            let preResult = callPre(linkIn, opts, drop, vars, storage);
+
+            // wrap preResult in an array, if it isn't an array yet
+            if(preResult){
+                let result: G.IMessage[] = [];
+                let preResultArray = <G.IMessage[]>(R.is(Array, preResult) ? preResult : [preResult]);
+
+                R.forEach((preRes) => {
+                    let res: any = {};
+                    res[MK[MK.value]] = callParameter(LO[LO.value], preRes, opts, drop, vars, storage);
+                    res[MK[MK.action]] = callParameter(LO[LO.action], preRes, opts, drop, vars, storage);
+                    res[MK[MK.it]] = callParameter(LO[LO.it], preRes, opts, drop, vars, storage);
+                    result.push(res);
+                }, preResultArray);
+                return check(result);
+            }
+        };
+    }
+
+    function mapOne(opts: G.ILinkOptions, storage: IStorage) {
+        const drop = opts[LO[LO.drop]];
+
+        return function(linkIn: G.IMessage|G.IMessage[]): G.IMessage {
+            let vars = R.clone(opts[LO[LO.variables]]);
+            let preResult = <G.IMessage>callPre(linkIn, opts, drop, vars, storage);
+            if (preResult) {
+                let result = <G.IMessage>{};
+                result[MK[MK.value]] = callParameter(LO[LO.value], preResult, opts, drop, vars, storage);
+                result[MK[MK.action]] = callParameter(LO[LO.action], preResult, opts, drop, vars, storage);
+                result[MK[MK.it]] = callParameter(LO[LO.it], preResult, opts, drop, vars, storage);
+                return check(<G.IMessage>result);
+            }
+        };
+    }
+
+    function map(opts: G.ILinkOptions, storage: IStorage) {
+        const drop = opts[LO[LO.drop]];
+        return function(linkIn: G.IMessage[]): G.IMessage[] {
+            let vars = R.clone(opts[LO[LO.variables]]);
+            let preResult = <G.IMessage[]>callPre(linkIn, opts, drop, vars, storage);
+            if (preResult && preResult.length>0) {
+                let result = R.map((l) => {
+                    let r: any = {};
+                    r[MK[MK.value]] = callParameter(LO[LO.value], l, opts, drop, vars, storage);
+                    r[MK[MK.action]] = callParameter(LO[LO.action], l, opts, drop, vars, storage);
+                    r[MK[MK.it]] = callParameter(LO[LO.it], l, opts, drop, vars, storage);
+                    return r;
+                }, preResult);
+                return check(<G.IMessage[]>result);
+            }
+        };
+    }
+
+
+    function valueExists(message: G.IMessage) {
+        if (message[MK[MK.value]] !== void 0) return message;
+        else if (message[MK[MK.action]] === ACT[ACT.remove] || message[MK[MK.action]] === ACT[ACT.delete]){
+           return <G.IMessage>message;
+        } else throw new TypeError('`value` of message doesn\'t exist');
+    }
+
+    function actionExists(message: G.IMessage) {
+        if (message[MK[MK.action]] !== void 0 && R.contains(message[MK[MK.action]], validActions)) return <G.IMessage>message;
+        else throw new TypeError('`action` of message doesn\'t exist');
+    }
+
+    function itExists(message: G.IMessage) {
+        if (message[MK[MK.it]] !== '') return message;
+         else if (message[MK[MK.action]] === ACT[ACT.remove] || message[MK[MK.action]] === ACT[ACT.delete]){
+           return <G.IMessage>message;
+        }
+        else throw new TypeError('`it` of message doesn\'t exist');
+    }
+
+    // checks message before returning the result
+    function check(message: G.IMessage): G.IMessage;
+    function check(message: G.IMessage[]): G.IMessage[];
+    function check(message) {
+        if (message instanceof Array) {
+            let exists = R.compose(valueExists, actionExists, itExists);
+            return R.map(exists, message);
+        }
+        let exists = R.compose(valueExists, actionExists);
+        return exists(message);
+    }
+
+    /**
+     * Adds drop definitions to link context. The definitions are cloned to prevent mutating pip register
+     */
+    function getDroppings(drop: string[], storage: IStorage) {
+        drop = drop || [];
+        let result: any = {};
+        R.forEach((name) => { result[name] = storage.get(name); }, drop);
+        return result;
+    }
+
+    function getVariables(variables, storage: IStorage) {
+        variables = variables || {};
+        return R.mapObj((value: string|number|Function) => {
+            return R.is(Function, value) ? (<Function>value).call(storage) : value;
+        }, variables);
+    }
+
+    function complexLink(opts: G.ILinkOptions, storage: IStorage, pubType: string, subType: string): any {
+        const pubMulti = Pip.Spec.isMulti(pubType), subMulti = Pip.Spec.isMulti(subType);
+
+        if (!pubMulti && !subMulti) {
+            // 1:1
+            return <(l:G.IMessage)=>G.IMessage>mapOne(opts, storage);
+        }
+        else if (pubMulti && !subMulti) {
+            // n:1
+            //TODO wel behoefte dit reduce noemen en check resultaat is inderdaad maar 1??
+            return <(l:G.IMessage[])=>G.IMessage>mapOne(opts, storage);
+        }
+        else if (!pubMulti && subMulti) {
+            // 1:n
+            return <(l:G.IMessage)=>G.IMessage[]>expand(opts, storage);
+        }
+        else {
+            // n:n
+            return <(l:G.IMessage[])=>G.IMessage[]>map(opts, storage);
+        }
+
+    }
+
+    export function create(linkOptions: G.ILinkOptions, storage: IStorage) {
+
+        if (DEBUG) {
+            if (!storage.exists(linkOptions[LO[LO.pub]])) {
+                throw new Error('Non-existing pip "' + linkOptions[LO[LO.pub]] + '" prevents creating the link');
+            }
+            if (!storage.exists(linkOptions[LO[LO.sub]])) {
+                throw new Error('Non-existing pip "' + linkOptions[LO[LO.sub]] + '" prevents creating the link');
+            }
+        }
+        const pub = storage.get(linkOptions[LO[LO.pub]]),
+        sub = storage.get(linkOptions[LO[LO.sub]]);
+        const pubType = pub.getType(),
+        subType = sub.getType();
+
+        let messageMapper;
+
+        // binding connects the handler of an event(Item) or model/collection with a pip.
+        var binding;
+        if (pubType === PT[PT.event] || pubType === PT[PT.eventItem]){
+           binding =  linkOptions[LO[LO.binding]] === false? false: true ;
+        } else if (pubType === PT[PT.model] || pubType === PT[PT.collection]){
+            binding =  linkOptions[LO[LO.binding]] || false;
+        } else binding =  false;
+
+        if (DEBUG && R.find((sub) => sub === linkOptions[LO[LO.sub]], pub.getLinks())) {
+            throw new Error('already link defined between pubPip' + linkOptions[LO[LO.pub]] + ' and subPip'+  linkOptions[LO[LO.sub]] );
+        }
+
+        if (!linkOptions[LO[LO.value]] && !linkOptions[LO[LO.action]] && !linkOptions[LO[LO.pre]] &&
+            !linkOptions[LO[LO.filter]] && !linkOptions[LO[LO.sort]]) {
+            if (linkOptions[LO[LO.refine]]) {
+                const {attr, value} = linkOptions[LO[LO.refine]];
+                messageMapper = function(linkIn: G.IMessage[]) {
+                    return check(R.reduce((acc, message) => {
+                        if (message.action === 'remove') {
+                            acc.push(message);
+                        } else {
+                            const $elem = message.value;
+                            if ($elem.map(DOMIO.getAttr(attr)).runIO() === value) {
+                                acc.push(message);
+                            }
+                        }
+                        return acc;
+                    }, [], linkIn));
+                };
+            } else {
+                messageMapper = function(linkIn) {
+                    return check(linkIn);
+                }
+            };
+        } else {
+            messageMapper = complexLink(linkOptions, storage, pubType, subType);
+        }
+
+        const logger = function(pubType, subType, message) {
+            const strlen = 80;
+            let val = JSON.stringify(message);
+            console.log(linkOptions[LO[LO.pub]]+':'+pubType + ' - ' + linkOptions[LO[LO.sub]]+':'+subType + ' = ' +
+                (val.length > strlen ? val.substring(0, strlen) + '...' : val));
+            return message;
+        }
+
+        const fn = function(message) {
+            // sub.react(messageMapper.call(storage, logger(pubType, subType, message)));
+            return  messageMapper(message);
+            // var linkOut = messageMapper.call(storage, message);
+            // if(linkOut){
+            //     if(!R.is(Array, linkOut) || linkOut.length !== 0) {
+            //         sub.react(linkOut);
+            //     }
+            // }
+        }
+
+        var link = {
+            sub:  linkOptions[LO[LO.sub]],
+            subPip: storage.get(linkOptions[LO[LO.sub]]),
+            fn:   fn
+        }
+        if(linkOptions[LO[LO.auto]]){
+            link[LO[LO.auto]] = true;
+        }
+        if (binding && (pubType === PT[PT.event] || pubType === PT[PT.eventItem] ||
+                        pubType === PT[PT.model] || pubType === PT[PT.collection])) {
+            pub.addBinding(link);
+        } else {
+            pub.addLink(link);
+            const init = pub.getInit();
+            if ((R.is(Array, init) && init.length > 0) || R.keys(init).length > 0) {
+                var linkInit = link.fn(init);
+                if (linkInit) {
+                    if (!R.is(Array, linkInit) || linkInit.length !== 0) {
+                        var subPip: G.IPublicFn = link.subPip;
+                        subPip.react(linkInit);
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,43 @@
+{{! Previous/next page links - only displayed on page 2+ }}
+<div class="extra-pagination inner">
+    {{pagination}}
+</div>
+
+{{! This is the post loop - each post will be output using this markup }}
+{{#foreach posts}}
+<article class="{{post_class}}">
+    <header class="post-header">
+        <div class = 'post-title--before'>
+            <h6 class="post-category">
+                {{#foreach tags}}
+                    {{#if @first}}
+                        <a href="{{url}}" title="{{name}}" class="tag-{{id}}">{{name}}</a>
+                    {{/if}}
+                {{/foreach}}
+            </h6>
+            {{>comment}}
+            </div>
+        <h2 class="post-title"><a href="{{url}}">{{{title}}}</a></h2>
+        <section class="post-meta">
+            <time class="post-date" datetime="{{date format='YYYY-MM-DD'}}">{{date format="DD MMMM YYYY"}}</time>
+            <div class = 'tags'>
+                {{#foreach tags}}
+                    {{#unless @first}}
+                        <a href="{{url}}" title="{{name}}" class="tag-{{id}}">{{name}}</a>
+                        {{#unless @last}} | {{/unless}}
+                    {{/unless}}
+                {{/foreach}}
+            </div>
+        </section>
+    </header>
+    <section class="post-excerpt">
+        <p>{{excerpt words="40"}} <a class="read-more" href="{{url}}">&raquo;</a></p>
+    </section>
+    <footer class="post-meta">
+        <a href="{{@blog.url}}/over" class = 'post-separator'><img class="post-separator-image" src="{{asset "images/author-logo.png"}}" alt="de data meester" nopin="nopin" /></a>
+    </footer>
+</article>
+{{/foreach}}
+
+{{! Previous/next page links - displayed on every page }}
+{{pagination}}

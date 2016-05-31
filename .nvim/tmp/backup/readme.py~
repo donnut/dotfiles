@@ -1,0 +1,19 @@
+def create(options):
+    content = """
+jQueryConfig
+
+This archive contains jquery files that are build using the user-specified
+options to reduce the file's size. The following jquery functionality is removed:
+
+"""
+    if len(options) == 0:
+        content = content + "- None\n"
+    else:
+        content = content + "".join([ "- %s\n" % option for option in options])
+
+    content = content + """
+If you want to create more custom-made jquery distribution, please visit
+jqueryconfig.com
+"""
+
+    return content

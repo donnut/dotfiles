@@ -1,0 +1,7 @@
+[user]
+	name = Erwin Poeze
+  	email = erwin@mope.mobi
+[core]
+	editor = /usr/bin/emacs
+[merge]
+	tool = gvimdiff

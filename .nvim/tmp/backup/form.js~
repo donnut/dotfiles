@@ -1,0 +1,624 @@
+var jQueryConfig = function(){
+	/**optimalisation of ui-references**/
+	var
+		$ALL_MODULES = $('input','#modules'),
+	 	$SPECIAL_MODULES= $('#wrap, #deprecated'),
+		$COMMON_MODULES= $('#deferred, #ready, #global, #amd'),
+	 	$START_MODULES = $($COMMON_MODULES).add('#event').add('#common'),
+	 	$NOT_START_MODULES =
+	     	$($SPECIAL_MODULES)
+	     		.add('#ajax')
+	     		.add('#xhr').add('#script').add('#jsonp')
+	     		.add('#css').add('#effects').add('#dimensions').add('#offset')
+	     		.add('#special'),
+
+		$SPECIAL = $("#special"),
+		$COMMON = $("#common"),
+
+		$SCRIPT=$("#script"),
+		$JSONP=$("#jsonp"),
+		$DEFERRED_DEPENDENCIES = $("#ajax, #effects, #ready"),
+		$CSS_DEPENDENCIES= $('#dimensions, #offset, #effects'),
+		$SCRIPT_DEPENDENCIES = $JSONP,
+		$AJAX_SIBLINGS = $('#xhr, #script, #jsonp'),
+
+		$CSS = $("#css"),
+		$DEFERRED = $("#deferred"),
+		$AJAX = $("#ajax"),
+
+		$LEGACY_HIDDEN = $($('#amd').parent())
+			.add($('#global').parent())
+			.add($('#ready').parent())
+			.add($('#wrap').parent())
+			.add($('#event').parent())
+			.add($('#deferred').parent())
+			.add($('#common')),
+		$LATEST_HIDDEN = $($('#global').parent()).add($('#deprecated').parent()),
+
+        $FORM = $('form'),
+	    $MESSAGE = $('#message'),
+	    $LAYERS = $('.layer'),
+	    $MESSAGE_AREA = $('#message-area'),
+	    $EMAIL_LABEL = $('.email-label'),
+	    $BUILD_IMG = $('.build'),
+	    $SEND_IMG = $('.send'),
+	    $COOKY_BAR = $('.cookies-bar');
+
+
+
+	var	setOn = function($checkboxes){
+			//loopen nodig om eioneindige loop events te voorkomen
+			 $($checkboxes).each(function(i){
+			 	var moduleName = $(this).attr('id');
+			  	if(!$(this).prop('checked')&& !$(this).hasClass('core-disabled')  ){//
+
+			  		$(this).prop('checked', true);
+			  		onCheck(moduleName);
+
+			  	}
+			  	//setGraphOn(moduleName);
+			 });
+
+		},
+		setOff = function($checkboxes, isRadio){
+			//loopen nodig om oneindige loop events te voorkomen
+			$($checkboxes).each(function(i){
+				var moduleName = $(this).attr('id');
+			  	if($(this).prop('checked')&& !$(this).hasClass('core-disabled')  ){//
+
+			  		$(this).prop('checked', false);
+			  		onUnCheck(moduleName);
+
+			  	}
+			  	// if(!isRadio){
+			  	// 	setGraphOff(moduleName);
+			  	// }
+			});
+
+		},
+		enable = function($checkboxes){
+		//geen loop nodig want geen triggering nieuw event
+			$($checkboxes).each(function(i){
+				if($(this).prop('disabled')){
+					$($checkboxes).prop('disabled', false);
+				}
+			});
+		},
+		disable = function($checkboxes){
+		//geen loop nodig want geen triggering nieuw event
+			$($checkboxes).each(function(i){
+				if(!$(this).prop('disabled')){
+					$($checkboxes).prop('disabled', true);
+				}
+			});
+		};
+
+
+	/****complex Functions***/
+	var setRequired = function($checkbox){
+			setOn($checkbox);
+			disable($checkbox);
+			$($checkbox).parent().addClass('required');
+		},
+		removeRequired = function($checkbox){
+			//setOff($checkbox);aanvullende test nodig
+			enable($checkbox);
+			$($checkbox).parent().removeClass('required');
+		},
+		setRequiredCSS = function(){
+			setOn($CSS/*_CORE*/);
+			disable($CSS/*_CORE*/);
+			$($CSS/*_CORE*/).parent().addClass('required');
+			// disable($CSS);
+			// $($CSS).parent().addClass('required');
+		},
+		removeRequiredCSS = function(){
+			enable($CSS/*_CORE*/);
+			$($CSS/*_CORE*/).parent().removeClass('required');
+			// enable($CSS);
+			// $($CSS).parent().removeClass('required');
+		},
+		checkRequired = function($depedencies, $parent){
+			var allUnchecked = true;
+			$($depedencies).each(function(i){
+				if($(this).prop('checked')){
+					allUnchecked = false;
+				}
+			});
+
+			if(allUnchecked){
+				removeRequired($parent);
+			}
+		},
+		checkRequiredCSS = function(){
+			var allUnchecked = true;
+			$($CSS_DEPENDENCIES).each(function(i){
+				if($(this).prop('checked')){
+					allUnchecked = false;
+				}
+			});
+
+			if(allUnchecked){
+				removeRequiredCSS();
+			}
+		},
+		activate = function($ul){
+			if($($ul).hasClass('hidden')){
+				$($ul).removeClass('hidden');
+			}
+		},
+		deactivate = function($ul){
+			if(!$($ul).hasClass('hidden')){
+				$($ul).addClass('hidden');
+			}
+		},
+		disclose = function($ul){
+			if($($ul).hasClass('closed')){
+				$($ul).removeClass('closed');
+			}
+		},
+		collapse = function($ul){
+			if(!$($ul).hasClass('closed')){
+				$($ul).addClass('closed');
+			}
+		},
+		hide = function($el){
+			$($el).each(function(i){
+				deactivate(this);
+			});
+		},
+		show = function($el){
+			$($el).each(function(i){
+				activate(this);
+			});
+		},
+
+		setGraphOff= function(moduleName){
+			hide($('#min-'+ moduleName));
+		},
+		setGraphOn= function(moduleName){
+			show($('#min-'+ moduleName));
+		},
+		showError= function($el){
+	    	$($el).each(function(i){
+				$el.addClass('error');
+			});
+	    },
+	    hideError= function($el){
+	    	$($el).each(function(i){
+				$el.removeClass('error');
+			});
+	    };
+
+	/** BEHAVIOURAL FUNCTIONS*/
+	var
+		$AJAX_SIBLINGCONTAINER= $('#ajax-siblings'),
+		onCheck = function(moduleName){
+		switch(moduleName){
+			case 'ajax':
+				setRequired($DEFERRED);
+				activate($AJAX_SIBLINGCONTAINER);
+				break;
+			//dependecies
+			case 'ready':
+				setRequired($DEFERRED);
+				break;
+			case 'effects':
+				setRequiredCSS();
+				setRequired($DEFERRED);
+				break;
+			case 'dimensions':
+			case 'offset':
+				setRequiredCSS();
+				break;
+			case 'jsonp':
+				setRequired($SCRIPT);
+				break;
+			//default:// (nothing: checkparent)
+		}
+		setGraphOn(moduleName);
+	},
+
+	onUnCheck = function(moduleName){
+		switch (moduleName){
+			case 'dimensions':
+			case 'offset':
+				checkRequiredCSS();
+				break;
+			case 'jsonp':
+				checkRequired($JSONP, $SCRIPT);
+				break;
+			case 'ajax':
+			    checkRequired($DEFERRED_DEPENDENCIES, $DEFERRED);
+				setOff($AJAX_SIBLINGS);
+				deactivate($AJAX_SIBLINGCONTAINER);
+				break;
+			case 'effects':
+				checkRequired($DEFERRED_DEPENDENCIES, $DEFERRED);
+				checkRequiredCSS();
+				break;
+			case 'ready':
+				checkRequired($DEFERRED_DEPENDENCIES, $DEFERRED);
+				break;
+		}
+		setGraphOff(moduleName);
+	};
+
+	$($ALL_MODULES).on('touchstart click', function(e){
+		//touchBinder(e,  function(e){
+			//e.preventDefault();
+			var moduleName = $(e.target).attr('id');
+			var checked = $(e.target).prop('checked');
+			if(checked){
+				onCheck(moduleName);
+			} else {
+				onUnCheck(moduleName);
+			}
+		//});
+	});
+
+
+	$('#common-more').on('touchstart click', function(e){
+		disclose($COMMON);
+	});
+	$('#special-more').on('touchstart click', function(e){
+		disclose($SPECIAL);
+	});
+
+	//var TESTLABEL =$('#test-label');
+	$('#test-label').trigger('click');
+	var labelTriggersInput = $('#test-input').prop('checked');
+
+	if(! labelTriggersInput){
+		//alert('got you');
+		var $ALL_CB_LABELS = $('.checkbox-label, .checkbox-label--level2');
+
+	    $($ALL_CB_LABELS).on('touchstart click', function(e){
+			//touchBinder(e,  function(e){
+				//e.preventDefault();
+				var moduleName = $(e.target).attr('for');
+				var $CHECKBOX = $('#' + moduleName);
+				var checked = $($CHECKBOX).prop('checked');
+				if(checked){
+					setOff(moduleName);
+				} else {
+					setOn(moduleName);
+				}
+			//});
+		});
+
+		var $ALL_RADIO_LABELS = $('.radio-label');
+
+	    $($ALL_RADIO_LABELS).on('touchstart click', function(e){
+			//touchBinder(e,  function(e){
+				//e.preventDefault();
+				var moduleName = $(e.target).attr('for');
+				var $RADIOBUTTON = $('#' + moduleName);
+				var checked = $($RADIOBUTTON).prop('checked');
+				if(checked){
+					setOff(moduleName);
+				} else {
+					setOn(moduleName);
+				}
+			//});
+		});
+	}
+
+
+	var
+	    changeMessage = function (data) {
+	        var type = data.type;
+	        var msg = data.text;
+	        setTimeout(function(){
+		        switch(type){
+		        	case 'email':
+		        	    $($MESSAGE).addClass('error');
+		        		showError($EMAIL_LABEL);
+		        		$($MESSAGE_AREA).html(msg);
+			    		break;
+		    		case 'config':
+		    		case 'system':
+		    		case 'version':
+		    			$($MESSAGE).addClass('error');
+						$($MESSAGE_AREA).html(msg);
+	                    show($MESSAGE);
+			    		break;
+
+			    	// case 'timeout':
+			    	// 	$($MESSAGE_AREA).html('uw aanvraag wordt verwerkt.');
+
+			    	default://succes
+	                    $($MESSAGE_AREA).html(msg);
+	                    $($MESSAGE).addClass('success');
+	                    setTimeout(function(){
+	                        hide($MESSAGE);
+	                    }, 2000);
+		        }
+		    }, 2000);
+	    }//,
+	    // touchBinder = function(e, method){
+	    //     //e.stopPropagation();
+	    //     //e.preventDefault();
+	    //     if(e.handled !== true) {
+	    //         method(e);
+	    //         e.handled = true;
+	    //     } else {
+	    //         return false;
+	    //     }
+	    // }
+	    ;
+
+    $($FORM).submit(function(evt) {
+        evt.preventDefault();
+
+		$($MESSAGE).removeClass('error success');
+        $($MESSAGE_AREA).html('Your configuration is being build.');
+
+		activate($MESSAGE);
+
+        var serialized = $(this).serialize();
+
+		if($($CSS).prop('disabled') && $($CSS).prop('checked')){
+            serialized += '&css=on';
+		}
+		if($($DEFERRED).prop('disabled') && $($DEFERRED).prop('checked')){
+			serialized += '&deferred=on';
+		}
+		if($($SCRIPT).prop('disabled') && $($SCRIPT).prop('checked')){
+			serialized += '&script=on';
+		}
+
+        $.ajax({
+            type: "POST",
+            url: "/config",
+            data: serialized,
+            timeout: 4000
+        })
+        .done(function(data, textStatus, jqXHR) {
+            // turns out to be a success
+            changeMessage(jqXHR.responseJSON);
+        })
+        .fail(function(jqXHR, textStatus, err) {
+            if (err === 'Internal Server Error') {
+                // server replies with an error
+                changeMessage(jqXHR.responseJSON);
+            } else if (textStatus === 'error') {
+                // connection with the server is lost
+                changeMessage({
+                    type: 'system',
+                    text: 'The connection with the server is broken.<br/>Please check your internet connection and try again.'
+                });
+            } else if (err === 'timeout'){
+				changeMessage({
+                    type: 'timeout',
+                    text: 'A message will be send to you shortly.<br/>Please check your mailbox.<br/>'
+                });
+            } else {
+                // unanticipated error
+            	changeMessage({
+                    type: 'system',
+                    text: textStatus
+                });
+            }
+        });
+    });
+
+
+<<<<<<< HEAD
+    $($LAYERS).on('touchstart click', function(e){
+    	//touchBinder(e,  function(e){
+
+    		//TODO
+
+    		if(!$(e.target).hasClass('container--scroll')){
+    			deactivate($(e.currentTarget));
+    		}
+		//});
+    });
+=======
+   
+>>>>>>> ab76c4e7e4400aa7bcd2468c20da0f8461a0d59d
+
+
+	$("#complete-config").on('touchstart click', function(e){
+		setOn($ALL_MODULES);
+		disclose($SPECIAL);
+		disclose($COMMON);
+	});
+	$("#basic-config").on('touchstart click', function(e){
+		setOff($NOT_START_MODULES);
+		setOn($START_MODULES);
+		collapse($SPECIAL);
+		collapse($COMMON);
+	});
+	$("#latest").on('touchstart click', function(e){
+    	//touchBinder(e,  function(e){
+			$($FORM).addClass('latest').removeClass('secondx compat legacy');
+			hide($LATEST_HIDDEN);
+			show($LEGACY_HIDDEN);
+		//});
+    });
+
+
+	$("#secondx").on('touchstart click', function(e){
+    	//touchBinder(e,  function(e){
+			var checked = $(e.target).prop('checked');
+			if(checked){
+				$($FORM).addClass('secondx').removeClass('latest compat legacy');
+				show($LATEST_HIDDEN);
+				show($LEGACY_HIDDEN);
+		    }
+		//});
+    });
+
+
+
+	$("#compat").on('touchstart click', function(e){
+    	//touchBinder(e,  function(e){
+			var checked = $(e.target).prop('checked');
+			if(checked){
+				$($FORM).addClass('compat').removeClass('latest secondx legacy');
+				show($LATEST_HIDDEN);
+				show($LEGACY_HIDDEN);
+		    }
+		//});
+    });
+
+
+	$("#legacy").on('touchstart click', function(e){
+    	//touchBinder(e,  function(e){
+			var checked = $(e.target).prop('checked');
+			if(checked){
+				$($FORM).addClass('legacy').removeClass('secondx compat latest');
+				show($LATEST_HIDDEN);
+				hide($LEGACY_HIDDEN);
+	    	}
+	    //});
+    });
+
+ 	$($LAYERS).on('touchstart click', function(e){
+    	//touchBinder(e,  function(e){
+
+    		//TODO
+    		
+    		if(!$(e.target).hasClass('container--scroll') &&
+    			!$(e.target).hasClass('container--no-scroll') && 
+    			!$(e.target).hasClass('modal-trigger') ){
+    			deactivate($(e.currentTarget));
+    		}
+		//});
+    });
+
+	$('.modal-trigger').on('touchstart click', function(e){
+    	//touchBinder(e,  function(e){
+			//e.preventDefault();
+			if($(e.target).hasClass('modal-trigger')){
+				activate($(e.currentTarget).find($('.modal--footer')));
+			}
+<<<<<<< HEAD
+
+		//});
+    });
+
+	$('#privacy-trigger, #cookies-more').on('touchstart click', function(e){
+        e.preventDefault();
+
+        $.ajax({
+            method: 'get',
+            url: '/docs/privacy.html',
+            contentType: 'text/plain',
+            dataType: 'html'
+        })
+        .done(function(data, textStatus, jqXHR) {
+            // turns out to be a success
+            $('article', '#privacy').html(data);
+            if ($(e.target).hasClass('modal-trigger')){
+                activate($('#privacy'));
+            }
+        })
+        .fail(function(jqXHR, textStatus, err) {
+            $('article', '#privacy').html('The privacy text failed to load');
+            if ($(e.target).hasClass('modal-trigger')){
+                activate($('#privacy'));
+            }
+        });
+=======
+		//});
+    });
+
+    $('.modal--footer').on('touchstart click', function(e){
+    	//touchBinder(e,  function(e){
+    		//e.preventDefault();
+    		if(!$(e.target).hasClass('container--scroll') &&
+    			!$(e.target).hasClass('container--no-scroll') ){
+    			deactivate($(e.currentTarget));
+    		}
+		//});
+>>>>>>> ab76c4e7e4400aa7bcd2468c20da0f8461a0d59d
+    });
+
+	$('.email-input').on('focus', function(e){
+		if( $($EMAIL_LABEL).hasClass('error')){
+			$($EMAIL_LABEL).removeClass('error');
+		}
+	});
+    $("#accept-cookies").on('touchstart click', function(e){
+    	//touchBinder(e,  function(e){
+			$($COOKY_BAR).removeClass('visible');
+		//});
+    });
+
+    //$("#cookies-more").on('touchstart click', function(e){
+        //$.ajax({
+            //url: '/docs/privacy.html',
+            //contentType: 'text/plain',
+            //dataType: 'html'
+        //})
+        //.done(function(data, textStatus, jqXHR) {
+            //// turns out to be a success
+            //$('article', '#privacy').html(data);
+			//activate($('#privacy'));
+        //})
+        //.fail(function(jqXHR, textStatus, err) {
+            //$('article', '#privacy').html('The privacy text failed to load');
+			//activate($('#privacy'));
+        //});
+    //});
+
+    //$("#nojs").trigger('click');
+	$("#basic-config").trigger('click');
+	$("#secondx").trigger('click');
+	$($COOKY_BAR).addClass('visible');
+
+	$('body').one('touchstart', function(e){
+ 		$('body').removeClass('no-touch');
+        var
+			$TOOLTIP_TRIGGERS = $('.icon--info, .icon--radio-info, .icon--tip, .icon--alert, .graph-section'),
+			$TOOLTIP_LAYERS = $('.layer--tooltip');
+
+       $TOOLTIP_TRIGGERS.on('touchstart', function(e){
+	    //$TOOLTIP_TRIGGERS.on('click', function(e){
+	    	if(!$(e.target).hasClass('layer--tooltip')){
+	    		$(e.currentTarget).addClass('touched');
+		    	//var $tooltip = $(e.currentTarget).find('.tooltip');
+		    	//$($tooltip).addClass('touched');
+	    	}
+	    });
+	    $TOOLTIP_LAYERS.on('touchstart', function(e){
+		//$TOOLTIP_LAYERS.on('click', function(e){
+			e.preventDefault();
+			$trigger = $(e.currentTarget).parent();
+			// if($trigger.hasClass('touched')){
+				$($trigger).removeClass('touched');
+			// } else {//touched icon alert
+			// 	$tooltip = $($trigger).find('.tooltip');
+			// 	$($tooltip).removeClass('touched');
+			// }
+	    	//var $tooltip = $(e.currentTarget).find('.tooltip');
+	    	//$($tooltip).addClass('touched');
+	    });
+	    var $ALL_REQUIRED_LABELS =
+        $('#css + .checkbox-label, #deferred + .checkbox-label, #script +.checkbox-label--level2');
+
+ 		$($ALL_REQUIRED_LABELS).on('touchstart', function(e){
+			//touchBinder(e,  function(e){
+				//e.preventDefault();
+				var $label = $(e.currentTarget);
+				if( ! $(e.target).hasClass ('layer--tooltip')){
+					if( $($label).parent().hasClass('required')){
+						$trigger = $($label).find('.icon--alert ');//> .tooltip
+		    			$($trigger).addClass('touched');
+					}
+				}
+			//});
+		});
+	});
+	// var modernizrClasses = $('html').attr('class');
+	// $('#modules').addClass(modernizrClasses);
+	if ($('html').hasClass('no-css-transitions')||
+		$('html').hasClass('no-transforms')||
+		$('html').hasClass('no-preserve3d')){
+			$('.check').html('v');
+	}
+};
+

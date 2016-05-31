@@ -1,0 +1,140 @@
+/// <reference path="../dts/ramda.d.ts" />
+/// <reference path="../dts/objectid.ts" />
+/// <reference path="globals.ts" />
+/// <reference path="utils.ts" />
+/// <reference path="DOMIO.ts" />
+
+namespace Pip.Tests {
+    import G = Globals;
+    import ACT = G.Action;
+    import AK = G.AddressKey;
+
+    /**
+     * TESTS
+     *
+     * pipProps.diffTest
+     */
+    export function objectDiff(desiredValue: string, register: G.IRegister<any>, itemId: string): boolean;
+    export function objectDiff(desiredValue: string, register: G.IRegister<string>): boolean;
+    export function objectDiff(desiredValue: any, register: any, itemId?: any): boolean {
+        return itemId
+            ? desiredValue !== register.value[itemId]
+            // register.value[itemId] may be undefined => return = true
+            : desiredValue !== register.value;
+    }
+
+    /**
+     * TESTS
+     *
+     * pipProps.diffTest
+     */
+    export function basicDiff(desiredValue: string, register: G.IRegister<string>): boolean;
+    export function basicDiff(desiredValue: any, register: any): boolean {
+        return  desiredValue !== register.value;
+    }
+
+    export function elDiff(desiredValue: DOMIO.Instance, register: G.IRegister<DOMIO.Instance>|G.IRegister<any>, itemId?: string): boolean {
+        //deze vergelijking is minder duur dan 2 DOMelementen vergelijken,
+        //als domelement dan gelijk,
+        //dus alleen testen of een van beide niet gedefinieerd
+        var storedValue;
+        if (itemId) {
+            storedValue = register.value[itemId] || {}
+        } else {
+            storedValue = register.value
+        }
+        //return (!desiredValue || !register.value) && !(!desiredValue && !register.value);
+        if (R.keys(desiredValue).length === 0 || R.keys(storedValue).length === 0) {
+            return true;
+        } else if (desiredValue.equals(storedValue)) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    //wanneer is sdesiredValue een string[]??
+    export function arrayDiff(desiredValue: string[], register: G.IRegister<string[]>): boolean;
+    export function arrayDiff(desiredValue: boolean, register: G.IRegister<string[]>, itemId: string): boolean;
+    export function arrayDiff(desiredValue: any, register: any, itemId?: any): boolean {
+        if (itemId) {
+            return desiredValue !== R.contains(itemId, register.value);
+        } else {
+            return !(desiredValue.length === register.value.length && R.reduce((acc, a) => acc && a, true, R.map((t) => t[0] === t[1], R.zip(desiredValue, register.value))));
+        }
+    }
+
+    /**
+     * Returns true if desiredValue is not in register or if the register value on position itemId is different from
+     * desiredValue.
+     * Note:
+     */
+    export function listDiff(desiredValue: boolean|any, register: G.IRegister<string[]>, itemId?: string): boolean {
+        if (itemId) {
+            if (typeof desiredValue === 'boolean') {
+                return desiredValue !== R.contains(itemId, register.value);
+            } else if (typeof desiredValue === 'number') {//if (desiredValue[G.POS] !== undefined) {
+                //TODO gaat dit goed als een ander wordt geinsert?
+                return desiredValue !== R.indexOf(itemId, register.value);
+                //return desiredValue[G.POS] !== R.indexOf(itemId, register.value);
+            } else {
+               throw new Error('Hier mag je niet komen, position wordt verwacht maar niet gegeven')
+            }
+        } else {
+            //TODO overgenomen van arrayDiif maar wat doet deze functie? wanneer is desiredValue een string[]
+            //throw new Error("listDiff: situatie die nooit bereikt mag worden?")
+            return !((<string[]>desiredValue).length === register.value.length && R.reduce((acc, a) => acc && a, true, R.map((t) => t[0] === t[1], R.zip((<string[]>desiredValue), register.value))));
+        }
+    }
+
+    export function modelDiff(desiredValue: any, register: G.IRegister<any>, itemId?: string): boolean {
+        var currentModel = itemId ? register.value[itemId] : register.value;
+        return !R.equals(desiredValue, currentModel);
+        //nrOfAttributes = (R.keys(desiredValue)).length,
+        //theSame: boolean;
+        //if (R.keys(currentModel).length === 0) {
+            //return R.keys(desiredValue).length !== 0;
+        //}
+        //for (var key in desiredValue) { //TODO kan geen arrays of objects aan als value!!!
+            //theSame = currentModel[key] && desiredValue[key] === currentModel[key];
+            //if (!theSame) break;
+            ///* verwacht create en dan wil je diff dus theSame = false,
+               //maar  ipv false voor de zekerheid test op delete */
+
+            ////maar TODO
+            ////zo leidt delete niet totregisterwijziging??
+            ////'create, usecase: delete moet hier niet komen: dan geen attr'
+        //}
+        //return !theSame;
+    }
+
+    export function navTreeDiff(desiredValue: string|any, register: G.IRegister<any>, itemId: string): boolean {
+        return (typeof desiredValue === 'string')
+            ? true
+            : modelDiff(desiredValue, register, itemId);
+    }
+
+    // modelEmit: ( ($el || !address[AK[AK.el]]) && (diff || pipIn[MK[MK.action]] === ACT[ACT.insert]) ) ||
+    // (diff && ($root || !address[AK[AK.root]]) && empty) || //Klopt test op root immers hier geen Action insert of remove vanuit root
+    // (diff && pipIn[MK[MK.action]] === ACT[ACT.remove])
+
+    export function DOMEmit(address){
+        return function(diff: boolean, action: string, empty: boolean, $anc): boolean {
+            // return  ($el && (diff || action === ACT[ACT.insert]) ) ||
+            //     (empty && diff && ($root || !address[AK[AK.root]]) ) || //Klopt test op root immers hier geen Action insert of remove vanuit root
+            //     (diff && action === ACT[ACT.remove]);
+            return (diff && ( !!$anc ||
+                        action === ACT[ACT.remove] ||
+                        (empty && ($anc || !address[AK[AK.anc]]))
+                        )
+                    //Klopt test op ancestor: immers hier geen Action insert of remove vanuit ancestor
+                   )//||na vervangen $el door $anc : helder dat dit theoretisch niet kan?!!!
+                //(action === ACT[ACT.insert] && !!$anc)//
+
+        }
+    }
+    export function modelEmit(diff: boolean){
+        return diff;
+    }
+
+}

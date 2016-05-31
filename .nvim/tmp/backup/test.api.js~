@@ -1,0 +1,191 @@
+QUnit.module('API', {
+    beforeEach: function() {
+        DEBUG = true;
+        Globals.idCounter = 0;
+        Globals.vb = Store.Storage(); // reset 'global' space
+    }
+});
+
+QUnit.test('api create treeModel', function(assert) {
+    var domStr = "<div id='main'></div>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'sub',
+        selector: '#main',
+        tpl: "<div></div>",
+        empty: '<p id="empty">not filled</p>'
+    }];
+
+    var pips = [{
+        type: 'treeModel',
+        name: 'storage',
+        server: false,
+        silent: false,
+        model: {
+            type: 'subject',
+            it: 'p1',
+            children: [{
+                type: 'value',
+                it: 'val1'
+            },{
+                type: 'value',
+                it: 'val2'
+            }],
+            selected: 'multiply'
+        }
+    }];
+
+    var links =[{
+        pub: 'models.storage',
+        sub: '#main.sub'
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links, 'vb', {options:{}, name: 'treeModel', ref: 'model'});
+
+    assert.deepEqual(Globals.vb.get('models.storage').get(), {
+        "children": [
+        {
+            "it": "val1",
+            "type": "value"
+        },
+        {
+            "it": "val2",
+            "type": "value"
+        }
+        ],
+        "it": "p1",
+        "selected": "multiply",
+        "type": "subject"
+    });
+    Globals.vb.get('models.storage').react({action: 'update', value: {
+        "children": [
+        {
+            "it": "val1",
+            "type": "value",
+            "selected": 1
+        },
+        {
+            "it": "val2",
+            "type": "value",
+            "selected": 2
+        }
+        ],
+        "it": "p1",
+        "selected": "multiply",
+        "type": "subject"
+    }});
+    assert.deepEqual(Globals.vb.get('models.storage').get(), {
+        "children": [
+        {
+            "it": "val1",
+            "selected": 1,
+            "type": "value"
+        },
+        {
+            "it": "val2",
+            "selected": 2,
+            "type": "value"
+        }
+        ],
+        "it": "p1",
+        "selected": "multiply",
+        "type": "subject"
+    });
+});
+
+
+QUnit.test('api create nestCollection', function(assert) {
+    var domStr = "<div id='main'></div>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'sub',
+        selector: '#main',
+        tpl: "<div></div>",
+        empty: '<p id="empty">not filled</p>'
+    }];
+
+    var pips = [{
+        type: 'nestCollection',
+        name: 'storage',
+        server: false,
+        silent: false,
+        model: [{
+            type: 'subject',
+            it: 'p1',
+            children: [{
+                type: 'value',
+                it: 'val1'
+            },{
+                type: 'value',
+                it: 'val2'
+            }],
+            selected: 'multiply'
+        }],
+        index: 'it'
+    }];
+
+    var links =[{
+        pub: 'models.storage',
+        sub: '#main.sub'
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links, 'vb', {
+        options: function() {}, 
+        name:'nestCollection', 
+        ref:'collection'
+    });
+
+    assert.deepEqual(Globals.vb.get('models.storage').get('1'), {
+        "children": [
+        {
+            "it": "val1",
+            "type": "value"
+        },
+        {
+            "it": "val2",
+            "type": "value"
+        }
+        ],
+        "it": "p1",
+        "selected": "multiply",
+        "type": "subject"
+    });
+    Globals.vb.get('models.storage').react([{action: 'update', it: '1', value: {
+        "children": [
+        {
+            "it": "val1",
+            "type": "value",
+            "selected": 1
+        },
+        {
+            "it": "val2",
+            "type": "value",
+            "selected": 2
+        }
+        ],
+        "it": "p1",
+        "selected": "multiply",
+        "type": "subject"
+    }}]);
+    assert.deepEqual(Globals.vb.get('models.storage').get('1'), {
+        "children": [
+        {
+            "it": "val1",
+            "selected": 1,
+            "type": "value"
+        },
+        {
+            "it": "val2",
+            "selected": 2,
+            "type": "value"
+        }
+        ],
+        "it": "p1",
+        "selected": "multiply",
+        "type": "subject"
+    });
+});
+
+

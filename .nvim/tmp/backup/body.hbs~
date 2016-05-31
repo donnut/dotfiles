@@ -1,0 +1,8 @@
+<body>
+{{#if title}}
+<p>{{title}}</p>
+{{else}}
+<span></span>
+{{/if}}
+@import './header';
+</body>

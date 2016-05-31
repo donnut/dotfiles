@@ -1,0 +1,21 @@
+import sys
+from providedcode.transitionparser import TransitionParser
+from providedcode.dependencygraph import DependencyGraph
+from providedcode.dependencycorpusreader import DependencyCorpusReader
+
+args = sys.argv
+dg = DependencyGraph(parsed)
+
+model_file_name = args[1]
+tp = TransitionParser.load(model_file_name)
+
+try:
+    for line in sys.stdin:
+        sentence = DependencyGraph.from_sentence(line)
+        parsed = tp.parse([sentence])
+        conll = parsed[0].to_conll(10).encode('utf-8')
+        sys.stdout.write(conll)
+except NotWorkingError:
+    print """
+    Something went wrong while processing
+    """

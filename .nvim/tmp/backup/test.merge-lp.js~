@@ -1,0 +1,16 @@
+var assert = require('assert');
+var fs = require('fs');
+var assets = require('../ts/index.js');
+
+describe('merge linkingPip files', function() {
+
+    //it('merges one file', function(done) {
+        //assets.merger('./test/data/m.toplevel--todo/m.toplevel--todo.json', function(data) {
+            //assert.deepEqual(JSON.parse(data), {});
+            //done();
+        //});
+    //});
+    it('merges one file', function() {
+        assert.deepEqual(assets.merger('./test/data/m.toplevel--todo/m.toplevel--todo.lp'), {});;
+    });
+});

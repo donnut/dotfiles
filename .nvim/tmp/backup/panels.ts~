@@ -1,0 +1,375 @@
+var nodes = [],  pips = [], links = [];
+/****COMPARATORS****/
+pips.concat([
+    {
+      selector: '#comparator>li>a',
+      type: 'stateItem',
+      default: 'is-unselected',
+      states: [
+        {
+          name: 'is-unselected',
+          attr: 'class',
+          value: 'option'
+        },
+        {
+          name: 'is-selected',
+          attr: 'class',
+          value: 'selected-option'
+        }
+      ]
+    },
+    {
+      selector: '#comparator',
+      type: 'select',
+      one: true,
+      required: true,
+      reselectable: false
+    },
+    //'#comparator>li>a'.select();
+    // '#comparator>li>a'.select({
+    //   one: true,
+    //   required: true,
+    //   reselectable: false}
+    // )
+
+
+    {
+      selector: '#comparator>li>a',
+      type: 'eventItem',
+      events: 'click'
+    },
+    {
+      selector: '#comparator',
+      type: 'state',
+      default: 'hidden',
+      states: [
+        {
+          name: 'hidden',
+          attr: 'class',
+          value: ''
+        },
+        {
+          name: 'focus',
+          attr: 'class',
+          value: 'focus'
+        }
+      ]
+    },
+    {
+      selector: '#comparator',
+      type: 'event',
+      events: 'blur'
+    },
+]);
+links.concat([
+    {
+      pub: '#comparator.select',
+      sub: '#comparator>li>a.states.class.is-unselected'
+    },
+    {
+      pub: '#comparator>li>a.eventItem.click',
+      sub: '#comparator>li>a.states.class.is-unselected',
+      action: 'update',
+      value: function () {
+          return 'is-selected';
+      },
+      it: function (eObject) {
+          return eObject.it;
+      }
+    },
+]);
+pips.concat([
+  type: 'model',
+  name:'comparator',
+  model: {
+    conditionId: 'string',
+    //top:***, tbv plaatsing
+    //left:***, tbv plaatsing
+    //areaName: 'string',//niet nodig
+  }
+]);
+
+/****OPERATORS****/
+pips.concat([
+    {
+      selector: '#operators>li>a',
+      type: 'stateItem',
+      default: 'is-unselected',
+      states: [
+        {
+          name: 'is-unselected',
+          attr: 'class',
+          value: 'option'
+        },
+        {
+          name: 'is-selected',
+          attr: 'class',
+          value: 'selected-option'
+        }
+      ]
+    },
+    {
+      selector: '#operators',
+      type: 'select',
+      one: true,
+      required: true,
+      reselectable: false
+    },
+    {
+      selector: '#operators>li>a',
+      type: 'eventItem',
+      events: 'click'
+    },
+    {
+      selector: '#operators',
+      type: 'state',
+      default: 'hidden',
+      states: [
+        {
+          name: 'hidden',
+          attr: 'class',
+          value: ''
+        },
+        {
+          name: 'focus',
+          attr: 'class',
+          value: 'focus'
+        }
+      ]
+    },
+    {
+      selector: '#operators',
+      type: 'event',
+      events: 'blur'
+    }
+]);
+links.concat([
+    {
+      pub: '#operators.select',
+      sub: '#operators>li>a.states.class.is-unselected'
+    },
+    {
+      pub: '#operators>li>a.eventItem.click',
+      sub: '#operators>li>a.states.class.is-unselected',
+      action: 'update',
+      value: function () {
+        return 'is-selected';
+      },
+      it: function (eObject) {
+        return eObject.it;
+      }
+    },
+]);
+nodes.concat([
+  {
+    selector: '#operators>.optgroup',
+    type: 'listItem',
+    idType: 'id'
+  },
+  {
+    selector: '#operators>.optgroup>button',
+    type: 'listItem',
+    idType: 'id'
+  },
+]);
+pips.concat([
+    {
+      selector: '#operators>.optgroup',
+      type: 'stateItem',
+      default: 'is-unselected',
+      states: [
+        {
+          name: 'is-unselected',
+          attr: 'class',
+          value: 'is-hidden'
+        },
+        {
+          name: 'is-selected',
+          attr: 'class',
+          value: ''
+        }
+      ]
+    },
+    {
+      selector: '#operators',
+      type: 'select',
+      name: 'optgroup',
+      one: false,
+      required: true,
+      reselectable: false
+    },
+    {
+      selector: '#operators>.optgroup>button',
+      type: 'stateItem',
+      default: 'is-enabled',
+      states: [
+        {
+          name: 'is-enabled',
+          attr: 'class',
+          value: '',
+        },
+        {
+          name: 'is-disabled',
+          attr: 'class',
+          value: 'is-disabled',
+        },
+      ]
+    },
+]);
+nodes.concat([
+  {
+    type: 'list',
+    selector: '#delete-operator',
+    tpl: "<button><span class ='delete'></span></button>",
+  }
+]);
+pips.concat([
+  {
+    selector: '#delete-operator>button>span',
+    type: 'templateItem',
+  },
+  {
+    selector: '#delete-operator>button',
+    type: 'templateItem',
+    attr: 'id'
+  },
+]);
+pips.concat([
+  type: 'model',
+  name:'operator',
+  model:{
+    //top:***, tbv plaatsing
+    //left:***, tbv plaatsing
+    areaName: 'string',
+    subjectId: 'string',
+    mode: 'add-left', // enum ['add-left', 'add-right', 'change'],
+    //current: 'minus', // enum operators and undefined!! als add-left of add-right
+    //niet nodig: dirt is degene die op false wordt gezet in selected!
+    'delete': [],//enum ['delete', 'delete-left', 'delete-right'],
+    range: 'single', //enum ['single', 'multiple'],
+    type: 'basic', //enum ['basic', 'boolean', 'condition', 'case'],
+  }
+]);
+
+
+
+/****VALUES****/
+nodes.concat([
+    {
+      selector: '#pub-args',
+      type: 'list',
+      tpl: '<li></li>'
+    },
+    {
+      selector: '#dropped-arguments',
+      type: 'list',
+      tpl: '<li></li>'
+    },
+    {
+      selector: '#variables',
+      type: 'list',
+      tpl: '<li></li>'
+    },
+    {
+      selector: '#pre-variables',
+      type: 'list',
+      tpl: '<li></li>'
+    },
+    {
+      selector: '#free-values>ul',
+      type: 'list',
+      tpl: '<li></li>'
+    },
+    {
+      selector: '#action-values',
+      type: 'list',
+      tpl: '<li></li>'
+    },
+]);
+pips.concat([
+    {
+      selector: '#pub-args>li',
+      type: 'templateItem',
+    },
+    {
+      selector: '#dropped-arguments>li',
+      type: 'templateItem',
+    },
+    {
+      selector: '#variables>li',
+      type: 'templateItem',
+    },
+    {
+      selector: '#pre-variables>li',
+      type: 'templateItem',
+    },
+    {
+      selector: '#free-values>ul>li',
+      type: 'templateItem',
+    },
+    {
+      selector: '#action-values>li',
+      type: 'templateItem',
+    },
+]);
+pips.concat([
+    {
+      selector: '#values>ul>li>ul>li',
+      type: 'stateItem',
+      default: 'is-unselected',
+      states: [
+        {
+          name: 'is-unselected',
+          attr: 'class',
+          value: 'option'
+        },
+        {
+          name: 'is-selected',
+          attr: 'class',
+          value: 'selected-option'
+        }
+      ]
+    },
+    {
+      selector: '#values',
+      type: 'select',
+      one: true,
+      required: true,
+      reselectable: false
+    },
+    {
+      selector: '#values>ul>li>ul>li',
+      type: 'eventItem',
+      events: 'click',
+      root: '#values',
+    }
+]);
+links.concat([
+    {
+      pub: '#values.select',
+      sub: '#values>ul>li>ul>li.states.class.is-unselected'
+    },
+    {
+      pub: '#values>ul>li>ul>li.eventItem.click',
+      sub: '#values>ul>li>ul>li.states.class.is-unselected',
+      action: 'update',
+      value: function () {
+          return 'is-selected';
+      },
+      it: function (eObject) {
+          return eObject.it;
+      }
+    },
+]);
+pips.concat([
+  type: 'model',
+  name:'value',
+  model: {
+    valueId: 'string',
+    //top:***, tbv plaatsing
+    //left:***, tbv plaatsing
+    //areaName: 'string',//niet nodig
+  }
+]);
+
+//evt 1 standaard model.panel

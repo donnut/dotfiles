@@ -1,0 +1,142 @@
+module Pip.Public {
+    /* aliases */
+    import G = Globals;
+    import PT = G.PipType;
+    import PC = G.PipClass;
+    import ON = G.OptionName;
+    import AK = G.AddressKey;
+    import MK = G.MessageKey;
+    import ACT = G.Action;
+    import LO = G.LinkOptionName;
+    import IStorage = Store.IStorage;
+
+    export function getInit(address: G.IAddresses, pipProps, storage: IStorage){
+        const pipClass = pipProps.pipClass,
+            actions = pipProps.outActions,
+            itType = pipProps.itType;
+
+        var initFunction;
+        if (itType) {
+            initFunction = function() {
+                var current = storage.get(address[AK[AK.pip]]).unsafeGet();
+                var init;
+                if (R.is(Array, current)) {
+                    return R.map(function(itemId) {
+                        var obj: any = {
+                            it:   itemId,
+                            action: pipClass === PC[PC.el] ||pipClass === PC[PC.nav]
+                                ? actions({action: ACT[ACT.insert]})
+                                : actions({action: ACT[ACT.create]})
+                        };
+                        obj[MK[MK.value]] = true;
+                        // if (pipClass === PC[PC.attr]) {
+                        //     obj[MK[MK.emit]] = false;
+                        // }
+                        return obj;
+                    }, current);
+                } else {
+                    return R.values(R.mapObjIndexed(function(val, itemId) {
+                        var obj: any = {
+                            it:   itemId,
+                            action: pipClass === PC[PC.el]||pipClass === PC[PC.nav]
+                                ? actions({action: ACT[ACT.insert]})
+                                : actions({action: ACT[ACT.create]})
+                        };
+                        obj[MK[MK.value]] = val;
+                        // if (pipClass === PC[PC.attr]) {
+                        //     obj[MK[MK.emit]] = false;
+                        // }
+                        return obj;
+                    }, current));
+                }
+            };
+        } else {
+            initFunction = function() {
+                var current = storage.get(address[AK[AK.pip]]).unsafeGet();
+                if (current && !((pipClass === PC[PC.attr] || pipClass === PC[PC.tree]) && R.keys(current).length === 0)) {
+                    var obj: any = {
+                        action: pipClass === PC[PC.el]||pipClass === PC[PC.nav]
+                            ? actions({action: ACT[ACT.insert]})
+                            : actions({action: ACT[ACT.create]})
+                    };
+                    obj[MK[MK.value]] = current;
+                    // if (pipClass === PC[PC.attr]) {
+                    //     obj[MK[MK.emit]] = false;
+                    // }
+                    return obj;
+                }
+            };
+        }
+        return initFunction;
+    }
+
+    //?? moet dit wel algemeen: alleen event en eventItem?!
+    export function addBinding(binding: G.ILink) {//this = bindings
+        var bindings = this;
+        bindings.push({sub: binding.sub, subPip:binding.subPip, fn: binding.fn});
+    }
+
+    export function removeBinding(sub: string) {//this = bindings
+        var bindings = this;
+        var bindingIndexToRemove = R.findIndex((binding) => binding[sub] !== sub, bindings);
+        Utils.remove(bindingIndexToRemove, 1, bindings);
+    }
+
+    export function getBindings(sub?: string) {//this = bindings
+        var bindings = this;
+        return sub !== void 0
+            ? R.find( (binding) => binding[sub] === sub, bindings)
+            : bindings;
+    }
+    // server always sends array, return an object in case of model pip
+    export function normalizeServerOutput(itType: boolean){
+        return function(data) {
+            return itType ? data : data[0];
+        };
+    }
+
+    //getItemId is something different: public function of nodeRef-Pips
+    export function getItemId(address: G.IAddresses, storage: IStorage) {
+        return function($item:DOMIO.Instance) {//TODO GEen :DOMIO.Instance
+            var it, i = 0;
+            var register = storage.get(address[AK[AK.pip]]).unsafeGet();
+            var itemIds = R.keys(register);
+            while(!it && i < itemIds.length) {
+                var itemId = itemIds[i];
+                if ($item.equals(register[itemId])) { // TODO dure vergelijking?
+                    it = itemId;
+                }
+                i++;
+            }
+            return it;
+        };
+    }
+    // export function getValues() {
+    //     switch (pipProps.pipType) {
+    //         case 'state':
+    //         case 'stateItem':
+    //             return pipProps.stateNames;
+    //         case 'model':
+    //             //oops dit is niet netjes!!
+    //             //als model leeg bestaat dit niet terwijl in opties wel gedefinieerd!!
+    //             return register.value;
+    //         case 'collection':
+    //             return R.zip(R.keys(register.value), R.values(register.value));
+    //     }
+    // }
+    // export function getDefaultValue() {
+    //     //TODO óf anders de default?
+    //     return R.head(pipProps.stateNames);
+    // }
+    // export function getKeys() {
+    //     return pipProps.keyNames;
+    // }
+    // export function modelKeys(options: G.IModelPipOptions|G.ICollectionPipOptions): string[] {
+    //     if (options.keys) {
+    //         return options.keys;
+    //     } else if (options.model) {
+    //         var models = R.is(Array, options.model) ? options.model : [options.model];
+    //         return R.reduce((init, model) => R.union(init, R.keys(model)), [], models);
+    //     }
+    // }
+}

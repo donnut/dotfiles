@@ -1,0 +1,113 @@
+module Tree.Flatten {
+    import G = Globals;
+    import PT = G.PipType;
+    import RPT = G.RegPipType;
+    import ACT = G.Action;
+    import MK = G.MessageKey;
+    import ELM = G.Element;
+    import ON = G.OptionName;
+    import OV = G.OptionValue;
+    import AK = G.AddressKey;
+    import LO = G.LinkOptionName;
+
+    function flatten(tagSpec: Tree.ExtElement, nodeId?:string, rootId?:string) {
+            // shadowElement must be processed after listItem! TODO: make this more bullet proof idea: use of loopWithSequenceControl?
+            const regPipNames = [PT[PT.element], PT[PT.listItem], PT[PT.itemElement], PT[PT.shadowElement]];
+            let appEl;
+            if (this.virtualDOM){//per tag
+                let returnPath = function(memberElement){
+                    if(memberElement && memberElement.path) {
+                        return memberElement.path;
+                    }
+                }
+                let extractAppel = function(tagSpecKey){
+                   if( tagSpecKey === 'children'){
+                       return R.map(returnPath, tagSpec.children)
+                   } else if(tagSpecKey === 'parent'){
+                        returnPath(tagSpec.parent);
+                   } else if(!R.contains(tagSpecKey, regPipNames)){
+                       /*if (tagSpec[tagSpecKey] != undefined)*/ return tagSpec[tagSpecKey];
+                   }
+                   //else nothing
+                }
+                appEl = R.mapObj(extractAppel, tagSpec);
+            }
+            R.forEach((regPipName) => {
+                if (tagSpec[regPipName]) {
+                    var regType = regPipName,
+                    options = { type: regType },
+                    address: G.IAddresses = tagSpec[regType],
+                    regPipId: string = address[AK[AK.selector]];
+                    address[AK[AK.pip]] = regPipId;
+
+                    if (nodeId) {
+                        //if already excist overwrite
+                        address[AK[AK.anc]] = nodeId;
+                    }
+
+                    if (this.storage.exists(regPipId)) {
+                        if (nodeId) {
+                            // nu ook el nodig als list!!!
+                            this.replacePip(options, address);
+                        }
+                        //else geen actie nodig!
+                    } else {
+                        if(this.virtualDOM){
+                            appEl[regPipName] = regPipId;
+                        }
+
+                        Pips.create(options, address, this.storage);
+
+                        var parentId: string = (regPipName === PT[PT.itemElement])
+                            ? tagSpec[regPipName].item
+                            : tagSpec[regPipName].anc;//komt voor elem, SE, ook voor listItem want tagSpec[regPipName].anc = tagSpec[regPipName].root
+
+                        if (this.navTree.length >0) {
+                            var parentModel: any = R.find( (navModel) => R.propEq('id', parentId, navModel), this.navTree);
+                            if (parentModel) {
+                                parentModel.children.push(regPipId);
+                            }
+                        }
+                        var navModel: G.INavModel = {
+                            id: regPipId,//_id,it?
+                            type: RPT[RPT[regPipName]],
+                            parent: parentId,
+                            children: []
+                        };
+                        this.navTree.push(navModel);
+                    }
+
+                    this.regAddressBook[regPipId] = R.assoc(AK[AK.pip], address[AK[AK.pip]], {});
+                    this.regAddressBook[regPipId][AK[AK.anc]] = address[AK[AK.anc]];
+
+                    if (regType === PT[PT.listItem] || regType === PT[PT.itemElement]) {
+                        this.regAddressBook[regPipId][AK[AK.root]] = address[AK[AK.root]];
+                        this.regAddressBook[regPipId][AK[AK.sel]] = address[AK[AK.sel]];
+                        if (regType === PT[PT.listItem]) {
+                            this.regAddressBook[regPipId][AK[AK.item]] = address[AK[AK.pip]];
+                        } else {
+                            this.regAddressBook[regPipId][AK[AK.item]] = address[AK[AK.item]];
+                        }
+                    }
+                }
+
+            }, regPipNames);
+
+            if (tagSpec.children.length > 0) {
+                R.forEach((c) => flatten.call(this, c), tagSpec.children);
+            }
+            if(this.virtualDOM){//per tag
+                //hier gaan verzenden naar collection!: zo worden ook altijd nodes bijgewerkt!!!
+                this.virtualDOM.react({
+                    value: appEl,
+                    it: appEl.path,
+                    action: ACT[ACT.create]
+                });
+            }
+    }
+    export function flattenTree(treeSpec: Tree.ExtElement[], nodeId?:string, rootId?:string){
+        // navTree: INavModel[], regAddressBook, parentNavModels?: G.INavModel[], rootId?: string, nodeId?: string)
+        if (treeSpec.length === 0) return;
+        R.forEach((c) => flatten.call(this, c, nodeId, rootId), treeSpec);
+    }
+}

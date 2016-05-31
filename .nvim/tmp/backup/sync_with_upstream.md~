@@ -1,0 +1,36 @@
+## Sync with upstream
+
+Assumes origin pointing to own repo and upstream is forked repo.
+Always develop in branch.
+
+Function to sync automatically
+```bash
+function gittyup()
+{
+    local gitCheck=$(git log -n1 2>&1 1>/dev/null | wc -l)
+    if [[ ! $gitCheck -eq 0 ]]; then
+        echo "Error: You're not in a Git repository"
+        return
+    fi
+    local currentBranch=$(git branch | grep \* | cut -d' ' -f2)
+    local stashed=$(git stash | grep -v 'No local changes' | wc -l)
+    if [[ ! $stashed -eq 0 ]]; then
+        echo "Your working copy has uncommitted changes..."
+        echo -e "These changes have been stashed and will be re-applied when we're done.\n"
+    fi
+    if [[ $currentBranch != 'master' ]]; then
+        git checkout master
+    fi
+    git fetch --all
+    git merge upstream/master --ff-only
+    git push origin master
+
+    if [[ $currentBranch != 'master' ]]; then
+        git checkout $currentBranch
+    fi
+    if [[ ! $stashed -eq 0 ]]; then git stash pop --index; fi
+}
+```
+
+After this you can merge master into your branch and push the branch to origin.
+Then create PR on github or whatever.

@@ -1,0 +1,227 @@
+/// <reference path="./utils"/>
+/// <reference path="./globals"/>
+
+module Tree.Reshape {
+
+    class TNode {
+        tpl: string;
+        nid: string;
+        children: TNode[];
+        constructor(tpl: string, nid: string, ...children: TNode[]) {
+            this.tpl = tpl;
+            this.nid = nid ? nid : Utils.uniqueId();
+            this.children = children;
+        }
+    }
+
+    interface IIndex {
+        pos: string;
+        node: TNode;
+        parent: TNode;
+    }
+
+    export function morf(current: TNode, to: TNode, pips, idKey = 'nid', contentKey = 'tpl', childKey = 'children') {
+
+        const toIndex = indexTree(to, idKey, contentKey, childKey);
+        let currentIndex = indexTree(current, idKey, contentKey, childKey);
+        const removedIds = R.difference(R.keys(currentIndex), R.keys(toIndex));
+        var pipOut = remove(removedIds);
+
+        walk(to);
+        return pipOut;
+
+        function walk(node: TNode, $sibling?: DOMIO.Instance) {
+
+            if (R.keys(node).length === 0) return;
+
+            if (currentIndex[node[idKey]]) {
+                // this node exists in current tree too
+
+                if (currentIndex[node[idKey]].pos !== toIndex[node[idKey]].pos) {
+
+                    // node has other position in current tree: move
+                    console.log(`move ${node[idKey]} to ${toIndex[node[idKey]].pos}`);
+
+                    // move the node in the current tree
+                    move(current, currentIndex[node[idKey]], toIndex[node[idKey]]);
+
+                    // update the current index
+                    currentIndex = indexTree(current, idKey, contentKey, childKey);
+                }
+
+            } else {
+                // node in current tree does not exist: insert
+
+                let message: Globals.IMessage;
+                if ($sibling) {
+                    // insert node after its sibling
+
+                    message = insert(current, node, toIndex[node[idKey]], $sibling, 'insertAfter');
+
+                } else {
+                    // insert node as the first child of parent
+
+                    let $parent = toIndex[node[idKey]].parent
+                        ? pips.get('#'+toIndex[node[idKey]].parent[idKey])
+                        : pips.get('#root');
+
+                    message = insert(current, node, toIndex[node[idKey]], $parent, 'append');
+                }
+
+                $sibling = message.value;
+                pipOut.push(message);
+
+                // update the current index
+                currentIndex = indexTree(current, idKey, contentKey, childKey);
+            }
+
+            if (node[childKey] && node[childKey].length > 0) {
+                // node has one of more children
+
+                for (let i = 0; i < node[childKey].length; i++) {
+                    $sibling = i === 0
+                        ? void 0
+                        : pips.get('#'+node[childKey][i-1][idKey]);
+
+                    walk(node[childKey][i], $sibling);
+                }
+            }
+        }
+
+        function getNode(node: TNode, pos: string) {
+            const trail = pos.split('');
+            const stepIn = (node, childNr) => node.children[childNr];
+
+            for (let i = 1; i < trail.length; i++) {
+                node = stepIn(node, trail[i]);
+            }
+            return node;
+        }
+
+        // mutates current tree by moving node `from.node` to position `to.pos`
+        function move(current: TNode, from: IIndex, to: IIndex): void {
+            // adding node to new parent
+            const toPos = to.pos;
+            const toChildPos = parseInt(toPos[toPos.length-1], 10);
+            const toParentPos = toPos.substr(0, toPos.length-1);
+
+            // remove node from old parent
+            const fromPos = from.pos;
+            const fromChildPos = parseInt(fromPos[fromPos.length-1], 10);
+            const fromParentPos = fromPos.substr(0, fromPos.length-1);
+
+            let toParent;
+            if (toParentPos === fromParentPos) {
+                // switch two children of same parent
+                toParent = getNode(current, toParentPos);
+                const ref = toParent[childKey][toChildPos];
+                toParent[childKey][toChildPos] = toParent[childKey][fromChildPos];
+                toParent[childKey][fromChildPos] = ref;
+
+            } else {
+                // move node from one parent to other
+                toParent = getNode(current, toParentPos);
+                toParent.children[toChildPos] = from.node;
+
+                const fromParent = getNode(current, fromParentPos);
+                fromParent.children = R.remove(fromChildPos, 1, fromParent.children);
+            }
+
+
+            // modify the DOM
+            let $node = pips.get('#'+from.node[idKey]);
+            const $detachedNode = $node.map(n => DOMIO.detach(n));
+
+            if (toChildPos === 0) {
+                // append node to parent
+
+                const $parent = pips.get('#'+toParent[idKey]);
+                $parent.chain(r => $detachedNode.map(n => DOMIO.prependElement(r, n))).runIO();
+            } else {
+                // insert node after its sibling
+                const $sibling = pips.get('#'+toParent[childKey][toChildPos - 1]); 
+                $sibling.chain(r => $detachedNode.map(n => DOMIO.insertAfterElement(r, n))).runIO();
+            }
+        }
+
+        function insert(current: TNode, node: TNode, to: IIndex, $ref: DOMIO.Instance, method: string) {
+
+            // mutate current tree by inserting new node
+            const toPos = to.pos;
+            const toChildPos = parseInt(toPos[toPos.length-1], 10);
+            const toParentPos = toPos.substr(0, toPos.length-1);
+            const toParent = getNode(current, toParentPos);
+
+            // move trailing children to right to create space for insert
+            let i = toParent.children.length;
+            while (i > toChildPos) {
+                toParent.children[i] = toParent.children[i - 1];
+                i--;
+            }
+
+            // add node to current tree without its children
+            let single = new TNode(to.node[contentKey], to.node[idKey]);
+            toParent.children[toChildPos] = single;
+
+            // create a new DOM element
+            const $node = DOMIO.create(node[contentKey]);
+
+            // store element in the pips register
+            pips.set('#'+node[idKey], $node);
+
+            // mutate the DOM by inserting new DOM element
+            if (method === 'append') {
+                // add new node into the parent -- prepend assures it will be the first child
+
+                $ref.chain(r => $node.map(n => DOMIO.prependElement(r, n))).runIO();
+            } else {
+                // insert node after the sibling
+
+                $ref.chain(r => $node.map(n => DOMIO.insertAfterElement(r, n))).runIO();
+            }
+
+            return {
+                action: 'insert',
+                it: node[idKey],
+                value: $node
+            };
+        }
+
+        function remove(nodeIds: string[]) {
+            let pipOut: Globals.IMessage[] = [];
+
+            for (let i = 0; i < nodeIds.length; i++) {
+
+                let $node = pips.get('#'+nodeIds[i]);
+                $node.map(DOMIO.remove).runIO();
+
+                pipOut.push({
+                    action: 'remove',
+                    it: nodeIds[i],
+                    value: $node
+                });
+            }
+            return pipOut;
+        }
+    }
+
+    function indexTree(tree: TNode, idKey = 'nid', contentKey = 'tpl', childKey = 'children') {
+        let index = {};
+        walk(tree, void 0, '0');
+        return <IIndex>index;
+
+        function walk(node: TNode, parent: TNode, trail: string): void {
+
+            if (!node[idKey]) return;
+
+            index[node[idKey]] = {pos: trail, node: node, parent: parent};
+
+            let childs = node[childKey] || [];
+
+            for (let i = 0; i < childs.length; i++) {
+                walk(childs[i], node, trail + i);
+            }
+        }
+    }
+
+}

@@ -1,0 +1,45 @@
+/// <reference path="../dts/linkingPips.d.ts"/>
+/// <reference path="./nest.reshape.ts" />
+
+module Nest.Test {
+
+    import TNode = Nest.Reshape.TNode
+
+    export function diff(tree1: TNode, tree2: TNode, idKey = 'nid', contentKey = 'tpl', childKey = 'children') {
+        let diffNode = [];
+        function walk(n1, n2) {
+            if (!(equalConstructor(n1, n2) &&
+                  equalValue(n1, n2, contentKey) &&
+                  equalNrChildren(n1, n2, childKey))) {
+               diffNode.push([n1,n2]);
+               return false
+            } else if (n1[childKey]) {
+                let i = -1;
+                while (++i < n1[childKey].length) {
+                    walk(n1[childKey][i], n2[childKey][i]);
+                }
+            }
+        }
+        walk(tree1, tree2);
+        return diffNode.length !== 0;
+    }
+
+    function equalConstructor(n1, n2) {
+        return n1.constructor.name === n2.constructor.name;
+    }
+
+    function equalValue(n1, n2, contentKey) {
+        return n1[contentKey] === n2[contentKey];
+    }
+
+    function equalNrChildren(n1, n2, childKey) {
+        if (n1[childKey] && n2[childKey]) {
+            if (n1[childKey].length !== n2[childKey].length) {
+                return false;
+            }
+        } else if (n1[childKey] || n2[childKey]) {
+            return false;
+        }
+        return true;
+    }
+}

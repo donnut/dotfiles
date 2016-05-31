@@ -1,0 +1,16 @@
+package fpinscala.tmp
+
+sealed trait Lijst[+A]
+case object Nil extends Lijst[Nothing]
+case class Cons[+A](head: A, tail: Lijst[A]) extends Lijst[A]
+
+object Lijst {
+  def tail[A](as: Lijst[A]): Lijst[A] = as match {
+    case Nil => Nil
+    case Cons(a, as) => as
+  }
+
+  def apply[A](as: A*): Lijst[A] =
+    if (as.isEmpty) Nil
+    else Cons(as.head, apply(as.tail: _*))
+}

@@ -1,0 +1,85 @@
+import pymysql.cursors
+import csv
+
+conn = pymysql.connect(user='root', database='mydb', cursorclass=pymysql.cursors.DictCursor)
+
+with open('./biomijnnatuur/bio_check.csv', 'rb') as csvfile:
+    foodreader = csv.DictReader(csvfile, delimiter=",", quotechar='"')
+    for row in foodreader:
+        print row
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                    insert into `subcategory` set
+                        `description` = %s,
+                        `category_id` = %s
+                    """, (
+                        'farm',
+                        '1'))
+            conn.commit()
+            subcategory_id = cursor.execute('LAST_INSERT_ID();')
+
+            with conn.cursor() as cursor:
+                cursor.execute("""insert into `food_point` set
+                    `name` = %s,
+                    `owner_name` = %s,
+                    `opening_description` = %s,
+                    `phone` = %s,
+                    `email` = %s,
+                    `website` = %s,
+                    `facebook` = %s,
+                    `nation_id` = %s,
+                    `post_code` = %s,
+                    `city` = %s,
+                    `address_number` = %s,
+                    `address_string` = %s,
+                    `latitude` = %s,
+                    `longitude` = %s,
+                    `subcategory_id` = %s,
+                    `subcategory_category_id` = %s
+                    """, (
+                        row['food_point > name'],
+                        'BioMijnNatuur',
+                        row['food_point > opening_description'],
+                        row['food_point > phone'],
+                        row['food_point > email'],
+                        row['food_point > website'],
+                        row['food_point > facebook'],
+                        'BE',
+                        row['position > postcode'],
+                        row['position > city'],
+                        row['position > address_number'],
+                        row['position > address_string'],
+                        float(row['position > latitude']),
+                        float(row['position > longitude']),
+                        '1',
+                        '1'))
+            food_point_id = cursor.execute('LAST_INSERT_ID();')
+            conn.commit()
+
+            with conn.cursor() as cursor:
+
+                cursor.execute("""insert into `opening` set
+                    `weekday` =  %s,
+                    `opening_time` =  %s,
+                    `closing_time` =  %s,
+                    `pause_start` =  %s,
+                    `pause_end` =  %s,
+                    `season_start` =  %s,
+                    `season_end` =  %s,
+                    `food_point_id` = %s
+                    """, (
+                        row['opening > weekday'],
+                        row['opening > opening_time'],
+                        row['opening > closing_time'],
+                        row['opening > pause_start'],
+                        row['opening > pause_end'],
+                        row['opening > season_start'],
+                        row['opening > season_end'],
+                        food_point_id))
+            conn.commit()
+
+        finally:
+            conn.close()
+
+

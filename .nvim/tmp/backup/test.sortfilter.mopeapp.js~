@@ -1,0 +1,532 @@
+QUnit.module('Sort and filter - MopeApp', {
+  beforeEach: function() {
+    DEBUG = true;
+    Globals.idCounter = 0;
+  }
+});
+
+QUnit.test('sorted list from unsorted, initial collection', function(assert) {
+  var domStr = "<ul id='main'></ul>";
+
+  $('#qunit-fixture').append(domStr);
+
+  var nodes = [{
+    type: 'list',
+    selector: '#main',
+    idKey: 'strip',
+    tpl: "<li><span></span></li>",
+    empty: '<p>no model data yet</p>',
+    sort: {key: 'strip', dir: 'asc'}
+  }];
+
+  var pips = [{
+    type: 'collection',
+    name: 'colorful',
+    model: [{
+      strip: 'two'
+    }, {
+      strip: 'one'
+    }, {
+      strip: 'four'
+    }, {
+      strip: 'three'
+    }],
+    index: 'id',
+    server: false
+  }];
+
+  var links = [{
+    pub: 'models.colorful',
+    sub: '#main.list'
+  }];
+
+  var app = new LinkingPips.App(domStr, nodes, pips, links);
+  assert.deepEqualSplitKeys(app.get('#main.list').get(), [ "3%%four", "2%%one", "4%%three", "1%%two" ], 'sorted');
+});
+
+QUnit.test('sorted list from unsorted collection', function(assert) {
+  var domStr = "<ul id='main'></ul>";
+
+  $('#qunit-fixture').append(domStr);
+
+  var nodes = [{
+    type: 'list',
+    selector: '#main',
+    tpl: "<li><span></span></li>",
+    empty: '<p>no model data yet</p>',
+    sort: {key: 'strip'}
+  }];
+
+  var pips = [{
+    type: 'collection',
+    name: 'colorful',
+    index: 'id',
+    server: false
+  }];
+
+  var links = [{
+    pub: 'models.colorful',
+    sub: '#main.list'
+  }];
+
+  var app = new LinkingPips.App(domStr, nodes, pips, links);
+  assert.deepEqual(app.get('#main.list').get(), [], 'empty');
+
+  app.get('models.colorful').react([{
+    action: 'create', it: "10", value: {strip: 'two'}
+  }, {
+    action: 'create', it: "11", value: {strip: 'one'}
+  }, {
+    action: 'create', it: "12", value: {strip: 'four'}
+  }, {
+    action: 'create', it: "13", value: {strip: 'three'}
+  }]);
+
+  assert.deepEqual(app.get('#main.list').get(), [ '12', '11', '13', '10' ], 'sorted');
+
+});
+
+QUnit.test('sorted list from unsorted collection, and a sorting link', function(assert) {
+  var domStr = "<ul id='main'></ul>";
+
+  $('#qunit-fixture').append(domStr);
+
+  var nodes = [{
+    type: 'list',
+    selector: '#main',
+    tpl: "<li><span></span></li>",
+    empty:'<p>no model data yet</p>',
+    sort: {key: 'strip'}
+  }];
+
+  var pips = [{
+    type: 'collection',
+    name: 'colorful',
+    index: 'id',
+    server: false,
+    silent: false
+  }];
+
+  var links = [{
+    pub: 'models.colorful',
+    sub: '#main.list',
+    pre: function(pipIn) {
+      return R.sortBy(R.path(['value','foo']), pipIn);
+    }
+  }];
+
+  var app = new LinkingPips.App(domStr, nodes, pips, links);
+  assert.deepEqual(app.get('#main.list').get(), [], 'empty');
+
+  app.get('models.colorful').react([{
+    action: 'create', it: "10", value: {foo: 44, strip: 'four'}
+  }, {
+    action: 'create', it: "11", value: {foo: 55, strip: 'one'}
+  }, {
+    action: 'create', it: "12", value: {foo: 31, strip: 'one'}
+  }, {
+    action: 'create', it: "13", value: {foo: 45, strip: 'four'}
+  }]);
+
+  assert.deepEqual(app.get('#main.list').get(), [ '10', '13', '12', '11' ], 'sorted');
+
+});
+
+QUnit.test('filters list', function(assert) {
+  var domStr = "<ul id='main'></ul>";
+
+  $('#qunit-fixture').append(domStr);
+
+  var nodes = [{
+    type: 'list',
+    selector: '#main',
+    tpl: "<li><span></span></li>",
+    empty: '<p>no model data yet</p>',
+    filter: {strip: 'one'}
+  }];
+
+  var pips = [{
+    type: 'collection',
+    name: 'colorful',
+    index: 'id',
+    server: false,
+    silent: false
+  }];
+
+  var links = [{
+    pub: 'models.colorful',
+    sub: '#main.list'
+    // drop: ['#main.list'],
+    // pre: function(pipIn) {
+    //   var reg = this['#main.list'].get();
+    //   var wantedItems = R.filter(R.eq(R.path(['value','strip']), 'four'), pipIn);
+    //   return reg.defineFilterMessages(wantedItems);
+    // }
+  }];
+
+  var app = new LinkingPips.App(domStr, nodes, pips, links);
+  assert.deepEqual(app.get('#main.list').get(), [], 'empty');
+
+  app.get('models.colorful').react([{
+    action: 'create', it: "10", value: {foo: 44, strip: 'four'}
+  }, {
+    action: 'create', it: "11", value: {foo: 55, strip: 'one'}
+  }, {
+    action: 'create', it: "12", value: {foo: 31, strip: 'one'}
+  }, {
+    action: 'create', it: "13", value: {foo: 45, strip: 'four'}
+  }]);
+
+  assert.deepEqual(app.get('#main.list').get(), [ '11', '12' ], 'sorted');
+
+});
+
+QUnit.test('moves item in list', function(assert) {
+  var domStr = "<ul id='main'></ul>";
+
+  $('#qunit-fixture').append(domStr);
+
+  var nodes = [{
+    type: 'list',
+    selector: '#main',
+    tpl: "<li><span></span></li>",
+    empty: '<p>no model data yet</p>'
+  }];
+
+  var pips = [{
+    type: 'collection',
+    name: 'colorful',
+    index: 'id',
+    server: false,
+    silent: false
+  },{
+    type: 'eventItem',
+    events: 'click',
+    selector: '#main>li'
+  }];
+
+
+  var links = [{
+    pub: 'models.colorful',
+    sub: '#main.list',
+    // drop: ['#main.list'],
+    // pre: function(pipIn) {
+    //   var reg = this['#main.list'].get();
+    //   var wantedItems = R.filter(R.eq(R.path(['value','strip']), 'four'), pipIn);
+    //   return reg.defineFilterMessages(wantedItems);
+    // }
+  },{
+    pub: '#main>li.events.click',
+    sub: '#main.list',
+    binding: true,
+    value: function(i) {
+        return {__pos: 0};
+    },
+    action: 'update'
+  }];
+
+  var app = new LinkingPips.App(domStr, nodes, pips, links);
+  assert.deepEqual(app.get('#main.list').get(), [], 'empty');
+
+  app.get('models.colorful').react([{
+    action: 'create', it: "10", value: {foo: 44, strip: 'four'}
+  }, {
+    action: 'create', it: "11", value: {foo: 55, strip: 'one'}
+  }, {
+    action: 'create', it: "12", value: {foo: 31, strip: 'one'}
+  }, {
+    action: 'create', it: "13", value: {foo: 45, strip: 'four'}
+  }]);
+
+  assert.deepEqual(app.get('#main.list').get(), [ '10', '11', '12', '13' ], 'before event');
+  $('#main>li:nth-of-type(2)').click();
+  assert.deepEqual(app.get('#main.list').get(), [ '11', '10', '12', '13'], 'after event');
+
+});
+
+QUnit.test('filters list in link', function(assert) {
+  var domStr = "<ul id='main'></ul>";
+
+  $('#qunit-fixture').append(domStr);
+
+  var nodes = [{
+    type: 'list',
+    selector: '#main',
+    tpl: "<li><span></span></li>",
+    empty:'<p>no model data yet</p>'
+    // sort: 'strip',
+    //filter: {strip: 'one'}
+  }];
+
+  var pips = [{
+    type: 'collection',
+    name: 'colorful',
+    index: 'id',
+    server: false,
+    silent: false
+  }];
+
+  var links = [{
+    pub: 'models.colorful',
+    sub: '#main.list',
+    filter: function(item) {
+        return item.strip === 'four';
+    }
+  }];
+
+  var app = new LinkingPips.App(domStr, nodes, pips, links);
+  assert.deepEqual(app.get('#main.list').get(), [], 'empty');
+
+  app.get('models.colorful').react([{
+    action: 'create', it: "10", value: {foo: 44, strip: 'four'}
+  }, {
+    action: 'create', it: "11", value: {foo: 55, strip: 'one'}
+  }, {
+    action: 'create', it: "12", value: {foo: 31, strip: 'one'}
+  }, {
+    action: 'create', it: "13", value: {foo: 45, strip: 'four'}
+  }]);
+
+  assert.deepEqual(app.get('#main.list').get(), [ '10', '13' ], 'filtered');
+
+});
+
+QUnit.test('filters list in link triggered by change of filter value', function(assert) {
+  var domStr = "<div><ul id='main'></ul><ul id='pill'><li id='one'></li><li id='four'></li></ul></div>";//
+
+  $('#qunit-fixture').append(domStr);
+
+  var nodes = [{
+    type: 'list',
+    selector: '#main',
+    tpl: "<li><span></span></li>",
+    empty:'<p>no model data yet</p>'
+    // sort: 'strip',
+    //filter: {strip: 'one'}
+  }, {
+    type: 'listItem',
+    selector: '#pill>li',
+    idType: 'id'
+  }];
+
+  var pips = [{
+    type: 'collection',
+    name: 'colorful',
+    server: false,
+  }, {
+    type: 'select',
+    selector: '#pill',
+    required:true,
+    one:true,
+    states: [{
+        name: 'IS_SELECTED',
+        attr: 'class',
+        value: 'green'
+    },{
+        name: 'IS_UNSELECTED',
+        attr: 'class',
+        value: 'red'
+    }]
+  }, {
+      type: 'eventItem',
+      selector: '#pill>li',
+      events: 'click'
+  }];
+
+  var links = [{
+      pub: 'models.colorful',
+      sub: '#main.list',
+      drop: ['#pill.select'],
+      filter: function(item) {
+          var filterName = this['#pill.select'].get()[0];
+          return item.strip === filterName;
+      }
+  }, {
+      pub: '#pill.select',
+      sub: '#main.list',
+      drop: ['#pill.select'],
+      filter: [function(item) {
+          var filterName = this['#pill.select'].get()[0];
+          return item.strip === filterName;
+      }, 'models.colorful']
+  },
+  {
+      pub: '#pill>li.events.click',
+      sub: '#pill.select',
+      binding: true,
+      value: function(i) {
+          return true;
+      },
+      action: 'update'
+    }];
+
+
+  var app = new LinkingPips.App(domStr, nodes, pips, links);
+  assert.deepEqual(app.get('#main.list').get(), [], 'empty');
+  app.get('models.colorful').react([{
+      action: 'create', it: "10", value: {foo: 44, strip: 'four'}
+    }, {
+      action: 'create', it: "11", value: {foo: 55, strip: 'one'}
+    }, {
+      action: 'create', it: "12", value: {foo: 31, strip: 'one'}
+    }, {
+      action: 'create', it: "13", value: {foo: 45, strip: 'four'}
+    }]);
+  assert.deepEqual(app.get('#main.list').get(), ['11','12'], 'filtered on one');
+  //TODO hier moet iets tussenin er gebeyrrt niks dus atuurlijk blijft ie empty!
+  $('#pill>li:nth-of-type(2)').click();
+
+  assert.deepEqual(app.get('#main.list').get(), [ '10', '13' ], 'filtered on four');
+
+});
+
+QUnit.test('filters list in pip and link', function(assert) {
+  var domStr = "<ul id='main'></ul>";
+
+  $('#qunit-fixture').append(domStr);
+
+  var nodes = [{
+    type: 'list',
+    selector: '#main',
+    idKey: 'strip',
+    tpl: "<li><span></span></li>",
+    empty: 'no model data yet',
+    // sort: 'strip',
+    filter: {strip: 'four'}
+  }];
+
+  var pips = [{
+    type: 'collection',
+    name: 'colorful',
+    index: 'id',
+    server: false,
+    silent: false
+  }];
+
+  var links = [{
+    pub: 'models.colorful',
+    sub: '#main.list',
+    drop: ['#main.list'],
+    filter: function(item){
+      return item.foo === 44;
+    }
+  }];
+
+  var app = new LinkingPips.App(domStr, nodes, pips, links);
+  assert.deepEqual(app.get('#main.list').get(), [], 'empty');
+
+  app.get('models.colorful').react([{
+    action: 'create', it: "10", value: {foo: 44, strip: 'four'}
+  }, {
+    action: 'create', it: "11", value: {foo: 55, strip: 'one'}
+  }, {
+    action: 'create', it: "12", value: {foo: 31, strip: 'one'}
+  }, {
+    action: 'create', it: "13", value: {foo: 45, strip: 'four'}
+  }]);
+
+  assert.deepEqual(app.get('#main.list').get(), [ '10%%four' ], 'filtered');
+
+});
+
+QUnit.test('filters and sorts list in pip', function(assert) {
+  var domStr = "<ul id='main'></ul>";
+
+  $('#qunit-fixture').append(domStr);
+
+  var nodes = [{
+    type: 'list',
+    selector: '#main',
+    tpl: "<li><span></span></li>",
+    empty: 'no model data yet',
+    sort: {key: 'foo', dir: 'desc'},
+    filter: {strip: 'one'}
+  }];
+
+  var pips = [{
+    type: 'collection',
+    name: 'colorful',
+    index: 'id',
+    server: false,
+    silent: false
+  }];
+
+  var links = [{
+    pub: 'models.colorful',
+    sub: '#main.list',
+    // drop: ['#main.list'],
+    // pre: function(pipIn) {
+    //   var listItemPip = this['#main.list'];
+    //   var wantedItems = R.filter(function(item) {
+    //     return R.lt(44, R.path(['value', 'foo'], item));
+    //   }, pipIn);
+    //   return listItemPip.defineFilterMessages(wantedItems);
+    // }
+  }];
+
+  var app = new LinkingPips.App(domStr, nodes, pips, links);
+  assert.deepEqual(app.get('#main.list').get(), [], 'empty');
+
+  app.get('models.colorful').react([{
+    action: 'create', it: "10", value: {foo: 44, strip: 'four'}
+  }, {
+    action: 'create', it: "11", value: {foo: 55, strip: 'one'}
+  }, {
+    action: 'create', it: "12", value: {foo: 31, strip: 'one'}
+  }, {
+    action: 'create', it: "13", value: {foo: 45, strip: 'four'}
+  }]);
+
+  assert.deepEqual(app.get('#main.list').get(), [ '11', '12' ], 'filtered and sorted');
+
+});
+
+//TODO nog niet geimplementeerd
+// QUnit.test('filters and sorts list in link', function(assert) {
+//   var domStr = "<ul id='main'></ul>";
+
+//   $('#qunit-fixture').append(domStr);
+
+//   var nodes = [{
+//     type: 'list',
+//     selector: '#main',
+//     tpl: "<li><span></span></li>",
+//     empty: 'no model data yet'
+//   }];
+
+//   var pips = [{
+//     type: 'collection',
+//     name: 'colorful',
+//     index: 'id',
+//     server: false,
+//     silent: false
+//   }];
+
+//   var links = [{
+//     pub: 'models.colorful',
+//     sub: '#main.list',
+//     drop: ['#main.list'],
+//     filter: function(item){
+//       return item.foo === 44;
+//     },
+//     sort: function(tmp) {
+//       return R.sortBy(tmp.foo, tmp);
+//     }
+//   }];
+
+//   var app = new LinkingPips.App(domStr, nodes, pips, links);
+//   assert.deepEqual(app.get('#main.list').get(), [], 'empty');
+
+//   app.get('models.colorful').react([{
+//     action: 'create', it: "10", value: {foo: 44, strip: 'four'}
+//   }, {
+//     action: 'create', it: "11", value: {foo: 55, strip: 'one'}
+//   }, {
+//     action: 'create', it: "12", value: {foo: 31, strip: 'one'}
+//   }, {
+//     action: 'create', it: "13", value: {foo: 45, strip: 'four'}
+//   }]);
+
+//   assert.deepEqual(app.get('#main.list').get(), [ '13', '11' ], 'fitered and sorted');
+
+// });

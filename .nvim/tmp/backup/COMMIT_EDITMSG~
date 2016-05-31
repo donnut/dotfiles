@@ -1,0 +1,27 @@
+# This is a combination of 2 commits.
+# The first commit's message is:
+
+updates ramda typings
+
+# This is the 2nd commit message:
+
+adds global
+
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+#
+# Date:      Mon May 30 13:36:53 2016 +0200
+#
+# interactive rebase in progress; onto 6e74d6b
+# Last commands done (3 commands done):
+#    p 490e2da updates ramda typings
+#    s 5386d08 adds global
+# Next commands to do (16 remaining commands):
+#    pick ed81a7e Update typings from azure-storage
+#    pick 0652db2 Add ES2015 polyfill typings (#441)
+# You are currently editing a commit while rebasing branch 'master' on '6e74d6b'.
+#
+# Changes to be committed:
+#	modified:   global/ramda.json
+#	modified:   npm/ramda.json
+#

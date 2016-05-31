@@ -1,0 +1,155 @@
+import pymysql.cursors
+import json
+import sys
+
+#conn = pymysql.connect(user='root', database='test')
+#try:
+    #with conn.cursor() as cursor:
+        #cursor.execute('DROP DATABASE IF EXISTS mydb')
+        #cursor.execute('CREATE DATABASE IF NOT EXISTS mydb')
+#finally:
+    #conn.close()
+
+conn = pymysql.connect(user='root', database='mydb', cursorclass=pymysql.cursors.DictCursor, autocommit=True)
+
+##
+with open('./biomijnnatuur/biomijnnatuur.json', 'rb') as jsonfile:
+    json_line = jsonfile.readline()
+    foodpoint = json.loads(json_line)
+
+    with conn.cursor() as cursor:
+        categories = [ (1, 'farm', 1, 1, 1, 0), (2, 'sale_point', 1, 1, 1, 1), (3, 'restaurant', 1, 0, 1, 0), (4, 'event', 1, 0, 1, 1) ]
+        for cat in categories:
+            cursor.execute("""INSERT INTO category (id, description, has_events, has_products, has_activity, has_child) VALUES (%s,"%s",%s,%s,%s,%s)""" % cat)
+
+    with conn.cursor() as cursor:
+        cursor.execute("""insert into `subcategory` set `description` = %s, `category_id` = %s""", ( 'farm', '1'))
+        subcategory_id = cursor.execute('select LAST_INSERT_ID()')
+
+    product_ids = {
+        'fruit': 1,
+        'vegetables': 2,
+        'meat': 3,
+        'diary': 4,
+        'eggs': 5,
+        'drinks': 6,
+        'bread': 7
+    }
+
+    with conn.cursor() as cursor:
+        for pk in product_ids.keys():
+            cursor.execute("""insert into `product` (`id`, `description`) VALUES (%s, "%s")""" % (pk, product_ids[pk]))
+
+
+    with conn.cursor() as cursor:
+        cursor.execute("""insert into `food_point` set
+            `name` = %s,
+            `owner_name` = %s,
+            `description` = %s,
+            `email` = %s,
+            `website` = %s,
+            `facebook` = %s,
+            `instagram` = %s,
+            `twitter` = %s,
+            `kind_of_place` = %s,
+            `tourism` = %s,
+            `education` = %s,
+            `CSA` = %s,
+            `sheltered_employment` = %s,
+            `employee` = %s,
+            `status` = %s,
+            `nation_id` = %s,
+            `post_code` = %s,
+            `city` = %s,
+            `address` = %s,
+            `latitude` = %s,
+            `longitude` = %s,
+            `subcategory_id` = %s,
+            `subcategory_category_id` = %s,
+            `timestamp` = %s
+            """, (
+                foodpoint['name'],
+                foodpoint['biomijnnatuurID'],
+                foodpoint['description'],
+                foodpoint['email'],
+                foodpoint['url'],
+                foodpoint['facebook'],
+                foodpoint['instagram'],
+                foodpoint['twitter'],
+                foodpoint['kindOfPlace'],
+                foodpoint['tourism'],
+                foodpoint['education'],
+                foodpoint['CSA'],
+                foodpoint['sheltered employment'],
+                foodpoint['employee'],
+                foodpoint['status'],
+                foodpoint['address']['addressCountry'],
+                foodpoint['address']['postalCode'],
+                foodpoint['address']['addressLocality'],
+                foodpoint['address']['streetAddress'],
+                float(foodpoint['geo']['latitude']),
+                float(foodpoint['geo']['longitude']),
+                subcategory_id,
+                '1',
+                foodpoint['timestamp']))
+        food_point_id = cursor.execute('select LAST_INSERT_ID()')
+
+        with conn.cursor() as cursor:
+            for phone in foodpoint['telephone']:
+                cursor.execute("""insert into `telephone` set `tel` = %s, `food_point_id` = %s""", (phone, food_point_id))
+
+        with conn.cursor() as cursor:
+            products in foodpoint['product']:
+            for pk in product_ids:
+                if products[pk] == True:
+                    cursor.execute("""insert into `food_point_has_product` set product_id = %s, `food_point_id` = %s""", (product_ids[pk], food_point_id))
+
+
+        opening_hours_specification = foodpoint['openingHoursSpecification']
+        with conn.cursor() as cursor:
+            for spec in opening_hours_specification:
+                timings = spec['timings']
+                cursor.execute("""insert into `opening` set
+                    `monday` = %s,
+                    `tuesday` = %s,
+                    `wednesday` = %s,
+                    `thursday` = %s,
+                    `friday` = %s,
+                    `saterday` = %s,
+                    `sunday` = %s,
+                    `valid_from` = %s,
+                    `valid_through` = %s,
+                    `opens` = %s,
+                    `closes` = %s,
+                    `timings` = %s,
+                    `food_point_id` = %s
+                    """, (
+                        spec['dayOfWeek']['monday'],
+                        spec['dayOfWeek']['tuesday'],
+                        spec['dayOfWeek']['wednesday'],
+                        spec['dayOfWeek']['thursday'],
+                        spec['dayOfWeek']['friday'],
+                        spec['dayOfWeek']['saterday'],
+                        spec['dayOfWeek']['sunday'],
+                        spec['validFrom'],
+                        spec['validThrough'],
+                        spec['opens'],
+                        spec['closes'],
+                        spec['timings'],
+                        food_point_id))
+
+                openings_id = cursor.execute('select LAST_INSERT_ID()')
+
+                for timing in timings:
+                    cursor.execute("""insert into `timings` set
+                        `opens` = %s,
+                        `closes` = %s,
+                        `openings_id` = %s
+                        """, (
+                            timing['opens'],
+                            timing['closes'],
+                            openings_id))
+
+conn.close()
+
+

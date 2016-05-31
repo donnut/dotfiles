@@ -1,0 +1,16 @@
+var Pip;
+(function (Pip) {
+    var prive;
+    function Pip(name) {
+        prive = name;
+    }
+    var read = function () {
+        return prive;
+    };
+    Pip.prototype.get = function () {
+        return read();
+    };
+    return Pip;
+}(Pip || {}));
+var pip = new Pip("Erwin");
+console.log(pip.get());

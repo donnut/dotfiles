@@ -1,0 +1,18 @@
+from ocr.train import Train
+from ocr.features import ServiceKenLM, ServiceNgrams
+
+
+sents = open('./ocr/test/fixtures/vv-22-06-1965_train.txt', 'r')
+
+service = ServiceKenLM()
+
+dirty = []
+clean = []
+for i, line in enumerate(sents):
+    if (i-0) % 3 == 0:
+        dirty.append([w.strip("\n").strip("'") for w in line.split(", ")])
+    elif (i-1) % 3 == 0:
+        clean.append([w.strip("\n").strip("'") for w in line.split(", ")])
+
+t = Train(service=service)
+print(t.train(dirty, clean))

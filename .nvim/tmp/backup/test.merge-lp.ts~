@@ -1,0 +1,10 @@
+import * as assert from 'assert';
+import {merger} from '../ts/index.js';
+
+describe('merge linkingPip files', () => {
+
+    it('merges one file', () => {
+        merger('../test/data/m.toplevel--todo.json');
+        assert.ok(true);
+    });
+});

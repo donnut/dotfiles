@@ -1,0 +1,15 @@
+from pymongo import MongoClient
+import csv
+
+client = MongoClient('localhost', 27017)
+
+db = client.vluchtelingen
+collection = db.sorted_tweets
+
+fp = open("vluchtelingen.csv", encoding='utf-8', mode="w")
+
+for tweet in collection.find({}, {"id":1, "text":1}):
+    #writer.writerow([tweet["id"], tweet["text"].encode("ascii", "replace")])
+    fp.write("%s\t%s\n" % (tweet["id"], " ".join(tweet["text"].split("\n"))))
+
+

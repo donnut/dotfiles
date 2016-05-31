@@ -1,0 +1,26 @@
+var mongoose = require('mongoose');
+var optionValidator = require('../logic/optionValidator');
+var Schema = mongoose.Schema;
+
+function validate(options) {
+    return optionValidator.validate(options).length === 0;
+}
+
+var Configuration = new Schema({
+    options: {
+        type: Schema.Types.Mixed,
+        validate: {
+            validator: validate,
+            message: '{VALUE} contains incompatible options'
+        }
+    },
+    version: {
+        type: String,
+        required: true
+    },
+    archive: String
+});
+
+//Schema.path('version').required(true, 'version is required');
+
+mongoose.model('Configuration', Configuration);

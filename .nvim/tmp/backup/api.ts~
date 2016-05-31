@@ -1,0 +1,8 @@
+/// <reference path="globals.ts" />
+module API {
+    export function addPipType(name: string) {
+        let pt = Globals.PipType;
+        const nr = R.keys(Globals.PipType).length/2;
+        pt[pt[name] = nr] = name;
+    }
+}

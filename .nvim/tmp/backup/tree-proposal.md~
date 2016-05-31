@@ -1,0 +1,90 @@
+#Virtuele Tree
+
+Tree analyseert de HTML-tree die uit DOM-elementen bestaat.
+Resultaat is een virtuale DOM, de tree, die nieuwe relaties aan individuele DOM-elementen en aan groepen DOM-elementen toevoegd. Een van de eigenschappen is het elementtype. Dit elementtype kan een individueel DOM-element beschrijven (Element en ShadowElement) of een groep DOM-elementen (ListItem en ItemElement). Uit deze elementtypen worden in een latere fase RegisterPips gemaakt.
+
+Met de volgende criteria wordt de HTML-tree omzet naar de tree.
+
+1. de root van de HTML-tree bestaat uit precies een DOM-element en deze vormt een Element.
+
+De tree wordt recursief doorlopen, iedere keer vanuit een volgende DOM-element. 
+
+Vanuit een DOM-element wordt een onderliggende subtree geanalyseerd beginnende met niveau 1 met de volgende criteria:
+
+Voor het niveau direct onder de root, niveau 1, geldt:
+
+2. als er meer dan één DOM-element direct onder de root hangt en de DOM-elementen een gelijke tagname hebben, vormen ze een ListItem (=groep). Het maakt niet uit wat de tagnames van de DOM-elementen zijn. Dit kan dus li zijn, maar ook div of span;
+3. als er meer dan één DOM-element direct onder de root hangt en de DOM-elementen twee of meer verschillende tagnames hebben, vormt iedere DOM-element een Element; dit is standaard, zie punt 14 en daarmee wordt de analyse van niveau 1 en daarmee van deze subtree beeindigd;
+4. als er één DOM-element direct onder de root hangt, de tagName van de root tot de verzameling {ul, ol, dl} behoort en de tagname van het DOM-element tot de verzameling {li, do, …}, dan vorm dit DOM-element een ListItem (groep bestaande uit één DOM-element. Dit geval treedt bijvoorbeeld op bij een dynamische list waarbij het enkele DOM-element de rol van een template heeft);
+
+Als niveau 1 geen ListItem bevat, dat stopt de analyse van de subtree.
+
+Voor het tweede niveau geldt:
+5. als ieder DOM-element uit de groep ListItem minstens een DOM-element op niveau 2 heeft, en als daarbij alle DOM-elementen een gelijke tagname hebben, dan vormen deze DOM-elementen een groep ItemElement. Het is mogelijk dat er meerdere ItemElement-groepen zijn. Het aantal DOM-elementen dat tot een ItemElement-groep behoort is altijd een veelvoud van het aantal DOM-elementen in de ListItem-groep.
+6. als één of meer DOM-elementen op niveau 2 niet aan de voorwaarden van punt 5 voldoet wordt ieder van deze 'losse' DOM-elementen een Element.
+7. een Element op niveau 2 heeft een ShadowElement op niveau 1 als ancestor. 
+8. een ShadowElement (op niveau 1) is direct gekoppeld met een DOM-element uit de ListItem-groep (op niveau 1).
+
+Als niveau 2 geen ItemElementen bevat, dan stopt de analyse van de subtree.
+
+Voor niveau x (x>2) geldt:
+9. als ieder DOM-element uit de groep ItemElementen op niveau x-1 minstens een DOM-element op niveau x heeft, en als daarbij alle DOM-elementen een gelijke tagname hebben, dan vormen deze DOM-elementen een groep ItemElement (op niveau x). Het is mogelijk dat er meerdere ItemElement-groepen zijn. 
+10. als niveau x een of meerdere ItemElementen heeft (als resultaat van punt 9) en als één of meer DOM-elementen op niveau x niet aan de voorwaarden van punt 9 voldoet wordt ieder van deze 'losse' DOM-elementen een Element.
+11. als niveau x een of meerdere ItemElementen bevat worden stappen 9 tot en met 11 herhaald, anders stop de analyse van de subtree.
+
+Analyse volgende subtree
+12. de root van een subtree is een DOM-element die gecategoriseerd is als ShadowElement of Element, of die nog niet gecategoriseerd is.
+13. een niet-gecategoriseerd DOM-element als root wordt een Element. Als de root al een ShadowElement of Element is, blijft dat zo.
+
+14. nadat de HTML-tree volledig geanalyseerd is, wordt de Tree nogmaals doorlopen en daarbij wordt van alle niet-gecategoriseerde DOM-element een Element gemaakt.
+
+##Groups en Gates, hulpmiddellen bij de analyse
+Met Groups worden per niveau cluster van gelijksoortige DOM-elementen verzameld. Hiermee kan de analyse van de subtree worden vergemakkelijkt.
+Voor ieder niveau in de subtree wordt een Group gemaakt. Een Group bestaat uit een of meer Gates. Een Gate bestaat uit een of meer DOM-elementen. DOM-elementen behoren tot een Gate als ze dezelfde tagname hebben. De Gate is een tuple is de vorm `(string, boolean, string[])`. Het eerste element van de tuple is de tagname, en het derde element van de tuple de lijst van DOM-elementen met deze tagname. Het tweede element van de tuple is true als het (enkele) DOM-element van de Gate een root (van een andere subtree) vormt. Hieruit volgt:
+- niveau 0, de root, heeft één Group één Gate met één element, de root, b.v `('ul', true, ['body>div>ul'])`
+- niveau 1 heeft een of meer Gates afhankelijk van het aantal DOM-elementen met verschillende tagnames. Een eenvoudige ul-li list heeft op niveau 1 dus één Gate, bijvoorbeeld `('li', false, ['ul>li(0)','ul>li(1)','ul>li(2)'])`
+- vanaf niveau 2 worden DOM-elementen verzameld op tagname om de potentiele ItemElementen (= DOM-elementen met gelijke tagname en gelijk aantal met de ListItems) makkelijk te kunnen onderscheiden. Als een Gate een gelijk aantal
+DOM-elementen bevat als het aantal DOM-elementen in de ListItem-groep, dan vormt deze Gate een nieuw ItemElement.
+
+De analyse van de subtree stopt als een niveau geen ListItem resp. ItemElement bevat. Hier is niet op voorhand bekend hoe diep de analyse van een subtree gaat, en dus ook niet hoeveel Groups er gemaakt moeten worden. De keuze van het aantal Groups is een efficientie kwestie. Zijn er echter onvoldoende Groups, dan worden eventuele ItemElements in een diepe subtree niet opgemerkt.
+
+##Inhoud van TreeElementen
+Er zijn dus vier TreeElementen - Element, ListItem, ItemElement en ShadowElement die relaties bevatten met andere TreeElementen. Deze relaties hebben de vorm van een adres, een DOM-id of een pad.
+
+Element: {
+    selector: pipId Element
+    anc: pipId ancestor
+    sel: relatief pad vanaf ancestor (= tagname Element)
+}
+
+ShadowElement: {
+    selector: pipId shadowElement
+    anc: pipId ancestor (= verzameling listItems, pipId van listItem)
+    sel: :volgnummer van het element in de groep listItem waar het SE aan hangt
+}
+
+ListItem: {
+    selector: pipId ListItem
+    anc: pipId Element of ShadowElement
+    root: gelijk aan anc
+    sel: tagname listItem
+}
+
+ItemElement: {
+    selector: pipId van itemElements
+    anc: pipId van listItems
+    root: pipId anc van ListItem
+    item: pipId van ListItem
+    sel: tagname ItemElement
+}
+
+**Definities**
+Tree: verzameling TreeElementen die onderlinge relaties hebben.
+TreeElement: een object van het type Element, ItemElement, ListItem of ShadowElement
+DOM-element: W3C element
+Ancestor: in een parent-child-relatie in de Tree tussen twee TreeElementen is een ancestor de parent
+Groups: verzameling van Group objecten, voor iedere niveau in een subtree een Group
+Group: verzameling van een of meer Gates
+Gate: cluster van DOM-elementen met gelijke tagname. Een Gate op niveau 1 bevat de potentiele DOM-elementen voor de ListItem en Gates op niveau 2 en hoger potentiele ItemElementen.
+pipId: adres van een Pip. Een TreeElement vormt de basis voor een Pip en het 'adres' van het TreeElement is de naam van de Pip. De pipId van een Element (of ShadowElement) wordt gevormd door de selector of de DOM-id indien aanwezig. De pipId van een ItemElement of ListItem (die uit groepen DOM-elementen bestaan) is altijd een selector waar al deze
+DOM-elementen aan voldoen.

@@ -1,0 +1,126 @@
+import sys
+import os
+import subprocess
+import shutil
+import io
+import logging
+import time
+import gzip
+
+options = [
+    'ajax',
+    'ajax/xhr',
+    'ajax/script',
+    'ajax/jsonp',
+    'css',
+    'core/ready',
+    'deprecated',
+    'dimensions',
+    'effects',
+    'event',
+    'offset',
+    'wrap',
+    'deferred',
+    'exports/amd',
+    'exports/global'
+]
+
+clusters = [
+    'ajax/xhr',
+    'ajax/jsonp',
+    'ajax/jsonp,-ajax/script',
+    'ajax/jsonp,-ajax/script,-ajax/xhr',
+    'ajax',
+    'core/ready',
+    'deprecated',
+    'dimensions',
+    'effects',
+    'event',
+    'offset',
+    'wrap',
+    'deferred,-ajax,-core/ready,-effects',
+    'css',
+    'exports/amd',
+    'exports/global',
+    'exports'
+]
+
+def zip():
+    with open('dist/jquery.min.js', 'rb') as f_in:
+        with gzip.open('dist/jquery.min.js.gz', 'wb') as f_out:
+            f_out.writelines(f_in)
+
+logging.basicConfig(filename='custom.log', format='%(asctime)s %(message)s', level=logging.DEBUG)
+log = logging.getLogger("Custom configuration script")
+
+DEVNULL = subprocess.DEVNULL
+PIPE = subprocess.PIPE
+
+args = sys.argv
+
+if len(args) < 1:
+    print('Usage: python create_dists [jquery_dir]')
+
+# construct jquery directory based on selected version
+jqueryDir = "%s/%s" % (os.getcwd(), args[1])
+
+# create unique directory
+try:
+    scratchDir = subprocess.check_output(["mktemp", "-d"]).decode("utf-8").strip()
+except:
+    log.exception('Failed to create the scratch directory')
+    sys.exit()
+finally:
+    log.info('Scratch directory %s' % scratchDir)
+
+
+# copy jquery repo into temp directory
+try:
+    shutil.copytree(jqueryDir, "%s/jquery" % scratchDir)
+except:
+    log.exception('Failed to copy the directory %s to %s' % (jqueryDir, scratchDir))
+    sys.exit()
+
+# change to this temp directory
+try:
+    os.chdir("%s/jquery" % scratchDir)
+except:
+    log.exception('Failed to change directory %s/jquery' % scratchDir)
+    sys.exit()
+
+# run grunt custom:... for dist pointing to new directory
+
+log.info('in directory %s' % os.getcwd())
+
+proc = subprocess.Popen(["grunt", "custom"], stdout=DEVNULL)
+proc.wait()
+zip()
+
+full = os.path.getsize('dist/jquery.js')
+minified = os.path.getsize('dist/jquery.min.js')
+gzipped = os.path.getsize('dist/jquery.min.js.gz')
+print("%s;%d;%d;%d" % ('all on', full, minified, gzipped))
+
+custom_args = ",-".join(format(opt, "s") for opt in options)
+proc = subprocess.Popen(["grunt", "custom:-%s" % custom_args], stdout=DEVNULL)
+proc.wait()
+zip()
+full = os.path.getsize('dist/jquery.js')
+minified = os.path.getsize('dist/jquery.min.js')
+gzipped = os.path.getsize('dist/jquery.min.js.gz')
+print("%s;%d;%d;%d" % ('all on', full, minified, gzipped))
+
+for cluster in clusters:
+    proc = subprocess.Popen(["grunt", "custom:-%s" % cluster], stdout=DEVNULL, stderr=DEVNULL)
+    proc.wait()
+    zip()
+    full = os.path.getsize('dist/jquery.js')
+    minified = os.path.getsize('dist/jquery.min.js')
+    gzipped = os.path.getsize('dist/jquery.min.js.gz')
+    print("%s;%d;%d;%d" % ('all on', full, minified, gzipped))
+
+# cleanup directory
+try:
+    subprocess.call(["rm", "-rf", "%s" % scratchDir])
+except:
+    log.exception('Failed to remove scratch directory %s' % scratchDir)

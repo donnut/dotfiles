@@ -1,0 +1,7 @@
+import pytest
+
+from ocr.kenlmwrap import KenLMWrap
+
+def test_unigram():
+    kenlm = KenLMWrap()
+    assert kenlm.query('De grote wereld') == -8.33755

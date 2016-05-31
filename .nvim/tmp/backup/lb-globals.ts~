@@ -1,0 +1,54 @@
+module LBGlobals {
+    export var idCounter = 0;
+    /**
+     * Global enum definitions for link builder
+     */
+    /** @enum {number} */
+    export enum Subject {areaName, nid, cat, 'type', 'enum', selected, children, 'default'}
+
+    /** @enum {number} */
+    export enum Comparators {eq, ne, lt, gt, lte, gte}
+
+    /** @enum {number} */
+    export enum Operators {
+        'delete', deleteLeft, deleteRight, 'default', 'case', or, and, 'switch',
+        plus, minus,multiply, divide, not,
+        count, minimum, maximum, find1, sort, filter, findn}
+
+    export enum Action {update, create, remove, insert, 'delete'}
+
+    export enum MessageKey {update, action, it}
+
+    /** @enum {number} */
+    export enum Arguments {
+        pub, sub, drop, variables, pre
+    }
+
+    /** @enum {number} */
+    export enum AreaNames {
+        subPipClass, action, it, main, variableName,
+        preMain, preVariableName, preSubPipClass, preAction , preIt
+    }
+
+    export interface ISubjectBasics{
+        nid: string;
+        cat: string;//enum
+        'type': string;
+        areaName: string;//enum
+        selected: string;
+    }
+    export interface IValue extends ISubjectBasics{
+        'default': string;
+        'enum': string[];
+    }
+
+    export interface IOperator extends ISubjectBasics{
+        children: string[];
+        'enum': string[];
+        //default: string;
+    }
+
+    export interface IComparator extends ISubjectBasics{
+        children: string[];
+    }
+}

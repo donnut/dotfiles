@@ -1,0 +1,108 @@
+module Pip.Addresses {
+    import G = Globals;
+    import PT = G.PipType;
+    //import ACT = G.Action;
+    import MK = G.MessageKey;
+    import ELM = G.Element;
+    import ON = G.OptionName;
+    import OV = G.OptionValue;
+    var AK = G.AddressKey;
+    //import PC = G.PipClass;
+
+    export function defineSelector(jQueryAchtigeSelectorString: string){
+        //voorlopig even parkeren, met hand nu volgens onze wensen al selector String definieren
+        var standardizedSelectorString = jQueryAchtigeSelectorString;
+        return standardizedSelectorString;
+    }
+
+    function getTagSelector(selectorString: string, contextSelector: string) {
+        return ( selectorString.substr(0, contextSelector.length) === contextSelector)
+            ? selectorString.substr(contextSelector.length + 1)
+            : selectorString;
+    }
+
+    function findFirstTagOfTpl(tpl: string) {
+        var matches = /<(\w+)\s?.*>/.exec(tpl);
+        if (matches && matches.length > 0) return matches[1];
+        else return "";
+    }
+
+    export function defineEventAddresses(options: G.IEventPipOptions | G.IEventItemPipOptions, regAddressBook: G.IRegAddressBook, itType: boolean) {
+        var selector = defineSelector(options[ON[ON.selector]]),
+            address: any = {},
+            delegation: boolean,
+            //for MOPEApp and FredApp
+            regAddresses = regAddressBook[selector];
+
+        //methode dependant on method of appCreation
+        //for visulaBuilder:
+        //PROBLEEM//regAddresses = G.VB.pips.models.pipSpec[options[ON[ON.selector]]].address;
+
+        address = R.assoc(AK[AK.el], selector, address);
+
+        if (itType) {
+            delegation = options[ON[ON.delegation]] == null ? true : options[ON[ON.delegation]];
+            address[AK[AK.item]] = regAddresses[AK[AK.item]];
+        }
+        else {
+            //let op default waarde voor event !== defaultwaarde voor eventItem
+            delegation = options[ON[ON.delegation]] == null ? false : options[ON[ON.delegation]];
+        }
+
+        //!!! spec.options[ON[ON.delegation]] = delegation;
+
+        if (delegation){
+            if (options[ON[ON.root]]){
+                address[AK[AK.root]] = defineSelector(options[ON[ON.root]]);
+            }
+            else {
+                if (itType) {
+                    address[AK[AK.root]] = regAddresses[AK[AK.root]];
+                    address[AK[AK.anc]] = regAddresses[AK[AK.root]];
+                }
+                else {
+                    // special case: if anc is a sub and root is unknown, strip the ".sub" to obtain the root
+                    if (regAddresses[AK[AK.anc]].substr(-4) === ".sub") {
+                        address[AK[AK.root]] = regAddresses[AK[AK.anc]].substr(0, regAddresses[AK[AK.anc]].length - 4);
+                    }
+                    else {
+                        address[AK[AK.root]] = regAddresses[AK[AK.anc]];
+                    }
+                }
+            }
+            address[AK[AK.anc]] = address[AK[AK.root]];
+            address[AK[AK.sel]] = getTagSelector(address[AK[AK.el]], address[AK[AK.root]]);
+        }
+        else if (itType){
+            address[AK[AK.root]] = regAddresses[AK[AK.root]];
+            address[AK[AK.anc]] = regAddresses[AK[AK.pip]];
+        }
+        else {
+            address[AK[AK.anc]] = regAddresses[AK[AK.pip]];
+        }
+        return address;
+    }
+
+    export function defineListAddresses(options: G.IListPipOptions){
+        let address = {};
+        address[AK[AK.anc]] = defineSelector(options[ON[ON.selector]]);
+        address[AK[AK.el]] = address[AK[AK.anc]] + '>' + findFirstTagOfTpl(options[ON[ON.tpl]]);
+        return address;
+    }
+
+    export function defineListItemAddresses(options: G.IListItemPipOptions){
+        let address = {};
+        let matches = /(.*)>(.*)$/.exec(options[ON[ON.selector]]);
+
+        address[AK[AK.anc]] = defineSelector(matches[1] ? matches[1] : options[ON[ON.selector]]);
+        address[AK[AK.sel]] = matches[2] ? matches[2] : '';
+        return address;
+    }
+
+    export function defineTreeNestAddresses(options: G.ITreePipOptions){
+        let address = {};
+        address[AK[AK.anc]] = defineSelector(options[ON[ON.selector]]);
+        address[AK[AK.el]] = address[AK[AK.anc]] + '_*';
+        return address;
+    }
+}

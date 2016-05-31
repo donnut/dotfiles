@@ -1,0 +1,660 @@
+//define(['require'], function(require) {
+define(function(require) {
+
+  var mongoose = require('mongoose');
+  var Component = require('stubs/Component').Model,
+      valueset = require('lib/schemas/defaults/valueset').values,
+      functiontype = valueset.functiontype,
+      componentcategories = valueset.componentcategories();
+
+  var BrickSchema = new mongoose.Schema({//repoObject? styleObject??
+    pId: 'string',//[{ type: Schema.Types.ObjectId, ref: 'Project' }], //in project eventueel projectId repo: een themeId, repoId of defaultId
+    // cn: 'string',
+    fnType    : {type: String, 'enum':functiontype, required: true},
+    cat       : {type: String, 'enum':componentcategories, required: true},
+    cid       : [{type: mongoose.Schema.Types.ObjectId, ref: 'Component' , index:true}],
+    chld      : [String],
+    tree      : mongoose.Schema.Types.Mixed,
+    __t       : String,
+    uglyId    : String,
+    html      : String,
+    js        : []
+  }, {
+    collection       : 'bricks',
+    strict           : false
+  });
+
+  // BrickSchema.index({'cid[0].fnType':1});
+  // BrickSchema.index({'cid[0].cat':1});
+
+  BrickSchema.methods.getSelectors = function() {
+    return this.get('selectors');
+  };
+
+  BrickSchema.methods.getRef = function(path, cb) {
+    switch(path){
+      case 'cs':
+        PaintSet.findById(this.get('cs'), function(err, paintSet){
+          cb(err,paintSet);
+        });
+        break;
+      case 'fs':
+        FontSet.findById(this.get('fs'), function(err, fontSet){
+          cb(err, fontSet);
+        });
+        break;
+      case 'as':
+        AreaDef.findById(this.get('as'), function(err, areaDef){
+          cb(err, areaDef);
+        });
+        break;
+      case 'is':
+        IconDef.findById(this.get('is'), function(err, iconDef){
+          cb(err, iconDef);
+        });
+        break;
+      case 'ms':
+        ComponentMap.findById(this.get('ms'), function(err, compMap){
+          cb(err, compMap);
+        });
+        break;
+      // case 'mm':
+      //   ComponentMap.findById(this.get('mm'), function(err, compMap){
+      //     cb(err, compMap);
+      //   });
+      //   break;
+      default:
+        Component.findById(this.get('cid')[0], function(err, component){
+          if (err) return cb(err);
+          switch(path){
+            case 'cid':
+              cb(err, component);
+              break;
+            case 'chld':
+              var children = component.chld;
+              cb(err, children);
+              break;
+            default:
+              cb(err, component.get(path));
+          }
+        });
+    }
+  };
+  BrickSchema.methods.getComponent = function(cb){
+    var brick = this;
+    brick.getRef('cid', function(err, component){
+      return cb(err, component);
+    });
+    // var fnType = brick.fnType;
+    // var  fnTypeObject = {//component type = fnType
+    //   // 'lev'
+    //   'mas': require('lib/schemas/repo/component/Master').Model,
+    //   'lay':require('lib/schemas/repo/component/Layout').Model,
+    //   'list':require('lib/schemas/repo/component/List').Model
+    //   // 'head',
+    //   // 'nav',
+    //   // 'par',
+    //   // 'action'
+    //   // 'map',
+    //   // 'soc',
+    //   // 'form',
+    //   // 'table',
+    //   // 'med',
+    //   // 'grph',
+    //   // 'gal'
+    // };
+    // var Comp = fnTypeObject[fnType];
+    // Comp.findById(brick.cid, function(err, component){
+    //   return cb(err, component);
+    // });
+  };
+
+  BrickSchema.statics.makeFromDefaultStyleSets = function(projectId, cid, customId, colorSelection, cb) {
+    var brick = new this();
+    var _        = require('lodash');
+    var async    = require('async');
+
+    var missingPaths = [];
+    brick.cid.push(cid);
+    brick.set('pId',projectId);
+    var Custom = require('lib/schemas/project/Custom').Model;
+    var Component = require('lib/schemas/repo/component/Component').Model;
+
+    var composeBrickObject = function(kind, styleSet, askedPaths, cb){
+      async.forEach(askedPaths, function(path, cb){
+        // console.log(styleSet,styleSet[styleVar[path]], path);
+        if(styleSet && styleSet[path] && styleSet[path][0]){
+
+          if(path === 'cs'){
+            var StyleObject = require('lib/schemas/repo/style/StyleObject').Model;
+            StyleObject.findById(styleSet[path][0], function(err, colorSet){
+              if (err) return cb(err);
+              PaintSet.makeFromColorSet(projectId, colorSet, colorSelection, function(err, paintSet){
+                if (err) return cb(err);
+                brick[path].push(paintSet);
+                //console.log( 'brick', path);
+                return cb(err);
+              });
+            });
+          }
+          else {
+            brick[path].addToSet(styleSet[path][0]);
+            return cb(null);
+          }
+        }
+        else if(kind === 'cat'){
+        missingPaths.push(path);
+          return cb(null);
+        }
+        else{
+          throw new Error( 'needed style ' + path + ' is not defined for styleset ' + styleSet.kind);
+        }
+      }, function(err){
+        //console.log(missingStyleObjects,brick);
+        return cb(err);
+      });
+    };
+
+    Component.findById(cid, function(err, component){
+      if (err) return cb(err);
+      var cat = component.cat;
+      var fnType= component.fnType;
+      brick.set('cat', cat);
+      brick.set('fnType', fnType);
+      async.series({
+        catStyle: function(cb){
+
+          Custom.findOne({$and:[{_id:customId}, {'style.kind': cat}]}, {"style.$" : 1}, function(err, catCustom){
+            if (err) return cb(err);
+            var paths = (fnType === 'mas')?  ['cs', 'ms']://['cs', 'ms', 'as'];
+                        ((fnType === 'lay')? []://'ms
+                                             ['cs', 'ms', 'fs']); //['cs', 'ms', 'as','fs','is'];
+            if(catCustom){
+              composeBrickObject('cat', catCustom.style[0], paths, function(err, missingStyleObjects) {
+                return cb(err, missingStyleObjects);
+              });
+            }
+            else {
+              missingPaths = paths;
+              return cb(err);
+            }
+          });
+        },
+        fnTypeStyle:function(cb) {
+          if(missingPaths.length === 0){
+            return cb(err);
+          }
+          else {
+            Custom.findOne({$and:[{_id:customId },{ 'style.kind': fnType}]}, {"style.$" : 1}, function(err, fnTypeCustom){
+              if (err) return cb(err);
+              composeBrickObject('fnType', fnTypeCustom.style[0], missingPaths, function(err){
+                return cb(err);
+              });
+            });
+          }
+        }
+      }, function(err){
+        if (err) return cb(err);
+       // console.log('brick', brick);
+        brick.save(function(err){
+          return cb(err, brick);
+        });
+      });
+    });
+  };
+
+  //BrickSchema.statics.make =Brick.create
+  // BrickSchema.statics.make = function(object, cb) {
+  //   var brick = new this(object);
+  //   brick.save(function(err, brick){
+  //     return cb(err, brick);
+  //   });
+  // };
+
+
+  //TODO nadenken of efficienter als bricks als clustertje (minder database calls voor opzoeken tagset en dergelijke)
+
+  //als voor master of layout speciale css moet worden aangemaakt, dan wordt wigetSpec toegevoegd als argument
+  //herkenbaar door sluiceType: widgetcss, widgethtml, widgethtmlcss
+  //anders niet (dus ook niet als brick voor master of layout: dan wordt masterspec hier vastgesteld)
+
+
+
+// sluiceSpec:{
+//   project
+//   job
+//   appEl
+//   custom
+// sluiceType:{
+  //   alt: false,
+  //   css:true,
+  //   html: false,
+  //   js: false,
+  //   widget: false
+  // }
+// }
+  BrickSchema.methods.sluice = function(sluiceSpec, cb){
+    var brick = this;
+    var sluiceType = sluiceSpec.sluiceType;
+    var async = require('async');
+    var hasChildren;
+    async.series({
+      component: function(cb){
+       brick.getComponent( function(err, component){
+          if (err) return cb(err);
+          var componentChildren = component.get('chld');
+          hasChildren = (componentChildren && componentChildren.length !== 0);
+          sluiceSpec.component = component;
+          sluiceSpec.children = componentChildren;//ook leeg is ook
+          cb(err);
+        });
+      },
+      project: function(cb){//vanuit appdefbuilder wordt project natuurlijk direct meegegeven.
+        //todo project niet altijd nodig?, namelijk niet als geen kinderen?
+        if(!sluiceSpec.project &&  (sluiceType.css || hasChildren )){//
+          var Project = require('lib/schemas/Project').Model;
+          Project.find({$and:[{_id:sluiceSpec.job.pId/*[0]*/},
+                                {'project.devices.device':sluiceSpec.job.device}]},
+                                {'project.devices.device.$':1}, function(err, project){
+            if (err) return cb(err);
+            sluiceSpec.project = project;
+            return cb(err);//, project
+          });
+        }
+        else return cb(null);
+      },
+      custom:  function(cb){//mag pas als project klaar
+        if(!sluiceSpec.custom && sluiceType.css){
+          var Custom = require('lib/schemas/project/Custom').Model;
+          Custom.find({$and:[{_id:sluiceSpec.project.custom/*[0]*/}, {'dims.d':sluiceSpec.job.device}]}, {'dims.d.$':1} ,function(err, custom){
+            if (err) return cb(err);
+            sluiceSpec.custom = custom.toObject();
+            return cb(err);
+          });
+        }
+        else return cb(null, null);
+      },
+    }, function(err){//, results
+        if (err) return cb(err);
+        brick.cascade(sluiceSpec, function(err){
+          return cb(err);
+        });
+    });
+  };
+
+
+  //project, custom, job, sluiceType, appEl,
+  BrickSchema.methods.cascade = function(sluiceSpec, cb){// widgetSpec
+    var brick = this;
+    var async = require('async');
+    var _ = require('lodash');
+
+    var sluiceType = sluiceSpec.sluiceType;
+    var fnType = brick.fnType;
+    var cat = brick.cat;
+    var component = sluiceSpec.component;
+    var appElIsParentOfWidget = (fnType === 'root' || fnType === 'mas' || fnType === 'lay');//'menu, 'section, 'page' pane zijn vier 4 typen van layout: ipv fnType _type??
+    var extraSpec = sluiceSpec.extraSpec || {};
+    //var appDef = project.devices.appDef;
+    var selectorSet;
+    var AppElement = require('lib/schemas/project/appDefinition/AppElement').Model;
+
+    var brickStyles = {
+      // cm:colormap paintSet,
+      // fm:fontmap,
+      // am:areamap,
+      // im:iconmap,
+      // sm:sizeMap
+      // mm: masterMap
+    };
+    var styleVariables = ['cm', 'am','sm', 'fm','mm'];//['cm', 'sm', 'fm','im'];  //liefst verwijzing naar defaults
+
+    var addBrickStylesClasses2Tagset= function(tagSet){
+      var keys = _.keys(brickStyles);
+      for (var i = 0, len = keys.length; i < len; i++) {
+        tagSet[keys[i]] = tagSet[keys[i]].cn;
+      }
+      return tagSet.toObject();
+    };
+    var setBrickStyles = function(cb){
+      async.forEach(styleVariables, function(key, cb){
+        if(brick[key]){
+          brick.getRef(key, function(err, styleObject){
+            if(err) return cb(err);
+            if(styleObject){
+              if(key === 'mm'){
+                styleObject = _.omit(styleObject, 'lay');
+              }
+              brickStyles[key] = styleObject;
+              return cb(err);
+            }
+            else {
+              return cb(err);
+            }
+          });
+        }
+        else {
+          return cb(err);
+        }
+      }, function(err){
+        //geen sluiceSpec.style= anders elders weghalen bij erven
+        //nu wordt dat gebruikt bij master naar layout
+        return cb(err);
+      });
+    };
+    var updateBrickStyles = function(newBrickStyles, cb){
+      var keys = _.keys(brickStyles);
+      async.forEach(keys, function(key, cb){
+        if(newBrickStyles[key]){
+          if(key === 'cs'){
+            newBrickStyles[key].markModified('values');
+          }
+          newBrickStyles[key].save(function(err){
+            return cb(err);
+          });
+        }
+        else {
+          return cb(err);
+        }
+      }, function(err){
+        return cb(err);
+      });
+    };
+    var updateCssProperties = function(newCssProperties, cb){
+
+
+      return cb(err);
+    };
+    var cssHandler = function(cssDef, newBrickStyles, cb){
+      if(sluiceType.alt){
+        //nu géén update van styleobjects en cssProps gewenst?
+        //en nu aan altCss ipv cssClustertoevoegen
+        sluiceSpec.job.writeAltCss(cssDef, function(err){
+          return cb(err);
+        });
+      }
+      else {
+        async.parallel({
+          writeCss: function(cb){
+            sluiceSpec.job.writeCss(cssDef, brick._id, fnType, cat,function(err){
+              cb(err);
+            });
+          },//slim om pas hier en niet telkens tijdens uitbreiding te doen, dat kan dan synchroon zonder databasecalls!!
+          updateBrickStyles: function(cb){
+            updateBrickStyles(newBrickStyles, function(err){
+              return cb(err);
+            });
+          }
+        }, function(err){
+          return cb(err);
+        });
+      }
+    };
+
+    var brickCascade = function(childName, childBrickId, cb){
+      Brick.findbyId(childBrickId, function(err, childBrick){
+        if(err) return cb(err);
+        var childSluiceSpec = sluiceSpec;
+        if(sluiceSpec.appEl) {
+          childSluiceSpec.appEl = appElChild;//dit is overschrijven
+        }
+        if(fnType === 'mas'){//van de moeder, niet het kind!!
+          //zo heeft layout automatisch de brickstyles van master ter beschikking
+          childSluiceSpec.style = brickStyles;
+          childSluiceSpec.extraSpec.locations = extraSpec.locations[childName];
+        }
+        else if(fnType === 'page' && childBrick.fnType === 'title'){//pagetitle doorgeven
+          childSluiceSpec.extraSpec.title = appEl.title;
+        }
+
+        childBrick.cascade(childSluiceSpec, function(err, result){
+          if (err) return cb(err);
+          extraSpec.html[child] = result.html;
+          if(sluiceSpec.appEl) {
+            extraSpec.DOMIds[child] = appElChild.DOMId;
+            if(result.cssProp){
+              extraSpec.cssProp[child] = result.cssProp;
+            }
+          }
+          return cb(err);
+        });
+      });
+    };
+
+    var createCss = function(cb){
+      if(sluiceSpec.appEl && appElIsParentOfWidget){
+        component.createCss(selectorSet, brickStyles, sluiceSpec, extraSpec, function(err, cssDef, newBrickStyles, newCssProperties){
+          if (err) return cb(err);
+          // result.cssProp = newCssProperties;
+          updateCssProperties(newCssProperties, function(err){
+            return cssHandler(cssDef, newBrickStyles, cb);
+          });
+        });
+      }
+      else {
+        component.createCss(selectorSet, brickStyles, sluiceSpec, function(err, cssDef, newBrickStyles){
+          if (err) return cb(err);
+          return cssHandler(cssDef, newBrickStyles, cb);
+        });
+      }
+    };
+
+    var bottomUpHtml = function(children, cb){
+      if(appElIsParentOfWidget){
+        if(sluiceSpec.appEl){
+          async.forEach(children, function(cb) {
+            var child = children[i];
+            var childAppElId = sluiceSpec.appEl.child[child]/*[0]*/;
+            AppElement.findById(childAppElId, function(err, appElChild){
+              if(err) return cb(err);
+              //extraSpec.DOMIds[child] = appElChild.DOMId;
+              var childBrickId = appElChild.brick/*[0]*/;
+              brickCascade(child, childBrickId,function(err){
+                return cb(err);
+              });
+            });
+          }, function(err){
+            return cb(err);
+          });
+        }
+        else {
+          async.forEach(children, function(cb) {
+            var child = children[i];
+            var childBrickId = (fnType=== 'lay')? defaults.emptyPlaceholderId: brick.mm[child];
+            brickCascade(child, childBrickId,function(err){
+              return cb(err);
+            });
+          }, function(err){
+            return cb(err);
+          });
+        }
+      }
+      else {
+        if(sluiceSpec.appEl){
+          var Content = require('lib/schemas/project/appDefinition/Content').Model;
+          for (var i = 0, len = children.length; i < len; i++) {
+            var contentChild = children[i];
+            var language = sluiceSpec.job.lang || defaults.language;
+            var embeddedContents = sluiceSpec.appEl.child[child]/*[0]*/;
+            var content;
+            if(embeddedContents.length === 1) {
+              content = embeddedContents[0];
+            }
+            else {
+              content = _.find(embeddedContents, {'lang':language});
+            }
+            extraSpec.content[child] = content.value;
+          }
+          return cb(null);
+        }
+        else{
+          var ContentSet = require('lib/schemas/repo/component/ContentSet').Model;
+          var lang = sluiceSpec.job.lang || defaults.language;
+          var appCategory = sluiceSpec.job.appCat || defaults.appcategory;
+          ContentSet.getMostDefaultContentSet(lang, appCategory, fnType, cat, function(err, contentSet){
+            if (err) return cb(err);
+            extraSpec.content = contentSet;
+            return cb(err);
+          });
+        }
+      }
+    };
+
+    async.auto({
+      component: function(cb){
+        if(!component){
+          brick.getComponent(function(err, comp){
+            if (err) return cb(err);
+            component = comp;
+            cb(err);
+          });
+        }
+        else return cb(null);
+      },
+      style: function(cb){
+        if(sluiceSpec.style){ //als layout als kind van master
+          brickStyles = sluiceSpec.style;
+          return cb(err);
+        }
+        else{
+          setBrickStyles( function(err){
+            return cb(err);
+          });
+        }
+      },
+      selectorSet:['style', function(cb){ //mag pas als styles klaar
+        var TagSet   = require('lib/schemas/repo/component/TagSet').Model;
+        TagSet.getTagSet(sluiceSpec.job, fnType, cat, function (err, tagset){
+          if (err) return cb(err);
+          selectorSet = addBrickStylesClasses2Tagset(tagset);
+          return cb(err);
+        });
+      }],
+      extraSpec: function(cb){
+        if(sluiceSpec.appEl){
+          var cssPropCollection = project.devices.cssProps;
+          //TODO sneller via mongoDB ipv find?
+          extraSpec.cssProps = _.find(cssPropCollection, {appEl: appEl._id});
+          extraSpec.DOMIds = {
+            prnt: sluiceSpec.appEl.DOMId
+          };
+        }
+        if(fnType == 'mas'){
+          var masterSpec = brickStyles.mm.spec;
+          extraSpec.locations = masterSpec.getLocations();
+        }
+        if(fnType === 'nav' && sluiceSpec.appEl){
+          //if !sluiceSpec.appEl dus brick moet je het zoeken in default ContentSet
+          sluiceSpec.appEl.getItemModels (
+            function(err, itemModels){
+              if (err) return cb(err);
+              extraSpec.itemModels = itemModels;
+              cb(err);
+          });
+        }
+
+        else return cb(null);
+      },
+      children: ['component', 'selectorSet', 'extraSpec', function(cb) {
+        var children = sluiceSpec.children ||
+                      (sluiceSpec.appEl?
+                          _.keys(sluiceSpec.appEl.chld):
+                          component.children.get()//kan virtual zijn?
+                      );
+        async.serie({
+          topDownCss: function(cb){
+            if(sluiceType.css){
+              return createCss(cb);
+            }
+            else {
+              return cb(err);
+            }
+          },
+          bottomUpHtml:function( cb){
+            if(children && children.length !== 0){
+              bottomUpHtml(children, cb);
+            }
+            else return cb(null);
+          }
+        }, function(err){
+            return cb(err);
+        });
+      }]
+    }, function(err){
+      if (err) return cb(err);
+      async.parallel({
+        js: function(cb){
+          if(sluiceType.js){
+            component.createJs(sluiceSpec.job, selectorSet, function(err, js){
+              cb(err, js);
+            });
+          }
+          else return cb(err);
+        },
+        html: function(cb){
+          if(appElIsParentOfWidget){//fnType === 'mas'|| fnType === 'lay' ){
+            extraSpec.purpose = sluiceSpec.job.purp;
+          }
+          if(sluiceType.html){
+            html = component.createHtml(selectorSet, brickStyles, extraSpec);
+            cb(null, html);
+          }
+          else return cb(null);
+        }
+      }, function(err, results){ //zo nog wel results.js, results.html, maar geen results.css meer
+        if (err) return cb(err);
+        results.job = sluiceSpec.job;
+        cb(err, results);//bevat nu  result.job,results.html en evt result.js
+      });
+    });
+  };
+
+  // BrickSchema.statics.getMostDefaultBrick = function(bricks) {
+  //   var csZero = [];
+  //   var nrZero = [];
+  //   var i, nrZeros, nrMins;
+
+  //   // determine number of zero style aspects for each brick and
+  //   // store the brick with colorset == 0
+  //   for (i=0, nrBricks = bricks.length; i<nrBricks; i++) {
+  //     if (bricks[i].get('cs') === 0) {
+  //       csZero[i] = true;
+  //     } else {
+  //       csZero[i] = false;
+  //       nrZero[i]++;
+  //     }
+  //     if (bricks[i].get('fs') !== 0) nrZero[i]++;
+  //     if (bricks[i].get('bs') !== 0) nrZero[i]++;
+  //     if (bricks[i].get('is') !== 0) nrZero[i]++;
+  //   }
+
+  //   // get the brick(s) with the minimum number of style aspects
+  //   var minI = 999;
+  //   var minIndex = [];
+  //   for (i=0, nrZeros = nrZero.length; i<nrZeros; i++) {
+  //     if (nrZero[i] < minI) {
+  //       minI = nrZero[i];
+  //       minIndex = [i];
+  //     } else if (nrZero[i] === minI) {
+  //       minIndex.push(i);
+  //     }
+  //   }
+
+  //   // return the brick with the most zero style aspects, or, if more
+  //   // bricks comply, the one with color set == 0, or, if that does not
+  //   // exist the first one (arbitrary)
+  //   if (minIndex.length > 1) {
+  //     for (i=0, nrMins = minIndex.length; i<nrMins; i++) {
+  //       brickId = minIndex[i];
+  //       if (csZero[i] === true) return bricks[brickId];
+  //     }
+  //   }
+  //   return bricks[minIndex[0]];
+  // };
+
+  return {
+    Schema: BrickSchema,
+    Model : mongoose.model('Brick', BrickSchema)
+  };
+
+});

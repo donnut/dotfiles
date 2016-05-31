@@ -1,0 +1,64 @@
+
+module Parser.Url {
+
+    export enum TOKEN { NAME, SLASH, RPARENTH, LPARENTH, AMP, EOL };
+
+    class Token {
+        type: TOKEN;
+        text: string;
+
+        constructor(type: TOKEN, text: string) {
+            this.type = type;
+            this.text = text;
+        }
+
+        toString() {
+            const tname = TOKEN[TOKEN.NAME]
+        }
+    }
+
+    export class Lexer {
+        input: string;
+        p: number;
+        c: string;
+
+        constructor(input: string) {
+            this.input = input;
+            this.p = 0;
+            this.c = this.input.charAt(this.p);
+        }
+
+        isLetter() {
+            return this.c !== TOKEN[TOKEN.EOL] && (this.c>='a' && this.c<='z' || this.c>='A' && this.c<='Z' || this.c === ' ');
+        }
+
+        nextToken(): Token {
+            while (this.c !== void 0) {
+                switch (this.c) {
+                    case '/': this.consume(); return new Token(TOKEN.SLASH, "/");
+                    case '(': this.consume(); return new Token(TOKEN.LPARENTH, "(");
+                    case ')': this.consume(); return new Token(TOKEN.RPARENTH, ")");
+                    case '&': this.consume(); return new Token(TOKEN.RPARENTH, "&");
+                    default:  if (this.isLetter()) return this.NAME(); throw new TypeError("invalid character: " + this.c);
+                }
+            }
+            return new Token(TOKEN.EOL, "EOL");
+        }
+
+        consume() {
+            this.p++;
+            if (this.p >= this.input.length) this.c = TOKEN[TOKEN.EOL];
+            else this.c = this.input.charAt(this.p);
+        }
+
+        NAME() {
+            let buf = '';
+            do {
+                buf += this.c;
+                this.consume();
+            } while(this.isLetter());
+            return new Token(TOKEN.NAME, buf);
+        }
+
+    }
+}

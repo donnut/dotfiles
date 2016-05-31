@@ -1,0 +1,261 @@
+/// <reference path="../dts/ramda.d.ts" />
+/// <reference path="../dts/objectid.ts" />
+/// <reference path="globals.ts" />
+/// <reference path="utils.ts" />
+/// <reference path="DOMIO.ts" />
+/// <reference path="storage.ts" />
+
+namespace Pip.Values {
+    import G = Globals;
+    import ACT = G.Action;
+    import MK = G.MessageKey;
+    import ON = G.OptionName;
+    import OV = G.OptionValue;
+    import AK = G.AddressKey;
+    import PC = G.PipClass;
+    import PT = G.PipType;
+    import IStorage = Store.IStorage
+
+    /**
+     * pipProps.values
+     */
+    export var arrayInsertValue = function(pipIn: G.IMessage, register:G.IRegister<string[]>, defaultValue: boolean, itemId:string): boolean{// gaat via create
+        return R.contains(itemId, register.value);
+    }
+    export var justValueIn = function(pipIn: G.IMessage): boolean {
+        return pipIn[MK[MK.value]];
+    }
+    export var itemInsertValue = function(pipIn: G.IMessage, register: G.IRegister<boolean>, defaultValue: any, itemId: string): boolean|any {
+        return register.value[itemId]
+            ? register.value[itemId]
+            : defaultValue;
+    }
+    export var basicInsertValue = function(pipIn: G.IMessage, register: G.IRegister<boolean>, defaultValue: any): boolean|any {
+        return register.value
+            ? register.value
+            : defaultValue;
+    }
+
+    export var select: G.IValues = {
+        // create: nocreate for select,
+        update: justValueIn,
+        defaultValue: () => false,
+        reg: () => [],
+        insert: arrayInsertValue
+    };
+
+    export var router: G.IValues = {//onafh options addresse|:er is er maar1
+        //create: :bestaat niet: target(item) geeft alleen update
+        update: justValueIn,
+        insert: itemInsertValue,
+        defaultValue: () => {active:false},// pipIn: G.IMessage //wordt eigenlijk niet gebruikt
+        reg: () => { return {} }
+    };
+
+    export var navTree: G.IValues = {//onafh options addresse|:er is er maar1
+
+        create: justValueIn,
+        update: justValueIn,
+        insert: function(pipIn: G.IMessage, register: G.IRegister<boolean>, defaultValue: boolean, itemId: string): boolean|any {
+            return defaultValue;//register.value[itemId] bestaat hier NOOIT
+        },
+        defaultValue: () => { return {children: []}; },
+        reg: () => { return {} }
+    };
+
+    export function node(itType: boolean): G.IValues {//voor sub en list
+
+        function insertFn(pipIn: G.IMessage, register: G.IRegister<boolean>, defaultValue: boolean): boolean {
+            return register.value || defaultValue;
+        }
+
+        function createFn(pipIn: G.IMessage): boolean {
+            if (R.contains(G.POS, R.keys(pipIn.value))) {
+                return pipIn.value[G.POS];
+            } else {
+                return true;
+                // return (itType && pipIn.value)
+                //     ? pipIn.value
+                //     : true;
+            }
+            // return (itType && pipIn.value)
+            //   ? pipIn.value
+            //   : true;
+        }
+
+        return {
+            create: createFn, //createFn, als je naar inhoud createFn kijkt lijkt dit nodeloos ingewikkeld, of heeft dit zin
+            // en is nog niet alles cases getest en moet code createFN uitgebreider
+            update: createFn, //nog niet uitgewerkt: kan filter of sort worden en dan moet het misschien vergelijkbaar als select met correctInput
+            defaultValue: () => false,
+            insert: basicInsertValue,
+            reg: () => itType ? []: false
+        };
+    }
+
+    export function element(options: G.IShadowElementPipOptions|G.IElementPipOptions|G.IItemElementPipOptions|G.IListItemPipOptions,
+                            address: G.IAddresses, itType: boolean, storage: IStorage): G.IValues {
+        var pipType = options[ON[ON.type]];
+        var defineEl: Function;
+
+        switch(pipType){
+            case PT[PT.listItem]:
+                defineEl = function($el: DOMIO.Instance): DOMIO.Instance {
+                    return $el;
+                }
+                break;
+            case PT[PT.itemElement]:
+                defineEl = function($ancestor: DOMIO.Instance, itemId: string): DOMIO.Instance {
+                    $ancestor = $ancestor ;//|| G[nameSpace].get(address[AK[AK.anc]]).get(itemId);
+                    return DOMIO.createScoped($ancestor, address[AK[AK.sel]]);
+                };
+                break;
+            case PT[PT.shadowElement]:
+                defineEl = function($ancestor: DOMIO.Instance): DOMIO.Instance {
+                    $ancestor = $ancestor;// || G[nameSpace].get(address[AK[AK.anc]]).get(itemId);
+                    return $ancestor;
+                };
+                break;
+            default://case PT[PT.element]:
+                if(address[AK[AK.anc]]){
+                    defineEl = function($ancestor: DOMIO.Instance): DOMIO.Instance {
+                        $ancestor = $ancestor || storage.get(address[AK[AK.anc]]).get();
+                        return DOMIO.createScoped($ancestor, address[AK[AK.sel]]);
+                    };
+                } else {
+                    defineEl = function(): DOMIO.Instance {
+                        return DOMIO.create(address[AK[AK.selector]]);
+                    };
+                }
+        }
+
+        return {
+            defaultValue: () => itType ? {}: null, // null,
+            insert: function(pipIn: G.IMessage,
+                    register: G.IRegister<any>,
+                    defaultValue: any, itemId: string): (el: DOMIO.Instance) => DOMIO.Instance { //, current, defaultValue
+                return defineEl(pipIn[MK[MK.value]], itemId);
+            },
+            reg: () => itType ? {}: null
+        };
+    }
+
+    export function model(options: G.IModelPipOptions|G.ICollectionPipOptions, itType: boolean): G.IValues{
+        // return itType ? defaultModels : defaultModels[0];
+
+        var update = itType
+            ? function(pipIn: G.IMessage, register: G.IRegister<any>, itemId?: string) {
+                //return R.merge(register.value[itemId], pipIn[MK[MK.value]]);
+                return pipIn[MK[MK.value]];
+            }
+            : function(pipIn: G.IMessage, register: G.IRegister<any>) {
+                //return R.merge(register.value, pipIn[MK[MK.value]]);
+                return pipIn[MK[MK.value]];
+            };
+
+        return {
+            defaultValue: () => {},//defaultModels[0],
+            create: justValueIn,
+            update: update,
+            reg: () => { return {} }
+        };
+    }
+
+    export function event(options: G.IEventPipOptions|G.IEventItemPipOptions, itType: boolean): G.IValues {
+        function defaultEventValue(options): boolean {
+            return options[ON[ON.enable]] === undefined || options[ON[ON.enable]] === true
+                ? true
+                : false;
+        }
+
+        function defaultEventReg(options, itType: boolean): boolean|string[] {
+            return (itType) //ok: in pipprops betekent itType dat array of niet en is dus al afh delegation
+                ? []  /* [it1]*/
+                : defaultEventValue(options);
+        }
+
+        function eventInsertValue(options, itType: boolean): Function {
+            if (itType) { //ok: in pipprops betekent itType dat array of niet en is dus al afh delegation
+                return function(pipIn: G.IMessage, register: G.IRegister<string[]>, defaultValue: boolean, itemId:string){
+                    return R.contains(itemId, register.value) || defaultValue;
+                };
+            } else {
+                return function(pipIn: G.IMessage, register: G.IRegister<boolean>, defaultValue: boolean){
+                    return register.value || defaultValue;
+                };
+            }
+        }
+
+        var desiredVals: any = {
+            create: justValueIn,
+            update: justValueIn,
+            defaultValue : () => defaultEventValue(options),
+            reg : () => defaultEventReg(options, itType),
+            insert : eventInsertValue(options, itType)
+        };
+
+        return desiredVals;
+    }
+
+
+    export function defaultState(options: G.IStatePipOptions|G.IStateItemPipOptions|G.ITargetPipOptions|G.ISelectPipOptions|G.ITargetItemPipOptions){
+        var states = options[ON[ON.states]];
+        var pipType = options[ON[ON.type]]
+
+        var defaultState = options[ON[ON.default]];
+        if(!defaultState){
+            switch(pipType){
+                case PT[PT.select]:
+                    defaultState = G.IS_UNSELECTED;
+                    break;
+                case PT[PT.target]:
+                case PT[PT.targetItem]:
+                    defaultState =  G.NO_TARGET;
+                    break;
+                default:
+                    defaultState = states[0].name
+                        ? states[0].name
+                        : states[0].value;
+            }
+        }
+        return defaultState;
+    }
+    export function otherToggleState(state: string,
+            options: G.IStatePipOptions|G.IStateItemPipOptions|G.ITargetPipOptions|G.ISelectPipOptions|G.ITargetItemPipOptions){
+        var
+            states = options[ON[ON.states]],
+            firstName = states[0].name || states[0].value,
+            stateIndex = firstName === state? 0: 1,
+            otherIndex = stateIndex === 0 ? 1 : 0,
+            otherState = states[otherIndex].name || states[otherIndex].value;
+        return otherState;
+    }
+
+    export function state(options: G.IStatePipOptions|G.IStateItemPipOptions, itType: boolean): G.IValues {
+
+        var desiredVals: any = {
+            create: justValueIn,
+            update: justValueIn,
+            defaultValue : () => defaultState(options),
+            reg : () => itType ? {} : defaultState(options),
+            insert : itType? itemInsertValue : basicInsertValue
+        };
+        return desiredVals;
+    }
+
+    export function template(options: G.ITemplatePipOptions|G.ITemplateItemPipOptions, itType: boolean): G.IValues {
+
+        function defaultTemplateValue(options): string {
+            return options[ON[ON.empty]] || '';
+        }
+
+        var desiredVals: any = {
+            create: justValueIn,
+            update: justValueIn,
+            defaultValue : () => defaultTemplateValue(options),
+            reg : () => itType ? {}: defaultTemplateValue(options),
+            insert : itType? itemInsertValue : basicInsertValue
+        }
+        return desiredVals;
+    }
+}

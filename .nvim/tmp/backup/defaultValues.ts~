@@ -1,0 +1,375 @@
+module DefaultValues {
+    /* aliases */
+    import G = Globals;
+
+    // interface IDefaultValues {
+    //     ApplyType?: Globals.ApplyType; //attr, prop, css
+    //     PipType?: Globals.PipType; // 'event', template, stateItem, eventItem, templateItem, element, listItem, itemElement, shadowElement, select, model, collection, sub, list, api}
+    //     PipClass?: Globals.PipClass;
+    //     PipProps?: Globals.PipProps;
+    //     Action?: Globals.Action;
+    //     Element?: Globals.Element;
+    //     AddressKey?: Globals.AddressKey;
+    //     OptionName?: Globals.OptionName;
+    //     LinkOptionName?: Globals.LinkOptionName;
+    //     OptionValue?: Globals.OptionValue;
+    //     IMessage?: Globals.IMessage;
+    //     IEventObject?: Globals.IEventObject;
+    //     IItemEventObject?: Globals.IItemEventObject;
+    //     IValues?: Globals.IValues;
+    //     IAction?: Globals.IAction;
+    //     IPipFn?: Globals.IPipFn;
+    //     IEventPipFn?: Globals.IEventPipFn;
+    //     IPipProps?: Globals.IPipProps;
+    //     IPipItemProps?: Globals.IPipItemProps;
+    //     IPipItemElementProps?: Globals.IPipItemElementProps;
+    //     ISelectPipProps?: Globals.ISelectPipProps;
+    //     IListItemPipProps?: Globals.IListItemPipProps;
+    //     ICollectionPipProps?: Globals.ICollectionPipProps;
+    //     IPublicFn?: Globals.IPublicFn;
+    //     IStatePublicFn?: Globals.IStatePublicFn;
+    //     IModelPublicFn?: Globals.IModelPublicFn;
+
+    //     IRegister?: Globals.IRegister;
+
+    //     ILink?: Globals.ILink;
+    //     ILinkOptions?: Globals.ILinkOptions;
+    //     //IPipId
+
+    //     IRegAddresses?: Globals.IRegAddresses;
+    //     IAddresses?: Globals.IAddresses;
+    //     ItemAddresses?: Globals.ItemAddresses;
+    //     EventItemAddresses?: Globals.EventItemAddresses;
+    //     IPipOptions?: Globals.IPipOptions;
+    //     IElementOptions?: Globals.IElementOptions;
+    //     IShadowElementOptions?: Globals.IShadowElementOptions;
+    //     IItemOptions?: Globals.IItemOptions;
+    //     IState?: Globals.IState;
+    //     IStateOptions?: Globals.IStateOptions;
+    //     IEventOptions?: Globals.IEventOptions;
+    //     ITemplateOptions?: Globals.ITemplateOptions;
+    //     ISubOptions?: Globals.ISubOptions;
+    //     IModelOptions?: Globals.IModelOptions;
+    //     ISelectPipOptions?: Globals.ISelectPipOptions;
+
+    //     Sort?: Globals.Sort;
+    //     IListPipOptions?: Globals.IListPipOptions;
+    //     ICollectionPipOptions?: Globals.ICollectionPipOptions;
+    //     IStatePipOptions?: Globals.IStatePipOptions;
+    //     IStateItemPipOptions?: Globals.IStateItemPipOptions;
+    //     ITemplatePipOptions?: Globals.ITemplatePipOptions;
+    //     ITemplateItemPipOptions?: Globals.ITemplateItemPipOptions;
+    //     IEventPipOptions?: Globals.IEventPipOptions;
+    //     IEventItemPipOptions?: Globals.IEventItemPipOptions;
+    //     ISubPipOptions?: Globals.ISubPipOptions;
+    //     IModelPipOptions?: Globals.IModelPipOptions;
+    //     IElementPipOptions?: Globals.IElementPipOptions;
+    //     IShadowElementPipOptions?: Globals.IShadowElementPipOptions;
+    //     IListItemPipOptions?: Globals.IListItemPipOptions;
+    //     IItemElementPipOptions?: Globals.IItemElementPipOptions;
+
+    //     IServerOptions?: Globals.IServerOptions;
+    //     IValidateData?: Globals.IValidateData;
+    //     IResult?: Globals.IResult;
+    // }
+    /**
+         * Global variable definitions
+         */
+    // export var conversionTable = {
+    //     'class': ApplyType[ApplyType.cl],
+    //     'display': ApplyType[ApplyType.css],
+    //     'autofocus': ApplyType[ApplyType.prop],
+    //     'checked': ApplyType[ApplyType.prop],
+    //     'alt': ApplyType[ApplyType.attr]
+    // };
+
+    export const STATES_TARGET: Globals.IState[] = [{
+        name: G.NO_TARGET,
+        attr: 'display',
+        value: 'none'
+    }, {
+        name: G.IS_TARGET,
+        attr: 'display',
+        value: ''//
+    }];
+    export const STATES_SELECT: Globals.IState[]= [{
+        name: G.IS_UNSELECTED,
+        attr: 'class',//
+        value: G.IS_UNSELECTED
+    }, {
+        name: G.IS_SELECTED,
+        attr: 'class',//
+        value: G.IS_SELECTED
+    }];
+    // export const STATES_HIDDEN: Globals.IStates = [{
+    //     name: G.IS_HIDDEN,
+    //     attr: 'display',
+    //     value: 'none'
+    // }, {
+    //     NAME: G.IS_SHOWN,
+    //     attr: 'display',
+    //     //value: ''
+    // }];
+    // export const STATES_ENABLED: Globals.IStates = [{
+    //     attr: 'enabled',
+    //     value: 'enabled'
+    // }, {
+    //     attr: 'enabled',
+    //     value: 'disabled'
+    // }];
+    // export const STATES_VISIBLE:Globals.IStates = [{
+    //     name: VISIBLE,
+    //     attr: 'visibility',
+    //     //value:  ''//visible or css
+    // }, {
+    //     name: BLANK,
+    //     attr: 'visibility',
+    //     value: 'hidden'
+    // }];
+    // export const STATES_MINIMIZE: Globals.IStates = [{
+    //     name: NORMAL,
+    //     //attr: 'class',
+    //     //value:  ''//visible or css
+    // }, {
+    //     name: IS_SMALL,
+    //     //attr:  'class',
+    //     value: IS_SMALL
+    // }];
+    // export const STATES_ENLARGE: Globals.IStates = [{
+    //     name: NORMAL,
+    //     //attr: 'class',
+    //     //value:  ''//visible or css
+    // }, {
+    //     name: IS_LARGE,
+    //     //attr:  'class',
+    //     value: IS_LARGE
+    // }];
+    // export const STATES_TOGGLESIZE: Globals.IStates = [{
+    //     name: IS_SMALL,
+    //     //attr:  'class',
+    //     value: IS_SMALL
+    // }, {
+    //     name: IS_LARGE,
+    //     //attr:  'class',
+    //     value: IS_LARGE
+    // }];
+    // STATES_TO_THE_BACK: Globals.IStates = {
+    //    name: IN_FRONT,
+    //    attr:  'z-index',
+    //    value: ''
+    // },{
+    //    name: TO_THE_BACK,
+    //    attr:  'z-index',
+    //    value: -1
+    // },
+    // export const STATES_MEDIA: Globals.IStates = [{
+    //     name: IS_SMALL,
+    //     //attr:  'class',
+    //     value: IS_SMALL
+    // }, {
+    //     name: IS_LARGE,
+    //     //attr:  'class',
+    //     value: IS_LARGE
+    // },
+    // {
+    //     name: XLARGE,
+    //     //attr:  'class',
+    //     value: IS_XLARGE
+    // }];
+    // export const STATES_DEFAULTCLASS: Globals.IStates = function(className) {
+    //     return [{
+    //         name: IS_ + className,
+    //         //attr:  'class',
+    //         value: className
+    //     }, {
+    //         name: IS_NO_ + className,
+    //         //attr:  'class',
+    //         //value: ''
+    //     }]
+    // };
+    // export const STATES_SETCLASS= Globals.IStates = function(className) {
+    //     return [{
+    //         name: IS_NO_ + className,
+    //         //attr:  'class',
+    //         //value: ''
+    //     }, {
+    //         name: IS_ + className,
+    //         //attr:  'class',
+    //         value: className
+    //     }]
+    // },
+    // export const STATES_CHECKBOX= Globals.IStates = [{
+    //     name: IS_NOT_CHECKED,
+    //     attr: 'checked',
+    //     value: false
+    // }, {
+    //     name: IS_CHECKED,
+    //     attr: 'checked',
+    //     value: true
+    // }];
+
+    export const serverAddress= "http://localhost:9090/";
+    export const serverIndexAttr= '_id';
+
+        /** used to merge the mid and itemId into one string */
+    export const MERGETOKEN= '%%';
+
+    export const DEFAULTEVENTS= 'click touchstart';//veel gebruikt tweetraps
+
+        /* reserved words */
+    export const IT= '__it';
+    export const POS= '__pos';
+    export const IS_TARGET= 'is-target';
+    export const NO_TARGET= 'no-target';
+    export const IS_SELECTED= 'is-selected';
+    export const IS_UNSELECTED= 'is-unselected';
+
+        /* optional variables for frequently used states */
+        //IS_OPEN: 'is-open',
+        //IS_CLOSED: 'is-closed',
+    export const     ENABLED= 'is-open';
+    export const     DISABLED= 'is-closed';
+    export const     TRUE= true;
+    export const     FALSE= false;
+
+    // var defaultValues: IDefaultValues = {
+    //     //ApplyType: 'cl', //attr, prop, css
+    //     //PipType: 'state', // 'event', template, stateItem, eventItem, templateItem, element, listItem, itemElement, shadowElement, select, model, collection, sub, list, api}
+    //     //PipClass: 'state', //el, tpl, state, enable, select, attr, list, sub, args
+    //     //PipProps:
+    //     Action: 'update',// create, remove, insert, 'delete'
+
+    //     //MessageKey: 'value', //it, action, emit, index
+    //     //Element: 'anc', //root, el//??item,
+    //     //AddressKey: 'anc', //pip, sel, root, item, el, selector//el tbv delegated event(Item) waarbij el !== sel
+    //     //OptionName : selector
+    //     OptionValue: 'html', //append, prepend,unAppend, unPrepend, wrap, remove, insertBefore, insertAfter
+    //     Direction: ASC,//DESC
+    //     //IMessage
+    //     //'IEventObject'
+    //     //IItemEventObject
+    //     //ISelectPipProps
+    //     //IListItemPipProps
+    //     //ICollectionPipProps
+    //     //IPublicFn
+    //     //IStatePublicFn
+    //     //IModelPublicFn
+    //     //IRegister
+    //     //ILinkOptions
+    //     //IPipId
+    //     //IRegAddresses
+    //     //IAddresses
+    //     //ItemAddresses
+    //     //EventItemAddresses
+
+
+    //     //IPipOptions{type: 'element'}
+    //     //IElementOptions
+    //     ShadowElementOptions: {
+    //         //attr: 'id',nu nth
+    //         //value: number
+    //     },
+    //     ItemOptions: { //==IItemElementOptions//IItemOptions {//tbv DOMItemPips
+    //         //idType: 'id',
+    //     },
+    //     //idType:'id',
+    //     State: {
+    //         name: function(options) { return options.name || options.states[i].value !== '' ? options.value : 'not-' + options.value },
+    //         attr: 'cl',
+    //         value: '',
+    //         //TODO animated?: any;
+    //     },
+    //     StateOptions: {
+    //         initValue: options.states[0].name,//defaultState
+    //         states: STATES_SETCLASS,//veresit wel className
+    //     },
+    //     EventOptions: {
+    //         events: DEFAULTEVENTS,
+    //         initValue: true,//default
+    //         preventDefault: true,
+    //         delegation: itType //? true:false;
+    //         //bindFn:    null;
+    //     },
+    //     TemplateOptions: {
+    //         attr: 'html',
+    //         method: 'html',
+    //         initValue: '',//empty
+    //     },
+    //     SubOptions: {
+    //         //tpl:  string,
+    //         method: 'html',
+    //         initValue: '',//empty
+    //     },
+    //     ModelOptions: {//model óf keys vereist?
+    //         //name:   string;
+    //         //initValue?: any;//was model
+    //         //keys?:  string[];
+
+    //         index: serverIndexAttr,
+    //         emit: boolean,
+    //         server: false,
+    //         //serverIO?: ServerIO.Server
+    //     },
+    //     //pipOptions
+    //     SelectPipOptions: {
+    //         name: unique(),
+    //         one: true,//TODO??
+    //         required: true,//TODO??
+    //         reselectable: false,
+    //         states: preDefinedStates.SELECT
+    //     },
+    //     TargetPipOptions: {
+    //         router: true,
+    //         states: preDefinedStates.TARGET
+    //     },
+    //     TargetItemPipOptions: {
+    //         router: true,
+    //         one: true,
+    //         required: true,
+    //         reselectable: false,
+    //         states: preDefinedStates.TARGET
+    //     },
+    //     Sort: {
+    //         key: 'id',
+    //         dir: 'ASC',
+    //     },
+    //     ListPipOptions: {
+    //         //idKey: null;
+    //         it: 'li',
+    //         //sort: null;
+    //         //filter: null;
+    //     },
+    //     //idKey: serverIndexAttr
+
+    //     CollectionPipOptions: {//model óf keys vereist?
+    //         //initValue?: any[];
+    //     },
+
+    //     // IStatePipOptions
+    //     // IStateItemPipOptions
+    //     // ITemplatePipOptions
+    //     // ITemplateItemPipOptions
+    //     // IEventPipOptions
+    //     // IEventItemPipOptions
+    //     // ISubPipOptions
+    //     // IModelPipOptions
+    //     // IElementPipOptions
+    //     // IShadowElementPipOptions
+    //     // IListItemPipOptions
+    //     // IItemElementPipOptions
+
+
+
+    //     ServerOptions: {
+    //         index: serverIndexAttr,
+    //     }
+    //     //IValidateData
+    //     //IResult {//mmar moet ook ar
+    //     //pipOut: IMessage;
+    //     //pipFn: Function;//met arg domel
+    //     //emit: false,
+    //     //reg: any;
+    //     //el: DOMIO.Instance;
+    //     //root: DOMIO.Instance;
+    // };
+}

@@ -1,0 +1,15 @@
+function add(x, y) {
+    return x + y;
+}
+
+add("Erwin", "Poeze");
+add(3,4);
+
+function map(f, list) {
+    return list.map(function(x) { return f(x);});
+}
+
+function inc(x) {
+    return x + 1;
+}
+map(inc, [1,2,3,4]);

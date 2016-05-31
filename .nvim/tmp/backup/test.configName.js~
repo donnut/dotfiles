@@ -1,0 +1,43 @@
+var assert = require('assert');
+
+var config = require('../logic/configCode');
+
+describe('configCode tests', function() {
+
+    it('group 1 only', function() {
+        assert.deepEqual(config.generate(['css']),
+                '0.1.0.0');
+    });
+
+    it('groups 1 and 2', function() {
+        assert.deepEqual(config.generate(['css', 'offset', 'deferred']),
+                '1.9.0.0');
+    });
+
+    it('all groups', function() {
+        assert.deepEqual(config.generate([
+            'css', 'offset', 'deferred',
+            'ajax', 'ajax/script',
+            'event', 'deprecated']),
+                '21.9.2.1');
+    });
+
+    it('ajax without transport', function() {
+        var inclOptions = [
+            'ajax',
+            'deferred',
+            'core/ready',
+            'deprecated',
+            'dimensions',
+            'effects',
+            'event',
+            'offset',
+            'wrap',
+            'deferred',
+            'css',
+            'exports/amd',
+            'exports/global'
+        ];
+        assert.equal(config.generate(inclOptions), '7.15.15.1');
+    });
+});

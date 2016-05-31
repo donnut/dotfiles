@@ -1,0 +1,735 @@
+module LinkingPips {
+    import G = Globals;
+    import D = DefaultValues;
+    import PT = G.PipType;
+    import RPT = G.RegPipType;
+    import ACT = G.Action;
+    import MK = G.MessageKey;
+    import ON = G.OptionName;
+    import AK = G.AddressKey;
+    import LO = G.LinkOptionName;
+    import IStorage = Store.IStorage;
+
+    // export Interface IAppOption{
+    //     domString= string;
+    //     nodes= G.IPipOptions[];
+    //     pips= G.IPipOptions[];
+    //     links= G.ILinkOptions[];
+    //     nameSpace = string;
+    //     analyser ?=any;
+    // }
+
+    // export some modules
+    //export var Storage = Store.Storage;
+
+    declare var DEBUG;
+
+    export class App {
+        constructor(domString: string, nodes: G.IPipOptions[], pips: G.IPipOptions[], links: G.ILinkOptions[], nameSpace = 'pips', externals?: any) {
+            let internalApp = new InternalApp(domString, nodes, pips, links, nameSpace, externals);
+            return {
+                get: internalApp.storage.get,
+                getAll: internalApp.storage.getAll
+            };
+        }
+    }
+
+    class InternalApp {
+        domString: string;
+
+        storage: IStorage;
+
+        nodes: G.IPipOptions[];
+        pips:  G.IPipOptions[];
+        links: G.ILinkOptions[];
+
+        nameSpace: string;
+        analyser: any;
+        regAddressBook: G.IRegAddressBook = {};
+
+        navTree: G.INavModel[] = [];
+        navLinks: G.ILinkOptions[] = [];
+        navTreeSpec: G.IPipSpec = {
+            options: { type: PT[PT.navTree] },
+            addresses: { pip: 'navTree' }
+        }
+
+        routerRoots: any[] = [];
+        appInit: boolean;
+
+        // alleen ingevuld bij desi
+        virtualDOM: G.IPublicFn;
+        orphans: G.IPublicFn;
+
+        constructor(domString: string, nodes: G.IPipOptions[], pips: G.IPipOptions[], links: G.ILinkOptions[], nameSpace = 'pips', externals?: any) {
+            this.nameSpace = nameSpace;
+            this.domString = domString;
+
+            this.storage = Store.Storage();
+
+            this.pips = pips;
+            this.links = links;
+            this.nodes = R.clone(nodes);//clone omdat nodes zelf in sequencecontrol wordt uitgekleed en oorspronkelijke nodg blijft
+
+            //this.analyser = analyser || Tree.Analyser();
+            this.analyser = Tree.Analyser();
+
+            if (externals) this.addExternals(externals);
+
+            this.appInit = true;
+            this.init(this.domString)//hier verschil tussen mopeApp en DesiApp;
+            this.appInit = false;
+
+            Pips.create({
+                type: PT[PT.router],
+                rules: 'path',
+                initValue: 'index',
+                error: '404',//empty?
+            }, { pip: 'router' }, this.storage);
+
+            this.addNavTree();
+
+            R.forEach(link => this.addLink(link), this.navLinks);
+
+            this.addLink({
+                pub: PT[PT.navTree],
+                sub: PT[PT.router],
+                pre: (i) => R.filter(inp =>
+                    inp[MK[MK.action]] === ACT[ACT.insert] || inp[MK[MK.action]] === ACT[ACT.remove], i)
+            });
+        }
+
+        addExternals(externals: any) {
+            var app = this;
+            externals = R.is(Array, externals) ? externals: [externals];
+            R.forEach(extern => {
+                API.addPipType(extern.name);
+                if (extern.ref) {
+                    Pip.Options.defaults[extern.name] = Pip.Options.defaults[extern.ref];
+                    if (typeof extern.options === 'function') {
+                        Pip.Props.def[extern.name] = function(opts, addr, storage: IStorage) {
+                            return R.merge(Pip.Props.def[extern.ref](opts, addr, storage),
+                                           extern.options.call(R.merge(Pip, {getPip: app.storage.get}), opts, addr, storage));
+                        }
+                    } else {
+                        Pip.Props.def[extern.name] = function(opts, addr, storage: IStorage) {
+                            return Pip.Props.def[extern.ref](opts, addr, storage);
+                        }
+                    }
+                } else {
+                    Pip.Props.def[extern.name] = function(opts, addr, storage: IStorage) {
+                        return extern.options.call(R.merge(Pip, {getPip: app.storage.get}), opts, addr, storage);
+                    }
+                }
+            }, <any[]>externals);
+        }
+
+        loopWithSequenceControl(orgArray: any[], sequenceTest, action) {
+            let arrayLengthStack: number[] = [],
+                orphanLoop = false,
+                array = R.clone(orgArray);
+
+            while (array.length > 0 && !orphanLoop) {
+                arrayLengthStack.push(array.length);
+                var element = array.shift();
+                //verkort array ; eerste erafhalen
+                var testResult = sequenceTest.call(this, element);
+                if (testResult.test) {
+                    action.call(this, testResult.arg);
+                }
+                else {
+                    var stackLength = arrayLengthStack.length;
+                    var lastLength = arrayLengthStack[stackLength-1],
+                    repetitionOfNodeLength = 0,
+                    endOfRepetition = false;
+                    while (!endOfRepetition) {
+
+                        if (stackLength > 1) {//0 is not allowed!
+
+                            var nthLastLength =  arrayLengthStack[stackLength - (2 + repetitionOfNodeLength)];
+                            if (nthLastLength !== lastLength) {
+                                endOfRepetition = true;
+                            }
+                            else {
+                                repetitionOfNodeLength++;
+                            }
+                        } else {
+                           repetitionOfNodeLength++;
+                           endOfRepetition = true;
+                        }
+                    }
+                    if (repetitionOfNodeLength > array.length+1) {
+                        //als aantal keren achter elkaar aan het einde dat array.length het zelfde
+                        //groter dan array.length zelf
+                        //dan zijn alle resterende arrayElements orphans
+                        orphanLoop = true;
+
+                         throw new Error('node options have no match within html or linkoptions have no match with defined pips, within element options: ' + array);
+                    }
+                    else {
+                        array.push(element);
+                        //throw new Error('move node throught node array. Infinit loop: TODO');
+                    }
+                }
+            }
+            return array;//array is reduced to elements that don't pass the sequenceTest : eg for nodes: orphans
+        }
+        linkSequenceTest(linkOptions) {
+            var pipsThatNeedToExist = [linkOptions[LO[LO.pub]], linkOptions[LO[LO.sub]]];
+            if (linkOptions[LO[LO.drop]]) {
+                pipsThatNeedToExist = pipsThatNeedToExist.concat(linkOptions[LO[LO.drop]]);
+            }
+            var ns = this.nameSpace;
+            var atLeastOnePipDoesntExist: boolean = R.reduce((acc, pip) => {
+                return acc || !this.storage.exists(pip);
+            }, false, pipsThatNeedToExist);
+
+            return {
+                test: !atLeastOnePipDoesntExist,
+                arg: linkOptions
+            };
+        }
+
+        //TODO hier check voor regPips bij pipSequenceTest??
+        pipSequenceTest(pipOptions) {
+            var existRegPip = Pip.RegPip.assure.call(this, pipOptions, this.storage);
+            return {
+                test: existRegPip,
+                arg: existRegPip ? Pip.Spec.define(pipOptions, this.regAddressBook): null
+            };
+        }
+
+        init(domString){
+            let tree = this.analyser.extract(domString/*, simpleTree*/);
+            let treeSpec:G.IDOMSpec = {
+                navTree: this.navTree,
+                regAddressBook: this.regAddressBook,
+            };
+            Tree.Flatten.flattenTree.call(this, [tree]);
+            var nodesClone = R.clone(this.nodes);
+            this.loopWithSequenceControl(nodesClone, this.pipSequenceTest, this.initNode);
+            this.loopWithSequenceControl(this.pips, this.pipSequenceTest, this.addPip);
+            this.loopWithSequenceControl(this.links, this.linkSequenceTest, this.addLink);
+        }
+
+        addPip(pipSpec: G.IPipSpec, replaceNavTree?: boolean): void {
+            var pipType = pipSpec.options[ON[ON.type]];
+            switch (pipType) {
+                case PT[PT.select]:
+                    Pips.create(pipSpec.options, pipSpec.addresses, this.storage);
+                    this.addStateItem(pipSpec);
+                    break;
+                case PT[PT.target]:
+                case PT[PT.targetItem]:
+                    //TODO gaat het goed dat links wordt uitgebreid? , netter laten zien dat in die functie links =links.concat gebeurt
+                    this.addTarget(pipSpec, replaceNavTree);
+                    break;
+                case PT[PT.sub]:
+                case PT[PT.list]:
+                    this.initNode(pipSpec);
+                    break;
+                case PT[PT.navTree]://zal NIET moeten voorkomen?
+                    this.addNavTree();
+                    break;
+                default:
+                    Pips.create(pipSpec.options, pipSpec.addresses, this.storage)
+            }
+        }
+
+        removePip(pipId: string, replaceNavTree?: boolean): void {//nu zijn links en bindings ook direct foetsie
+            //let pip = G[this.nameSpace].get(pipId);
+            let pip = this.storage.get(pipId);
+            let pipType = pip.getType();
+
+            if (pipType === PT[PT.select] || pipType === PT[PT.targetItem]) {
+                let statePipId;
+                let links = pip.getLinks();
+                //gaat het overig netjes met ook deze links verwidjeren, dat deze er uiteindelijk toch noet dubbel zijn???
+                R.forEach(function(link) {
+                    if (link[LO[LO.auto]]) {
+                        let subPipId = link[LO[LO.sub]];
+                        Pips.remove(subPipId, this.nameSpace);
+                    }
+                }, links);
+            }
+            var linkSources = pip.getLinkSources();
+            if(linkSources){
+                R.forEach(function(pubPibId) {
+                    var pubPip = this.storage.get(pubPibId);
+                    pubPip.removeLink(pipId);
+                }, linkSources);
+            }
+
+            var bindingSources = pip.getBindingSources();
+            if(bindingSources){
+                R.forEach(function(pubPibId) {
+                    var pubPip = this.storage.get(pubPibId);
+                    pubPip.removeBinding(pipId);
+                }, bindingSources);
+            }
+
+            if(this.virtualDOM && R.contains(pipType, [PT[PT.element], PT[PT.listItem], PT[PT.itemElement], PT[PT.shadowElement]]) ){
+                this.virtualDOM.react({
+                    it: pipId,
+                    action: ACT[ACT.remove]
+                });
+            }
+
+            //altijd
+            Pips.remove(pipId, this.storage);
+
+            if (replaceNavTree || (replaceNavTree === void 0 && (pipType === PT[PT.target] || pipType === PT[PT.targetItem]))) {
+                var targetIndex = R.findIndex(R.propEq('target', pipId), this.routerRoots);
+                if (targetIndex) {
+                    Utils.remove(targetIndex, 1, this.routerRoots);
+                }
+                if (!this.appInit && replaceNavTree) {
+                    this.replacePip({ type: PT[PT.navTree] }, { pip: 'navTree' });
+                }
+            }
+        }
+
+        movePip(options, newAddress: G.IAddresses, oldAddress?: G.IAddresses) {
+            //if !oldAddress, no move or alteration of relevant addresses
+            var
+                pipType = options[ON[ON.type]],
+                replaceNavTree;
+
+            if (pipType === PT[PT.targetItem] || pipType === PT[PT.target]) {
+                if (options[ON[ON.routing]] && !R.find(R.propEq('target', newAddress[AK[AK.pip]]), this.routerRoots)) {
+                    replaceNavTree = true;
+                } else if (oldAddress) {
+                    if (oldAddress[AK[AK.anc]] !== newAddress[AK[AK.anc]]) {
+                        replaceNavTree = true;
+                    } else {
+                        replaceNavTree = false;
+                    }
+                    // else if (pipType === PT[PT.targetItem]){
+                    //     //kan listItem kan nog op ander plek terecht zijn gekomen
+                    // }
+                }
+            }
+
+            oldAddress = oldAddress ? oldAddress : newAddress;
+            var oldPipId = oldAddress[AK[AK.pip]];
+            var oldPip = this.storage.get(oldPipId);
+            var oldLinks = oldPip.getLinks();
+            var oldLinkSources = oldPip.getLinkSources();
+            var oldSourceLinks = oldLinkSources
+                ? R.map(pubPipId => {
+                    var pubPip: G.IPublicFn = this.storage.get(pubPipId);
+                    return {
+                        pub: pubPip,
+                        link: pubPip.getLinks(oldPipId)
+                    };
+                }, oldLinkSources)
+                : [];
+            var oldBindingSources = oldPip.getBindingSources();
+            var oldSourceBindings = oldBindingSources
+                ? R.map(function(pubPipId) {
+                    var pubPip: G.IEventPublicFn = this.storage.get(pubPipId);
+                    return {
+                        pub: pubPip,
+                        binding: pubPip.getBindings(oldPipId)
+                    };
+                }, oldBindingSources)
+                : [];
+            var oldPipBindings;
+
+            if (pipType === PT[PT.event] || pipType === PT[PT.eventItem]) {
+                oldPipBindings = oldPip.getBindings();
+            }
+
+            // moet binnen remove en uitgebreider! tbv desi dit was leuk voor regPips!!!
+            if (oldAddress[AK[AK.anc]]) {
+                this.removePubSubLink(oldAddress[AK[AK.anc]], oldPipId);
+            }
+
+            this.removePip(oldPipId, replaceNavTree);//nu zijn links en bindings ook direct foetsie
+            this.addPip({ options: options, addresses: newAddress }, replaceNavTree);
+
+            var newPipId = newAddress[AK[AK.pip]],
+                newPip = this.storage.get(newPipId);
+
+            if (oldLinks) {
+                newPip.addLinks(oldLinks, this.nameSpace);
+                let init = newPip.getInit();
+                let links = newPip.getLinks();
+                if (init) {
+                    if (!R.is(Array, init) || init.length !== 0) {
+                        R.forEach(function(link: G.ILink) {
+                            var subPip: G.IPublicFn = link.subPip;
+                            subPip.react(init);
+                        }, oldLinks);
+                    }
+                }
+
+            }
+
+            if (oldPipBindings) {
+                newPip.addBinding(oldPipBindings, this.nameSpace);
+            }
+            R.forEach(function(oSL:any) {
+                var pubPip = oSL.pub;
+                var newLink = {
+                    sub: newPipId,
+                    subPip: newPip,
+                    fn: oSL.link.fn,
+                    //deze route nooit voor autoLinks
+                }
+                pubPip.addLink(newLink);
+            }, oldSourceLinks);
+            R.forEach(function(oSB:any) {
+                var pubPip = oSB.pub;
+                var newBinding = {
+                    sub: newPipId,
+                    subPip: newPip,
+                    fn: oSB.binding.fn,
+                    //deze route nooit voor autoLinks
+                }
+                pubPip.addBinding(newBinding);
+            }, oldSourceBindings);
+        }
+
+        replacePip(options: G.IPipOptions, address: G.IAddresses) {
+            this.movePip(options, address);
+        }
+
+        addLink(linkOptions: G.ILinkOptions) {
+            Links.create(linkOptions, this.storage);
+        }
+        removeLink(linkOptions: G.ILinkOptions) {
+            var pubPipId = linkOptions.pub,
+                subPipId = linkOptions.sub,
+                pubPip = this.storage.get(pubPipId);
+            if (linkOptions.binding) {
+                pubPip.removeBinding(subPipId);
+            } else {
+                pubPip.removeLink(subPipId);
+            }
+        }
+        replaceLink(oldLinkOptions: G.ILinkOptions, newLinkOptions: G.ILinkOptions) {
+            var oldSubPipId = oldLinkOptions.sub,
+                oldPubPipId = oldLinkOptions.pub,
+                oldPubPip = this.storage.get(oldPubPipId);
+
+            if (oldLinkOptions.binding) {
+                oldPubPip.removeBinding(oldSubPipId)
+            } else {
+                oldPubPip.removeLink(oldSubPipId);
+            }
+            this.addLink(newLinkOptions);
+        }
+
+        removePubSubLink(pubId, subId){
+           var pubPip = this.storage.get(pubId);
+           pubPip.removeLink(subId);
+        }
+
+        removePubSubBinding(pubId, subId){
+           var pubPip = this.storage.get(pubId);
+           pubPip.removeBinding(subId);
+        }
+
+        findListItemTagName(ancestorId: string) {
+            var rootId = this.storage.exists(ancestorId + '.list')
+                ? ancestorId + '.list'
+                : ancestorId;
+            let containerSelector: string;
+
+            let listItemNavModel = R.find(navModel => {
+                return R.propEq('type', PT[PT.listItem], navModel) && R.propEq('parent', rootId, navModel);
+            }, this.navTree);
+            let listItemPipId = listItemNavModel.id;
+            return this.regAddressBook[listItemPipId].sel;
+        }
+
+        findItemElementTagName(selector: string) {
+            var itemElementNavModel = R.find(navModel => {
+                return R.propEq('type', PT[PT.itemElement], navModel) && R.propEq('parent', selector, navModel);
+            }, this.navTree);
+            var itemElementPipId = itemElementNavModel.id;
+            return this.regAddressBook[itemElementPipId].sel;
+        }
+
+        addStateItem(pipSpec: G.IPipSpec, containerTag?: string) {
+            //this = app;
+            var pipType = pipSpec.options[ON[ON.type]];
+            var ancestorId = pipSpec.addresses[AK[AK.anc]];
+            var defaultSelectStates = pipType  === PT[PT.select] ? D.STATES_SELECT : D.STATES_TARGET;
+
+            pipSpec.options[ON[ON.states]] = pipSpec.options[ON[ON.states]] || defaultSelectStates;
+            var selectStates = Pip.Spec.defineSelectStates(pipSpec.options);
+
+            containerTag = containerTag || this.findListItemTagName(ancestorId);
+            // var rootId = //G.pips.get(ancestorId + '.list')
+            //     //? ancestorId + '.list'
+            //     //:
+            //     ancestorId;
+            let selector = ancestorId + '>' + containerTag;
+            var selectorIsDefined: boolean;
+            if (!pipSpec.options[ON[ON.it]] || containerTag === pipSpec.options[ON[ON.it]]) {
+                selectorIsDefined = true;
+            }
+
+            //TODO gevaarlijke loop; zorgen ook foutmelding en niet ondeindig
+            while (!selectorIsDefined) {
+                let selectorTag = this.findItemElementTagName(selector);
+                if (selectorTag) {
+                    selector = selector + '>' + selectorTag;
+                    if (selectorTag === pipSpec.options[ON[ON.it]]) {
+                        selectorIsDefined = true;
+                    }
+                } else {
+                    throw new Error('cannot find tag for auto-stateItem with tagName: ' + pipSpec.options[ON[ON.it]]);
+                }
+            }
+
+            let stateItemOpts = {
+                type: 'stateItem',
+                // name: pipSpec.options[ON[ON.name]]
+                //         ? 'state.' + pipSpec.options[ON[ON.name]]
+                //         : pipSpec.options[ON[ON.type]] === PT[PT.select]
+                //             ? PC[PC.select]
+                //             : PC[PC.target],
+                selector: selector,
+                default: pipSpec.options[ON[ON.default]] || selectStates.unSelected,
+                states: pipSpec.options[ON[ON.states]]
+            };
+            let stateItemSpec = Pip.Spec.define.call(this, stateItemOpts);
+
+            Pips.create(stateItemOpts, stateItemSpec.addresses, this.storage);//mag direct create, geen add!
+
+            this.addLink({ // stateItem and target twosided, not added to this.links
+                pub: pipSpec.addresses[AK[AK.pip]],
+                sub: stateItemSpec.addresses[AK[AK.pip]],
+                auto: true,
+                value: function(i) {
+                    return (i[MK[MK.value]] === true) ? selectStates.selected : selectStates.unSelected;
+                }
+            });
+            this.addLink({
+                pub: stateItemSpec.addresses[AK[AK.pip]],
+                sub: pipSpec.addresses[AK[AK.pip]],
+                auto: true,
+                value: function(i) {
+                    return i[MK[MK.value]] === selectStates.selected //?  true: false;
+                }
+            });
+        }
+
+        addTarget(targetSpec: G.IPipSpec, replaceNavTree?: boolean) {
+            var itType = targetSpec.options[ON[ON.type]] === PT[PT.targetItem];
+            var ancestorId = targetSpec.addresses[AK[AK.anc]];
+            let navLinks = [];
+
+            if (itType) {
+
+                Pips.create(targetSpec.options, targetSpec.addresses, this.storage);//geen add, anders loop!
+
+                var containerTag = this.findListItemTagName(ancestorId);//, regAddressBook, nameSpace);
+                var containerSelector = ancestorId + '>' + containerTag;
+                var dynamicList: boolean = this.storage.exists(ancestorId + '.list');
+                if (!dynamicList) {
+                    var listItemNode = R.find((n) => n[ON[ON.type]] === PT[PT.listItem] && n[ON[ON.selector]] === containerSelector, this.nodes);
+                    if (!listItemNode) {
+                        let listItemOpts = {
+                            type: PT[PT.listItem],
+                            selector: containerSelector,
+                            idType: 'id'
+                        };
+                        let listItemAddr = {
+                            anc: ancestorId,
+                            pip: containerSelector,
+                            sel: containerTag
+                        };
+                        this.replacePip(listItemOpts, listItemAddr);
+                    }
+                }
+
+                targetSpec.options[ON[ON.it]] = containerTag;
+                this.addStateItem(targetSpec);
+
+                if (targetSpec.options[ON[ON.routing]] !== undefined && targetSpec.options[ON[ON.routing]] !== false) {
+                    navLinks = navLinks.concat([
+                        { //targetItem to router
+                            pub: targetSpec.addresses[AK[AK.pip]],//targetItemPip
+                            sub: PT[PT.router],
+                            //it: i.it,
+                            //action: ACT[ACT.update],= i.action
+                            value: (i) => {
+                                return {
+                                    active: i[MK[MK.value]],
+                                    anc: ancestorId
+                                }
+                            }
+                        }, { // - router to targetItem
+                            pub: PT[PT.router],
+                            sub: targetSpec.addresses[AK[AK.pip]],//targetItemPip
+                            pre: (i) => R.reduce(function(acc, inp) {
+                                if (inp[MK[MK.action]] === ACT[ACT.update] && inp[MK[MK.value]].anc && inp[MK[MK.value]].anc === ancestorId) {
+                                    acc.push({
+                                        it: inp[MK[MK.it]],
+                                        action: ACT[ACT.update],
+                                        value: inp[MK[MK.value]].active
+                                    });
+                                }
+                                return acc;
+                            }, [], i)
+                        }, {
+                            pub: containerSelector,
+                            sub: PT[PT.navTree],
+                            // action:(i) => i[MK[MK.action]],
+                            // it : (i) =>i[MK[MK.it],
+                            value: (i) => {
+                                return { anc: ancestorId }
+                            }
+                        }
+                    ]);
+                    //if (this.appInit) {
+                    this.routerRoots.push({ target: containerSelector, anc: ancestorId });
+                    //}
+                }
+            } else {
+                if (!targetSpec.options[ON[ON.states]]) {
+                    targetSpec.options[ON[ON.default]];
+                    targetSpec.options[ON[ON.states]] = D.STATES_TARGET;
+                }
+
+                Pips.create(targetSpec.options, targetSpec.addresses, this.storage);
+
+                if (targetSpec.options[ON[ON.routing]] !== undefined && targetSpec.options[ON[ON.routing]] !== false) {
+                    navLinks = navLinks.concat([
+                        {
+                            pub: targetSpec.addresses.pip,//targetPip
+                            sub: PT[PT.router],
+                            pre: (i) => [{
+                                it: ancestorId,
+                                action: ACT[ACT.update],
+                                value: {
+                                    active: i[MK[MK.value]] === G.IS_TARGET// ? true : false
+                                }
+                            }]
+                        }, { // - router to target
+                            pub: PT[PT.router],
+                            sub: targetSpec.addresses.pip,//targetPip
+                            pre: (i) => i[MK[MK.action]] === ACT[ACT.update] && i[MK[MK.it]] === ancestorId
+                                ? {
+                                    action: ACT[ACT.update],
+                                    value: i[MK[MK.value]].active
+                                }
+                                : void 0
+                        }, {
+                            pub: ancestorId,
+                            sub: 'navTree',
+                            pre: (i) => [{
+                                action: i[MK[MK.action]],
+                                it: ancestorId,
+                                value: {}
+                            }]
+                        }
+                    ]);
+                    //if (this.init) {
+                    this.routerRoots.push({ target: ancestorId });
+                    //}
+                }
+                // else if(!R.find(rr.target === ancestorId, this.routherRoots)){
+                //     replaceNavTree(app);
+                // }
+            }
+
+            if (this.appInit) {
+                this.navLinks = this.navLinks.concat(navLinks);
+            } else {
+                if (this.storage.get('navTree')) {
+                    this.replacePip(this.navTreeSpec.options, this.navTreeSpec.addresses);
+                    R.forEach((navLink) => this.addLink(navLink), navLinks);//
+                }
+                // else {
+                //     this.addPip(this.navTreeSpec);
+                // }
+                // R.forEach((navLink) => this.addLink(navLink), navLinks);
+            }
+        }
+
+        composeNavTreeOptions() {
+            //uitgangspunt: waar nodig, zijn er shadowelements?
+            //en dat shadowElement wordt weliswaar aangeduid met bijv #main>div(0) maar heeft 100% zeker id bijv #page1
+            //anders past targetPip niet!
+            //TODO nog oplossing nodig voor dynamisch geneste lijsten met targetItempips: er worden live geen repPips meer toegevoegd
+
+            //{ target: containerSelector, anc: ancestorId }
+            var potentialTargets = R.pluck('target', this.routerRoots);
+            var navTreeOptions = {};
+            R.forEach(routerRoot => {
+                let parentTarget,
+                    lookupId = routerRoot.anc
+                        ? routerRoot.anc
+                        : routerRoot.target,
+                    testId = lookupId;
+
+                while (!parentTarget) {
+                    let navModel = R.find(nm => R.propEq('id', testId, nm), this.navTree);
+                    var parentId = navModel.parent;
+                    if (!parentId) {
+                        parentTarget = 'body';
+                    } else if (R.contains(parentId, potentialTargets)) {
+                        let routerRootModel = R.find(rrm => R.propEq('target', parentId, rrm), this.routerRoots);
+                        parentTarget = routerRootModel.anc
+                            ? testId
+                            : parentId;
+                    } else {
+                        testId = parentId;
+                    }
+                }
+                navTreeOptions[lookupId] = parentTarget;
+            }, this.routerRoots);
+            return navTreeOptions;
+        }
+
+        addNavTree() {
+            Pips.create({
+                type: PT[PT.navTree],
+                navTree: this.composeNavTreeOptions()
+            }, { pip: 'navTree' }, this.storage);
+        }
+
+        initNode(nodeSpec) {
+            var nodePipId = nodeSpec.addresses[AK[AK.pip]],
+                nodeRoot = nodeSpec.addresses[AK[AK.anc]];
+            if (this.storage.exists(nodePipId)) {
+                // the idType of a static list is specified => replace the existing listItemPip with a
+                // new one
+                this.replacePip(nodeSpec.options, nodeSpec.addresses)
+            }
+            else {
+                Pips.create(nodeSpec.options, nodeSpec.addresses, this.storage);
+                this.addNode(nodeSpec.options, nodeSpec.addresses);
+            }
+        }
+
+        addNode(options, addresses: G.IAddresses) {
+            let rootId = addresses[AK[AK.anc]],
+                nodeId = addresses[AK[AK.pip]],
+                isList = options[ON[ON.type]] === PT[PT.list];
+
+
+            if (options[ON[ON.type]] === PT[PT.tree] || options[ON[ON.type]] === PT[PT.nest]) {
+                let listItemOpts = {
+                    type: PT[PT.listItem],
+                    selector: options[ON[ON.selector]] + '_*',
+                };
+                let listItemAddr = {
+                    anc: addresses[AK[AK.pip]],
+                    pip: options[ON[ON.selector]] + '_*',//*TODO underscore bij spatie in selector of kan er een spatie blijven staan?)
+                    //sel: containerTag PROBLEM!!!, maar wordt ook alleen aangemaakt via insert
+                };
+                this.addPip({ options: listItemOpts, addresses: listItemAddr});
+
+            } else {
+                let nodeTree = this.analyser.extract(options[ON[ON.tpl]], rootId, isList);
+                Tree.Flatten.flattenTree.call(this, nodeTree, nodeId, rootId);
+            }
+        }
+    }
+}

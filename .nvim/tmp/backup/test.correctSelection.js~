@@ -1,0 +1,171 @@
+QUnit.module('Correcting selection', {
+    beforeEach: function(assert) {
+        DEBUG = true;
+        Globals.idCounter = 0;
+        Globals.pips = Store.Storage(); // reset 'global' space
+    }
+});
+
+QUnit.test('input === current && reselectable is true', function(assert) {
+    var inputs = [{it: 'item1', action: 'update', value: true}],
+        current = {value: ['item1']},
+        options = {one: true, required: true, reselectable: true};
+
+    var res = Pip.Input.correctSelection(options)(inputs, current);
+    assert.deepEqual(res[0], {it: 'item1', action: 'update', value: true});
+});
+
+QUnit.test('reselectable is false, one is true', function(assert) {
+    var inputs = [{it: 'item1', action: 'update', value: true}],
+        current = {value: ['item1']},
+        options = {one: true, required: true, reselectable: false};
+
+    var res = Pip.Input.correctSelection(options)(inputs, current);
+
+    assert.deepEqual(res[0], {it: 'item1', action: 'update', value: true});
+    assert.equal(res.length, 1);
+});
+
+QUnit.test('reselectable and one are false', function(assert) {
+    var inputs = [{it: 'item1', action: 'update', value: true}],
+        current = {value: ['item1']},
+        options = {one: false, required: true, reselectable: false};
+
+    var res = Pip.Input.correctSelection(options)(inputs, current);
+
+    assert.deepEqual(res, [{it: 'item1', action: 'update', value: true}]);
+    assert.equal(res.length, 1);
+});
+
+QUnit.test('reselectable, required and one are false', function(assert) {
+    var inputs = [{it: 'item1', action: 'update', value: true}],
+        current = {value: ['item1']},
+        options = {one: false, required: false, reselectable: false},
+        items = ['item1','item2'];
+
+    var res = Pip.Input.correctSelection(options)(inputs, current, items);
+
+    assert.deepEqual(res, [{it: 'item1', action: 'update', value: false, emit: true}]);
+    assert.equal(res.length, 1);
+});
+
+QUnit.test('one is true, two items are set', function(assert) {
+    var inputs = [
+            {it: 'item1', action: 'update', value: true},
+            {it: 'item2', action: 'update', value: true}
+        ],
+        current = {value: []},
+        options = {one: true, required: true, reselectable: false};
+
+    var res = Pip.Input.correctSelection(options)(inputs, current);
+
+    assert.deepEqual(res, [
+        {it: 'item1', action: 'update', value: true},
+        {it: 'item2', action: 'update', value: false, emit: true}
+    ]);
+    assert.equal(res.length, 2);
+});
+
+QUnit.test('one is true, two items are set, one is current', function(assert) {
+    var inputs = [
+            {it: 'item1', action: 'update', value: true},
+            {it: 'item2', action: 'update', value: true}
+        ],
+        current = {value: ['item1']},
+        options = {one: true, required: true, reselectable: false};
+
+    var res = Pip.Input.correctSelection(options)(inputs, current);
+
+    assert.deepEqual(res, [
+        {it: 'item2', action: 'update', value: true},
+        {it: 'item1', action: 'update', value: false, emit: true}
+    ]);
+    assert.equal(res.length, 2);
+});
+
+QUnit.test('one is true, two items are unset', function(assert) {
+    var inputs = [
+            {it: 'item1', action: 'update', value: false},
+            {it: 'item2', action: 'update', value: false}
+        ],
+        current = {value: ['item1']},
+        options = {one: true, required: true, reselectable: false};
+
+    var res = Pip.Input.correctSelection(options)(inputs, current);
+
+    assert.deepEqual(res, [
+        {it: 'item1', action: 'update', value: true, emit: true},
+        {it: 'item2', action: 'update', value: false}
+    ]);
+    assert.equal(res.length, 2);
+});
+
+QUnit.test('multi is set, all items in current', function(assert) {
+    var inputs = [
+            {it: 'item2', action: 'update', value: true}
+        ],
+        current = {value: ['item1', 'item2', 'item3']},
+        options = {one: false, required: true, reselectable: true};
+
+    var res = Pip.Input.correctSelection(options)(inputs, current);
+    assert.ok(R.find(function(it) {
+        return it.it === 'item1' && it.value === true;
+    }, res));
+    assert.ok(R.find(function(it) {
+        return it.it === 'item2' && it.value === true;
+    }, res));
+    assert.ok(R.find(function(it) {
+        return it.it === 'item3' && it.value === true;
+    }, res));
+    assert.equal(res.length, 3);
+});
+
+QUnit.test('initial setting, one input set', function(assert) {
+    var inputs = [
+            {it: 'item2', action: 'update', value: true}
+        ],
+        current = {value: []},
+        options = {one: false, required: true, reselectable: true};
+
+    var res = Pip.Input.correctSelection(options)(inputs, current);
+    assert.ok(R.find(function(it) {
+        return it.it === 'item2' && it.value === true;
+    }, res));
+    assert.equal(res.length, 1);
+});
+
+QUnit.test('initial setting, input empty, required true (no solution!)', function(assert) {
+    var inputs = [],
+        current = {value: []},
+        options = {one: false, required: true, reselectable: true};
+
+    var res = Pip.Input.correctSelection(options)(inputs, current);
+    assert.equal(res.length, 0);
+});
+
+QUnit.test('initial setting, input empty, required false', function(assert) {
+    var inputs = [],
+        current = {value: []},
+        options = {one: false, required: false, reselectable: true};
+
+    var res = Pip.Input.correctSelection(options)(inputs, current);
+    assert.equal(res.length, 0);
+});
+
+QUnit.test('initial setting, input empty, options empty', function(assert) {
+    var inputs = [],
+        current = {value: []},
+        options = {};
+
+    var res = Pip.Input.correctSelection(options)(inputs, current);
+    assert.equal(res.length, 0);
+});
+
+QUnit.test('initial setting, input empty, options empty', function(assert) {
+    var inputs = [],
+        current = {value: []},
+        options = {};
+
+    var res = Pip.Input.correctSelection(options)(inputs, current);
+    assert.equal(res.length, 0);
+});

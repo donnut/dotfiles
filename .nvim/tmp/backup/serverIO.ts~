@@ -1,0 +1,47 @@
+module ServerIO {
+
+    import Future = Monads.Future;
+
+    export class Server {
+        _server: Globals.IServer;
+
+        constructor(dispatchServer: Globals.IServer, collectionName: string, options?: {index?: string}) {
+            this._server = dispatchServer;
+        }
+
+        collectActions(servActions: Globals.IServerAction[]) {
+            var collected = {
+                create: [],
+                update: [],
+                'delete': [],
+                empty: []
+            };
+            R.forEach(servAct => {
+                let [method, data] = servAct;
+                collected[method].push(data);
+            }, servActions);
+            return collected;
+        }
+
+        sync(servActions: Globals.IServerAction[]) {
+            return new Future((reject, resolve) => {
+                this._server.emit(this.collectActions(servActions), function(err, data) {
+                    return (err)
+                        ? reject(err)
+                        : resolve(data)
+                });
+            });
+        }
+
+        fetch() {
+            return new Future((reject, resolve) => {
+                this._server.emit('fetch', function(err, data) {
+                    return (err)
+                        ? reject(err)
+                        : resolve(data)
+                });
+            });
+        }
+    }
+
+}

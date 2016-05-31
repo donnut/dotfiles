@@ -1,0 +1,8 @@
+/// <reference path="../../../node.d.ts" />
+//
+const a = Number(process.argv[2]);
+const b = Number(process.argv[3]);
+function sum(a: number, b: number) {
+    return a+b;
+}
+console.log(sum(a,b));

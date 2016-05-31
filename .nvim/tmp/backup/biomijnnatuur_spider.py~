@@ -1,0 +1,70 @@
+import scrapy
+import re
+
+from biomijnnatuur.items import BiomijnnatuurItem
+
+class Biomijnnatuur(scrapy.Spider):
+    name = "biomijnnatuur"
+    allowed_domains = ["www.biomijnnatuur.be"]
+    start_urls = [
+        "http://www.biomijnnatuur.be/biogenietengids/resultaten?values[postcode]=postcode%20of%20gemeente&values[slider][value]=10&values[name]=bedrijfsnaam&values[rubriek][versvandeboer]=versvandeboer&values[rubriek][restaurant]=0&values[rubriek][abonnement]=0&values[rubriek][catering]=0&values[rubriek][zelfoogst]=0&values[rubriek][kookworkshop]=0&values[rubriek][biowinkel]=0&values[rubriek][vergaderzaal]=0&values[rubriek][winkelketen]=0&values[rubriek][textiel]=0&values[rubriek][markt]=0&values[rubriek][health]=0&values[rubriek][bakker]=0&values[rubriek][groenentuinen]=0&values[rubriek][slager]=0&values[rubriek][kids]=0&values[rubriek][logies]=0&values[rubriek][bijleren]=0&values[rubriek][webshop]=0&values[zoekknop]=Zoek&values[form_build_id]=form-mV60F1TmUVC2YYg5cMaaTPx7VMmDw88CD0Ha9RCiQ9w&values[form_id]=zoek_form&values[op]=Zoek"
+    ]
+
+    def parse(self, response):
+        for section in response.xpath("//div[@id='bgglijst']/div"):
+            item = BiomijnnatuurItem()
+
+            lijstleft = section.xpath("div/div[@class='lijstleft']")
+            item['cert_bioboer'] = lijstleft.xpath("div[@class='v-cert']").extract_first(default='NA')
+            item['cert_biogarantie'] = lijstleft.xpath("img[@src='/sites/all/themes/biomijntheme/images/bgg/biogarantielijst.png']").extract_first(default='NA')
+
+            lijstright = section.xpath("div/div[@class='lijstright']")
+            item['boerderij'] = lijstright.xpath("img[@class='boerderij']").extract_first(default='NA')
+            item['fruit'] = lijstright.xpath("img[@class='fruit']").extract_first(default='NA')
+            item['winkel'] = lijstright.xpath("img[@class='winkel']").extract_first(default='NA')
+            item['groente'] = lijstright.xpath("img[@class='groente']").extract_first(default='NA')
+            item['zuivelkoe'] = lijstright.xpath("img[@class='zuivelkoe']").extract_first(default='NA')
+            item['marktvia'] = lijstright.xpath("img[@class='marktvia']").extract_first(default='NA')
+            item['abonnement'] = lijstright.xpath("img[@class='abonnement']").extract_first(default='NA')
+            item['vlees'] = lijstright.xpath("img[@class='vlees']").extract_first(default='NA')
+            item['ei'] = lijstright.xpath("img[@class='ei']").extract_first(default='NA')
+            item['eetgelegenheidsmall'] = lijstright.xpath("img[@class='eetgelegenheidsmall']").extract_first(default='NA')
+            item['zuivelgeitschaap'] = lijstright.xpath("img[@class='zuivelgeitschaap']").extract_first(default='NA')
+            item['vergaderzaal'] = lijstright.xpath("img[@class='vergaderzaal']").extract_first(default='NA')
+            item['zelfpluk'] = lijstright.xpath("img[@class='zelfpluk']").extract_first(default='NA')
+            item['CSA'] = lijstright.xpath("img[@class='CSA']").extract_first(default='NA')
+            item['drogevoeding'] = lijstright.xpath("img[@class='drogevoeding']").extract_first(default='NA')
+            item['brood'] = lijstright.xpath("img[@class='brood']").extract_first(default='NA')
+            item['logiesenvakantie'] = lijstright.xpath("img[@class='logiesenvakantie']").extract_first(default='NA')
+            item['bijleren'] = lijstright.xpath("img[@class='bijleren']").extract_first(default='NA')
+            item['webwinkel'] = lijstright.xpath("img[@class='webwinkel']").extract_first(default='NA')
+            item['catering'] = lijstright.xpath("img[@class='catering']").extract_first(default='NA')
+
+            lijstcenter = section.xpath("div/a/div[@class='lijstcenter']")
+            item['name'] = lijstcenter.xpath("h1/text()").extract()
+            item['address'] = lijstcenter.xpath("h3/text()").extract()
+            item['openinghours'] = lijstcenter.xpath("div[@class='lijstopeningsuren']/text()").extract()
+
+            # get details
+            item_url = section.xpath("div/a/@href").extract()
+            if len(item_url) > 0:
+                for url in item_url:
+                    request = scrapy.Request( "http://www.biomijnnatuur.be%s" % url, callback=self.parse_item)
+                    request.meta['item'] = item
+                    yield request
+            else:
+                yield item
+
+        for page in response.xpath('//li[@class="pager-next"]/a/@href').extract():
+            yield scrapy.Request("http://www.biomijnnatuur.be%s" % page, callback=self.parse)
+
+    def parse_item(self, response):
+        item = response.meta['item']
+        item['all'] = response.xpath("//div[@id='detailtxt']").extract()
+        latlong = response.xpath("//div[@class='content']/script/text()").extract()[0]
+        print "******** %s" % latlong
+        try:
+            item['lat'], item['long'], key = re.findall('(\d\d.\d*?),(\d.\d*?),(\d+)', latlong)[0]
+        except:
+            pass
+        return item

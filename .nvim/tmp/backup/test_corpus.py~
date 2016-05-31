@@ -1,0 +1,8 @@
+import pytest
+import sys
+
+from ocr.corpus import Corpus
+
+def test_text_to_tokened_sentences():
+    Corpus.remove_noise('./ocr/test/fixtures/vv-22-06-1965_13_sents.txt', './ocr/test/fixtures/vv-22-06-1965_13_tokens.txt')
+    assert False

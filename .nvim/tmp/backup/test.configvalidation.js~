@@ -1,0 +1,20 @@
+var assert = require('assert');
+
+var validator = require('../logic/optionValidator');
+
+describe('Configution validation', function() {
+
+    it('valid options', function() {
+        assert.deepEqual(validator.validate(['css']), []);
+        assert.deepEqual(validator.validate(['deprecated', 'wrap']), []);
+        assert.deepEqual(validator.validate(['css', 'effects', 'deferred']), []);
+        assert.deepEqual(validator.validate(['css', 'ajax', 'ajax/script', 'ajax/jsonp', 'deferred']), []);
+    });
+
+    it('invalid options', function() {
+        assert.deepEqual(validator.validate(['cs']), ['"cs" is not a valid option']);
+        assert.deepEqual(validator.validate(['css', 'effects']), ["effects requires deferred and css"]);
+        assert.deepEqual(validator.validate(['effects', 'ajax/script', 'ajax/jsonp', 'deferred']),
+                                            ["script requires ajax", "effects requires deferred and css"]);
+    });
+});

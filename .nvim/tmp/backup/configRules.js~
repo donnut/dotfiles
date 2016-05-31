@@ -1,0 +1,61 @@
+"use strict";
+var R = require('ramda');
+
+var validTokens = [
+    'ajax',
+    'ajax/jsonp',
+    'ajax/script',
+    'ajax/xhr',
+    'core/ready',
+    'css',
+    'deferred',
+    'deprecated',
+    'dimensions',
+    'effects',
+    'event',
+    'exports/amd',
+    'exports/global',
+    'offset',
+    'wrap',
+];
+
+function depends(token) {
+    switch (token) {
+        case 'ajax/jsonp': return {depsOn: ['ajax/script'], msg: 'jsonp requires script and ajax'};
+        case 'ajax/script': return {depsOn: ['ajax'], msg: 'script requires ajax'};
+        case 'ajax/xhr': return {depsOn: ['ajax'], msg: 'xhr requires ajax'};
+        case 'ajax': return {depsOn: ['deferred'], msg: 'ajax requires deferred'};
+        case 'core/ready': return {depsOn: ['deferred'], msg: 'ready requires deferred'};
+        case 'effects': return {depsOn: ['deferred', 'css'], msg: 'effects requires deferred and css'};
+        case 'dimensions': return {depsOn: ['css'], msg: 'dimensions requires css'};
+        case 'offset': return {depsOn: ['css'], msg: 'offset requires css'};
+        default: return {depsOn: []};
+    }
+}
+
+function test(options) {
+    var todo = R.clone(options);
+    var msgs = [];
+
+    while (todo.length > 0) {
+        var token = todo.pop();
+        if (!R.contains(token, validTokens)) {
+            msgs.push('"' + token + '" is not a valid option');
+        } else {
+
+            var dependencies = depends(token);
+    console.log(dependencies)
+
+            while (dependencies.depsOn.length > 0) {
+                var item = dependencies.depsOn.pop();
+                console.log('item '+item);
+                if (!R.contains(item, options)) {
+                    msgs.push(dependencies.msg);
+                    break;
+                }
+            }
+        }
+    }
+    return msgs;
+}
+exports.test = test;

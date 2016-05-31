@@ -1,0 +1,299 @@
+QUnit.module('Links', {
+    beforeEach: function() {
+        DEBUG = true;
+        Globals.idCounter = 0;
+    }
+});
+
+QUnit.test('1:1 - model linked to template', function(assert) {
+    var domStr = "<div id='main'></div>";
+    $('#qunit-fixture').append(domStr);
+    var pips = [{
+        type:'template',
+        selector: '#main',
+        method: 'html',
+        empty:'(0)'
+    }, {
+        type: 'model',
+        name: 'Storage',
+        model: {
+            'str': 'hello'
+        },
+        server: false
+    }];
+
+    var links = [{
+        pub: 'models.Storage',
+        sub: '#main.html',
+        // drop: ['model.Storage'],
+        // variables: {counter: 0, b: function() {}},
+        value: function(l) { return l.value.str;},
+        action: function(l) { return l.action;}
+    }];
+
+    var app = new LinkingPips.App(domStr, [], pips, links);
+    assert.equal($('#main').html(), 'hello');
+
+    app.get('models.Storage').react({
+        action: 'update',
+        value: {str: 'there'}
+    });
+    assert.equal($('#main').html(), 'there');
+});
+
+QUnit.test('n:1 - collection linked to template', function(assert) {
+    var domStr = "<div id='main'></div>";
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        type: 'template',
+        selector: '#main',
+        method: 'html',
+        empty:'(0)'
+    }, {
+        type: 'collection',
+        name: 'Storage',
+        model: [{
+            'continue': true
+        },{
+            'continue': false
+        },{
+            'continue': true
+        },{
+            'continue': false
+        }],
+        silent: false,
+        server: false
+    }];
+
+    var links = [{
+        pub: 'models.Storage',
+        sub: '#main.html',
+        drop: ['models.Storage'],
+        value: function(l) {
+            return R.length(
+                R.filter(function(v) {
+                    return v['continue'] === true;
+                }, R.values(this['models.Storage'].get()))
+            );
+        },
+        action: function(l) {
+            return 'create';
+        }
+    }];
+
+    var app = new LinkingPips.App(domStr, [], pips, links);
+    assert.equal($('#main').html(), '2');
+
+    app.get('models.Storage').react([{
+        action: 'update',
+        value: {continue: true},
+        it: "2"
+    }]);
+    assert.equal($('#main').html(), '3', 'only model change is used in template');
+});
+
+QUnit.test('n:1 - collection linked to template, using pre function', function(assert) {
+    var domStr = "<div id='main'></div>";
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        type: 'template',
+        selector: '#main',
+        method: 'html',
+        empty:'(0)'
+    }, {
+        type: 'collection',
+        name: 'Storage',
+        model: [{
+            'continue': true
+        },{
+            'continue': false
+        },{
+            'continue': true
+        },{
+            'continue': false
+        }],
+        silent: false,
+        server: false
+    }];
+
+    var links = [{
+        pub: 'models.Storage',
+        sub: '#main.html',
+        drop: ['models.Storage'],
+        pre: function() {
+            var result = {};
+            result.value = R.length(
+                R.filter(function(v) {
+                    return v.continue === true;
+                }, R.values(this['models.Storage'].get()))
+            );
+            return result;
+        },
+        action: function(l) {
+            return 'create';
+        }
+    }];
+
+    var app = new LinkingPips.App(domStr, [], pips, links);
+    assert.equal($('#main').html(), '2');
+
+    app.get('models.Storage').react([{
+        action: 'update',
+        value: {continue: true},
+        it: "2"
+    }]);
+    assert.equal($('#main').html(), '3', 'only model change is used in template');
+});
+
+QUnit.test('n:n - collection linked to state', function(assert) {
+    var domStr = "<ul id='main'></ul>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'list',
+        selector: '#main',
+        idKey: 'continue',
+        tpl: '<li></li>',
+        empty:'<p>(0)</p>'
+    }];
+
+    var pips = [{
+        type:'stateItem',
+        'default' :'isShown',
+        selector: '#main>li',
+        states:[{
+            name: 'isStrickedOut',
+            attr: 'class',
+            value: 'red'
+        },
+        {
+            name: 'isShown',
+            attr: 'class',
+            value: 'green'
+        }]
+    }, {
+        type: 'collection',
+        name: 'Storage',
+        model: [{
+            'continue': 4
+        },{
+            'continue': 5
+        },{
+            'continue': 6
+        },{
+            'continue': 7
+        }],
+        silent: false,
+        server: false
+    }];
+
+    var links = [{
+        pub: 'models.Storage',
+        sub: '#main.list',
+    },{
+        pub: 'models.Storage',
+        sub: '#main>li.states.isShown',
+        value: function(linkIn) {
+            return linkIn.value.continue <= 5 ? 'isShown' : 'isStrickedOut';
+        },
+        action: function(linkIn) {
+            return linkIn.action;
+        }
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+
+    assert.ok($('#main>li').eq(0).hasClass('green'));
+    assert.ok($('#main>li').eq(1).hasClass('green'));
+    assert.ok($('#main>li').eq(2).hasClass('red'));
+    assert.ok($('#main>li').eq(3).hasClass('red'));
+});
+
+QUnit.test('1:n - click event sets collection true', function(assert) {
+    var domStr = "<div id='clear-completed'></div>";
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        type: 'event',
+        selector: '#clear-completed',
+        events: 'click'
+    }, {
+        type: 'collection',
+        name: 'Storage',
+        model: [{
+            'continue': true
+        },{
+            'continue': false
+        },{
+            'continue': true
+        },{
+            'continue': false
+        }],
+        silent: false,
+        server: false
+    }];
+
+    var links = [{
+        pub: '#clear-completed.events.click',
+        sub: 'models.Storage',
+        binding: true,
+        drop: ['models.Storage'],
+        pre: function() {
+            return R.map(function(i) {
+                i.continue = true;
+                return {value: i, action: 'update', it: i.__it};
+            }, this['models.Storage'].get());
+        }
+    }];
+
+    var app = new LinkingPips.App(domStr, [], pips, links);
+
+    $('#clear-completed').click();
+    assert.deepEqual(R.pluck('continue', app.get('models.Storage').get()), [
+        { "__it": "1",
+          "continue": true
+        },
+        { "__it": "2",
+          "continue": true
+        },
+        { "__it": "3",
+          "continue": true
+        },
+        { "__it": "4",
+          "continue": true
+        }
+    ]);
+});
+
+QUnit.test('class-based filtering rows of a list', function(assert) {
+    var domStr = "" +
+        "<ul id='list'>" +
+        "<li class='off'><span></span></li>" +
+        "<li class='on'><span></span></li>" +
+        "<li class='on'><span></span></li>" +
+        "<li class='off'><span></span></li>" +
+        "</ul>";
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        type: 'stateItem',
+        selector: '#list>li',
+        refine: { attr: 'class', value: 'on' },
+        states: [{
+            name: 'ok',
+            attr: 'class',
+            value: 'green'
+        },{
+            name: 'fail',
+            attr: 'class',
+            value: 'red'
+        }]
+    }];
+
+    var app = new LinkingPips.App(domStr, [], pips, []);
+
+    assert.ok($('#list>li.on').hasClass('green'));
+    assert.ok(!$('#list>li.off').hasClass('green'));
+});

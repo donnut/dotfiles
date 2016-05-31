@@ -1,0 +1,19 @@
+public class AyeAye {
+  int i = 40;
+  int j;
+
+  public AyeAye() {
+    setValue(i++);
+  }
+
+  void setValue(int inputValue) {
+    int i = 20;
+    j = j + i;
+    System.out.println("j = " + j);
+  }
+
+  public static void main(String[] arguments) {
+    AyeAye aye = new AyeAye();
+  }
+}
+

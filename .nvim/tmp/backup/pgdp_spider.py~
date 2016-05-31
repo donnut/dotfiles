@@ -1,0 +1,70 @@
+# -*- coding: utf-8 -*-
+
+import scrapy
+import re
+
+class PGDP(scrapy.Spider):
+    name = "pgdp"
+    allowed_domains = ["www.pgdp.net"]
+
+    project_id = ''
+    f_out = open('total_diffs_2.txt', 'a')
+
+    def start_requests(self):
+        return [scrapy.FormRequest("http://www.pgdp.net/c/accounts/login.php",
+                                   formdata={'userNM': 'donnut', 'userPW': 'D-x9defSG5rIMKdy', 'destination': '/c/default.php'},
+                                   callback=self.logged_in)]
+
+    def logged_in(self, response):
+        if "authentication failed" in response.body:
+            self.logger.error("Login failed")
+            return
+
+        # here you would extract links to follow and return Requests for
+        # each of them, with another callback
+        with open('project_pages.full.csv', 'r') as f:
+            for line in f.readlines():
+                pair = line.split(';', 1)
+                project_id, name = pair
+                self.project_id = project_id
+                print "Processing project '%s'" %name
+                yield scrapy.Request(
+                    "http://www.pgdp.net/c/tools/project_manager/diff.php?project="+self.project_id+"&image=001.png&L_round_num=0&R_round_num=1",
+                    callback=self.parse)
+
+
+    def parse(self, response):
+        for diff_row in response.xpath("//table[@class='diff']//tr"):
+            text_org_resp = diff_row.xpath("./td[@class='diff-deletedline']/span[@class='diffchange']/text()")
+            text_new_resp = diff_row.xpath("./td[@class='diff-addedline']/span[@class='diffchange']/text()")
+            if len(text_org_resp) > 0 and len(text_new_resp) > 0:
+                text_org = text_org_resp.extract_first()
+                text_new = text_new_resp.extract_first()
+                self.f_out.write("'%s';'%s'\n" % (text_org.encode('utf-8'), text_new.encode('utf-8')))
+
+        next_str = response.xpath('//input[@value="Next"]/@onclick').extract_first()
+        next_nr = re.search("value='(.*?)'", next_str).group(1)
+        if next_nr == '001.png' or next_nr == "":
+            yield None
+        else:
+            yield scrapy.Request(
+                "http://www.pgdp.net/c/tools/project_manager/diff.php?project="+self.project_id+"&image="+next_nr+"&L_round_num=0&R_round_num=1&jumpto=001.png",
+                callback=self.parse_next_page)
+
+    def parse_next_page(self, response):
+        for diff_row in response.xpath("//table[@class='diff']//tr"):
+            text_org_resp = diff_row.xpath("./td[@class='diff-deletedline']/span[@class='diffchange']/text()")
+            text_new_resp = diff_row.xpath("./td[@class='diff-addedline']/span[@class='diffchange']/text()")
+            if len(text_org_resp) > 0 and len(text_new_resp) > 0:
+                text_org = text_org_resp.extract_first()
+                text_new = text_new_resp.extract_first()
+                self.f_out.write("'%s';'%s'\n" % (text_org.encode('utf-8'), text_new.encode('utf-8')))
+
+        next_str = response.xpath('//input[@value="Next"]/@onclick').extract_first()
+        next_nr = re.search("value='(.*?)'", next_str).group(1)
+        if next_nr == '001.png' or next_nr == "":
+            yield None
+        else:
+            yield scrapy.Request(
+                "http://www.pgdp.net/c/tools/project_manager/diff.php?project="+self.project_id+"&image="+next_nr+"&L_round_num=0&R_round_num=1&jumpto=001.png",
+                callback=self.parse_next_page)

@@ -1,0 +1,294 @@
+/*
+    size: minified, not gzipped
+	legacy: 1.8.3
+	compat:1.11.3
+	secondx: 2.1.4
+	latest: 3.0.0-alpha1
+*/
+
+    $scale-max:                 100000;
+    $legacy-total:				93640;
+    $legacy-biggest:			16773;	//TODO
+
+
+    $amd-legacy-bytes:			0;
+	$global-legacy-bytes:		0;
+	$ready-legacy-bytes:		0;
+
+	$alloff-legacy:				66800;//met de hand zodat die past moet eigenlijk 67253 zijn
+	
+    $css-legacy-bytes:			6202;
+ //    $event-legacy-bytes:		$alloff-legacy/4;
+	// $sizzle-legacy-bytes:		$alloff-legacy/4;	//TODO;
+	// $selector-legacy-bytes:		$alloff-legacy/4;	//TODO;
+	// $core-legacy-bytes:			$alloff-legacy/4;	//TODO;
+
+
+    $event-legacy-bytes:		0;
+	$sizzle-legacy-bytes:		0;	//TODO;
+	//$selector-legacy-bytes:		$alloff-legacy/4;	//TODO;
+	$core-legacy-bytes:			$alloff-legacy;	//TODO;
+    //$deferred-legacy-bytes:		0;
+
+	$ajax-legacy-bytes:         6631;
+	//$transport-legacy-bytes:	1099;
+	$xhr-legacy-bytes:			1444;
+	$script-legacy-bytes:   	830;
+	$jsonp-legacy-bytes: 		847;
+	$effects-legacy-bytes:		7021;
+	$dimensions-legacy-bytes:	494;
+	$offset-legacy-bytes:		2177;
+	$deferred-legacy-bytes:		0;//12
+	$wrap-legacy-bytes:			0;
+	$deprecated-legacy-bytes:	741;
+
+	$compat-total:				96022;
+	$compat-biggest:			18334;
+
+	$amd-compat-bytes:			54;
+	$global-compat-bytes:		112;
+	$ready-compat-bytes:		1125;
+	$css-compat-bytes:			7916;
+	$event-compat-bytes:		11822;
+
+	$alloff-compat: 			33339;
+	$sizzle-compat-bytes:		18334;			//TODO;
+	//$selector-compat-bytes:		$alloff-compat/2;			//TODO;
+	$core-compat-bytes:			$alloff-compat;			//TODO;
+	$ajax-compat-bytes:		    7324;
+	//$transport-compat-bytes:	1041;
+	$xhr-compat-bytes:			1354;
+	$script-compat-bytes:		826;
+	$jsonp-compat-bytes:		823;
+	$effects-compat-bytes:		8097;
+	$dimensions-compat-bytes:	495;
+	$offset-compat-bytes:		2027;
+	$deferred-compat-bytes:		1424;
+	$wrap-compat-bytes:			759;
+	$deprecated-compat-bytes:	43;
+
+	$secondx-total:				84408;
+	$secondx-biggest:			17127;
+
+	$amd-secondx-bytes:			53;
+	$global-secondx-bytes:		112;
+	$ready-secondx-bytes:		638;
+	$css-secondx-bytes:			6036;
+	$event-secondx-bytes:		9652;
+
+	$alloff-secondx:			29305;
+	$sizzle-secondx-bytes:		17127;
+	//$selector-secondx-bytes:	0;$alloff-secondx/2;		//TODO;
+	$core-secondx-bytes:		$alloff-secondx;	//TODO;
+	$ajax-secondx-bytes:		6799;
+	//$transport-secondx-bytes:	862;
+	$xhr-secondx-bytes:			1051;
+	$script-secondx-bytes:		602;
+	$jsonp-secondx-bytes:		822;
+	$effects-secondx-bytes:		7439;
+	$dimensions-secondx-bytes:	494;
+	$offset-secondx-bytes:		1928;
+	$deferred-secondx-bytes:	1422;
+	$wrap-secondx-bytes:		739;
+	$deprecated-secondx-bytes:	42;
+
+	$latest-total:				83817;
+	$latest-biggest:			19671;
+
+	$amd-latest-bytes:			53;
+	$global-latest-bytes:		0;
+	$ready-latest-bytes:		556;
+	$css-latest-bytes:			5350;
+	$event-latest-bytes:		9517;
+
+	$alloff-latest:				28730;
+	$sizzle-latest-bytes:		17405;	//TODO;
+	//$selector-latest-bytes:		$alloff-latest/2;	//TODO;
+	$core-latest-bytes:			$alloff-latest;   //TODO;
+	$ajax-latest-bytes:			6652;
+	$xhr-latest-bytes:			938;
+	$script-latest-bytes:		593;
+	$jsonp-latest-bytes:		855;
+	$effects-latest-bytes:		7625;
+	$dimensions-latest-bytes:	494;
+	$offset-latest-bytes:		1899;
+	$deferred-latest-bytes:		2451;
+	$wrap-latest-bytes:			689;
+	$deprecated-latest-bytes:	0;
+
+
+
+	$legacy-bar-length:($legacy-total/$scale-max ) * 100%;
+    $amd-legacy-height : ($amd-legacy-bytes/$legacy-total) * 100%;
+	$global-legacy-height: ($global-legacy-bytes/$legacy-total) * 100%;
+	$ready-legacy-height: ($ready-legacy-bytes/$legacy-total) * 100%;
+	$css-legacy-height: ($css-legacy-bytes/$legacy-total) * 100%;
+	$event-legacy-height: ($event-legacy-bytes/$legacy-total) * 100%;
+	$sizzle-legacy-height: ($sizzle-legacy-bytes/$legacy-total) * 100%;
+	//$selector-legacy-height: $selector-legacy-bytes/$legacy-total * 100%;
+	$core-legacy-height: ($core-legacy-bytes/$legacy-total) * 100%;
+	 $ajax-legacy-height: ($ajax-legacy-bytes/$legacy-total) * 100%;
+	// $load-legacy-height: $load-legacy-bytes/$legacy-total * 100%;
+	// $transport-legacy-height: $transport-legacy-bytes/$legacy-total * 100%;
+	$xhr-legacy-height: ($xhr-legacy-bytes/$legacy-total) * 100%;
+	$script-legacy-height: ($script-legacy-bytes/$legacy-total) * 100%;
+	$jsonp-legacy-height: ($jsonp-legacy-bytes/$legacy-total) * 100%;
+	$effects-legacy-height: ($effects-legacy-bytes/$legacy-total )* 100%;
+	$dimensions-legacy-height:( $dimensions-legacy-bytes/$legacy-total) * 100%;
+	$offset-legacy-height: ($offset-legacy-bytes/$legacy-total )* 100%;
+	$deferred-legacy-height: ($deferred-legacy-bytes/$legacy-total) * 100%;
+	$wrap-legacy-height: ($wrap-legacy-bytes/$legacy-total) * 100%;
+	$deprecated-legacy-height:( $deprecated-legacy-bytes/$legacy-total) * 100%;
+
+	$amd-legacy-width : $amd-legacy-bytes/$legacy-biggest * 100%;
+	$global-legacy-width: $global-legacy-bytes/$legacy-biggest * 100%;
+	$ready-legacy-width: $ready-legacy-bytes/$legacy-biggest * 100%;
+	$css-legacy-width: $css-legacy-bytes/$legacy-biggest * 100%;
+	$event-legacy-width: $event-legacy-bytes/$legacy-biggest * 100%;
+	$sizzle-legacy-width: $sizzle-legacy-bytes/$legacy-biggest * 100%;
+	//$selector-legacy-width: $selector-legacy-bytes/$legacy-biggest * 100%;
+	$core-legacy-width: $core-legacy-bytes/$legacy-biggest * 100%;
+	$ajax-legacy-width: $ajax-legacy-bytes/$legacy-biggest * 100%;
+	// $load-legacy-width: $load-legacy-bytes/$legacy-biggest * 100%;
+	// $transport-legacy-width: $transport-legacy-bytes/$legacy-biggest * 100%;
+	$xhr-legacy-width: $xhr-legacy-bytes/$legacy-biggest * 100%;
+	$script-legacy-width: $script-legacy-bytes/$legacy-biggest * 100%;
+	$jsonp-legacy-width: $jsonp-legacy-bytes/$legacy-biggest * 100%;
+	$effects-legacy-width: $effects-legacy-bytes/$legacy-biggest * 100%;
+	$dimensions-legacy-width: $dimensions-legacy-bytes/$legacy-biggest * 100%;
+	$offset-legacy-width: $offset-legacy-bytes/$legacy-biggest * 100%;
+	$deferred-legacy-width: $deferred-legacy-bytes/$legacy-biggest * 100%;
+	$wrap-legacy-width: $wrap-legacy-bytes/$legacy-biggest * 100%;
+	$deprecated-legacy-width: $deprecated-legacy-bytes/$legacy-biggest * 100%;
+
+	$compat-bar-length:($compat-total/$scale-max ) * 100%;
+    $amd-compat-height : $amd-compat-bytes/$compat-total * 100%;
+	$global-compat-height: $global-compat-bytes/$compat-total * 100%;
+	$ready-compat-height: $ready-compat-bytes/$compat-total * 100%;
+	$css-compat-height: $css-compat-bytes/$compat-total * 100%;
+	$event-compat-height: $event-compat-bytes/$compat-total * 100%;
+	$sizzle-compat-height: $sizzle-compat-bytes/$compat-total * 100%;
+	//$selector-compat-height: $selector-compat-bytes/$compat-total * 100%;
+	$core-compat-height: $core-compat-bytes/$compat-total * 100%;
+	$ajax-compat-height: $ajax-compat-bytes/$compat-total * 100%;
+	// $load-compat-height: $load-compat-bytes/$compat-total * 100%;
+	// $transport-compat-height: $transport-compat-bytes/$compat-total * 100%;
+	$xhr-compat-height: $xhr-compat-bytes/$compat-total * 100%;
+	$script-compat-height: $script-compat-bytes/$compat-total * 100%;
+	$jsonp-compat-height: $jsonp-compat-bytes/$compat-total * 100%;
+	$effects-compat-height: $effects-compat-bytes/$compat-total * 100%;
+	$dimensions-compat-height: $dimensions-compat-bytes/$compat-total * 100%;
+	$offset-compat-height: $offset-compat-bytes/$compat-total * 100%;
+	$deferred-compat-height: $deferred-compat-bytes/$compat-total * 100%;
+	$wrap-compat-height: $wrap-compat-bytes/$compat-total * 100%;
+	$deprecated-compat-height: $deprecated-compat-bytes/$compat-total * 100%;
+
+	$amd-compat-width : $amd-compat-bytes/$compat-biggest * 100%;
+	$global-compat-width: $global-compat-bytes/$compat-biggest * 100%;
+	$ready-compat-width: $ready-compat-bytes/$compat-biggest * 100%;
+	$css-compat-width: $css-compat-bytes/$compat-biggest * 100%;
+	$event-compat-width: $event-compat-bytes/$compat-biggest * 100%;
+	$sizzle-compat-width: $sizzle-compat-bytes/$compat-biggest * 100%;
+	//$selector-compat-width: $selector-compat-bytes/$compat-biggest * 100%;
+	$core-compat-width: $core-compat-bytes/$compat-biggest * 100%;
+	$ajax-compat-width: $ajax-compat-bytes/$compat-biggest * 100%;
+	// $load-compat-width: $load-compat-bytes/$compat-biggest * 100%;
+	// $transport-compat-width: $transport-compat-bytes/$compat-biggest * 100%;
+	$xhr-compat-width: $xhr-compat-bytes/$compat-biggest * 100%;
+	$script-compat-width: $script-compat-bytes/$compat-biggest * 100%;
+	$jsonp-compat-width: $jsonp-compat-bytes/$compat-biggest * 100%;
+	$effects-compat-width: $effects-compat-bytes/$compat-biggest * 100%;
+	$dimensions-compat-width: $dimensions-compat-bytes/$compat-biggest * 100%;
+	$offset-compat-width: $offset-compat-bytes/$compat-biggest * 100%;
+	$deferred-compat-width: $deferred-compat-bytes/$compat-biggest * 100%;
+	$wrap-compat-width: $wrap-compat-bytes/$compat-biggest * 100%;
+	$deprecated-compat-width: $deprecated-compat-bytes/$compat-biggest * 100%;
+
+
+    $secondx-bar-length:($secondx-total/$scale-max ) * 100%;
+    $amd-secondx-height : ($amd-secondx-bytes/$secondx-total) * 100%;
+	$global-secondx-height: ($global-secondx-bytes/$secondx-total) * 100%;
+	$ready-secondx-height: ($ready-secondx-bytes/$secondx-total) * 100%;
+	$css-secondx-height: ($css-secondx-bytes/$secondx-total) * 100%;
+	$event-secondx-height: ($event-secondx-bytes/$secondx-total) * 100%;
+	$sizzle-secondx-height: ($sizzle-secondx-bytes/$secondx-total) * 100%;
+	//$selector-secondx-height: ($selector-secondx-bytes/$secondx-total) * 100%;
+	$core-secondx-height: ($core-secondx-bytes/$secondx-total) * 100%;
+	$ajax-secondx-height: ($ajax-secondx-bytes/$secondx-total) * 100%;
+	// $load-secondx-heigheight: $transport-secondx-bytes/$secondx-total * 100%;
+	$xhr-secondx-height: ($xhr-secondx-bytes/$secondx-total) * 100%;
+	$script-secondx-height: ($script-secondx-bytes/$secondx-total) * 100%;
+	$jsonp-secondx-height: ($jsonp-secondx-bytes/$secondx-total) * 100%;
+	$effects-secondx-height: ($effects-secondx-bytes/$secondx-total) * 100%;
+	$dimensions-secondx-height: ($dimensions-secondx-bytes/$secondx-total) * 100%;
+	$offset-secondx-height: ($offset-secondx-bytes/$secondx-total) * 100%;
+	$deferred-secondx-height: ($deferred-secondx-bytes/$secondx-total) * 100%;
+	$wrap-secondx-height: ($wrap-secondx-bytes/$secondx-total) * 100%;
+	$deprecated-secondx-height: ($deprecated-secondx-bytes/$secondx-total) * 100%;
+
+	$amd-secondx-width : ($amd-secondx-bytes/$secondx-biggest) * 100%;
+	$global-secondx-width: ($global-secondx-bytes/$secondx-biggest) * 100%;
+	$ready-secondx-width: ($ready-secondx-bytes/$secondx-biggest) * 100%;
+	$css-secondx-width: ($css-secondx-bytes/$secondx-biggest) * 100%;
+	$event-secondx-width: ($event-secondx-bytes/$secondx-biggest) * 100%;
+	$sizzle-secondx-width: ($sizzle-secondx-bytes/$secondx-biggest) * 100%;
+	//$selector-secondx-width: ($selector-secondx-bytes/$secondx-biggest) * 100%;
+	$core-secondx-width: ($core-secondx-bytes/$secondx-biggest) * 100%;
+	$ajax-secondx-width: ($ajax-secondx-bytes/$secondx-biggest) * 100%;
+	// $load-secondx-width: $load-secondx-bytes/$secondx-biggest * 100%;
+	// $transport-secondx-width: $transport-secondx-bytes/$secondx-biggest * 100%;
+	$xhr-secondx-width: ($xhr-secondx-bytes/$secondx-biggest) * 100%;
+	$script-secondx-width: ($script-secondx-bytes/$secondx-biggest) * 100%;
+	$jsonp-secondx-width: ($jsonp-secondx-bytes/$secondx-biggest) * 100%;
+	$effects-secondx-width: ($effects-secondx-bytes/$secondx-biggest) * 100%;
+	$dimensions-secondx-width: ($dimensions-secondx-bytes/$secondx-biggest) * 100%;
+	$offset-secondx-width: ($offset-secondx-bytes/$secondx-biggest) * 100%;
+	$deferred-secondx-width: ($deferred-secondx-bytes/$secondx-biggest) * 100%;
+	$wrap-secondx-width: ($wrap-secondx-bytes/$secondx-biggest) * 100%;
+	$deprecated-secondx-width: ($deprecated-secondx-bytes/$secondx-biggest) * 100%;
+
+
+	$latest-bar-length:($latest-total/$scale-max ) * 100%;
+
+    $amd-latest-height : $amd-latest-bytes/$latest-total * 100%;
+	$global-latest-height: $global-latest-bytes/$latest-total * 100%;
+	$ready-latest-height: $ready-latest-bytes/$latest-total * 100%;
+	$css-latest-height: $css-latest-bytes/$latest-total * 100%;
+	$event-latest-height: $event-latest-bytes/$latest-total * 100%;
+	$sizzle-latest-height: $sizzle-latest-bytes/$latest-total * 100%;
+	//$selector-latest-height: $selector-latest-bytes/$latest-total * 100%;
+	$core-latest-height: $core-latest-bytes/$latest-total * 100%;
+	$ajax-latest-height: $ajax-latest-bytes/$latest-total * 100%;
+	// $load-latest-height: $load-latest-bytes/$latest-total * 100%;
+	// $transport-latest-height: $transport-latest-bytes/$latest-total * 100%;
+	$xhr-latest-height: $xhr-latest-bytes/$latest-total * 100%;
+	$script-latest-height: $script-latest-bytes/$latest-total * 100%;
+	$jsonp-latest-height: $jsonp-latest-bytes/$latest-total * 100%;
+	$effects-latest-height: $effects-latest-bytes/$latest-total * 100%;
+	$dimensions-latest-height: $dimensions-latest-bytes/$latest-total * 100%;
+	$offset-latest-height: $offset-latest-bytes/$latest-total * 100%;
+	$deferred-latest-height: $deferred-latest-bytes/$latest-total * 100%;
+	$wrap-latest-height: $wrap-latest-bytes/$latest-total * 100%;
+	$deprecated-latest-height: $deprecated-latest-bytes/$latest-total * 100%;
+
+	$amd-latest-width : $amd-latest-bytes/$latest-biggest * 100%;
+	$global-latest-width: $global-latest-bytes/$latest-biggest * 100%;
+	$ready-latest-width: $ready-latest-bytes/$latest-biggest * 100%;
+	$css-latest-width: $css-latest-bytes/$latest-biggest * 100%;
+	$event-latest-width: $event-latest-bytes/$latest-biggest * 100%;
+	$sizzle-latest-width: $sizzle-latest-bytes/$latest-biggest * 100%;
+	//$selector-latest-width: $selector-latest-bytes/$latest-biggest * 100%;
+	$core-latest-width: $core-latest-bytes/$latest-biggest * 100%;
+	$ajax-latest-width: $ajax-latest-bytes/$latest-biggest * 100%;
+	// $load-latest-width: $load-latest-bytes/$latest-biggest * 100%;
+	// $transport-latest-width: $transport-latest-bytes/$latest-biggest * 100%;
+	$xhr-latest-width: $xhr-latest-bytes/$latest-biggest * 100%;
+	$script-latest-width: $script-latest-bytes/$latest-biggest * 100%;
+	$jsonp-latest-width: $jsonp-latest-bytes/$latest-biggest * 100%;
+	$effects-latest-width: $effects-latest-bytes/$latest-biggest * 100%;
+	$dimensions-latest-width: $dimensions-latest-bytes/$latest-biggest * 100%;
+	$offset-latest-width: $offset-latest-bytes/$latest-biggest * 100%;
+	$deferred-latest-width: $deferred-latest-bytes/$latest-biggest * 100%;
+	$wrap-latest-width: $wrap-latest-bytes/$latest-biggest * 100%;
+	$deprecated-latest-width: $deprecated-latest-bytes/$latest-biggest * 100%;
+

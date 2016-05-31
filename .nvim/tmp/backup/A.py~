@@ -1,0 +1,211 @@
+from main import replace_accented
+from sklearn import svm
+from sklearn import neighbors
+from sklearn import preprocessing
+from nltk import word_tokenize
+import codecs
+import re
+import operator
+
+# don't change the window size
+window_size = 10
+
+# A.1
+def build_s(data):
+    '''
+    Compute the context vector for each lexelt
+    :param data: dic with the following structure:
+        {
+			lexelt: [(instance_id, left_context, head, right_context, sense_id), ...],
+			...
+        }
+    :return: dic s with the following structure:
+        {
+			lexelt: [w1,w2,w3, ...],
+			...
+        }
+
+    '''
+
+    s = {}
+
+    p = re.compile('^\d+')
+
+    # implement your code here
+    for lexelt, instances in data.iteritems():
+        words = []
+        for instance in instances:
+            left = word_tokenize(instance[1])
+            right = word_tokenize(instance[3])
+
+            left_words = left[0:window_size]
+            right_words = right[-window_size:]
+
+            words += left_words + right_words
+
+
+        s[lexelt] = set(words)
+
+    return s
+
+
+# A.1
+def vectorize(data, s):
+    '''
+    :param data: list of instances for a given lexelt with the following structure:
+        {
+			[(instance_id, left_context, head, right_context, sense_id), ...]
+        }
+    :param s: list of words (features) for a given lexelt: [w1,w2,w3, ...]
+    :return: vectors: A dictionary with the following structure
+            { instance_id: [w_1 count, w_2 count, ...],
+            ...
+            }
+            labels: A dictionary with the following structure
+            { instance_id : sense_id }
+
+    '''
+    vectors = {}
+    labels = {}
+
+    # implement your code here
+
+    for instance in data:
+
+        instance_id = instance[0]
+        left = word_tokenize(instance[1])
+        right = word_tokenize(instance[3])
+        sense_id = instance[4]
+
+        labels[instance_id] = sense_id
+
+        left_words = left[0:window_size]
+        right_words = right[-window_size:]
+
+        wc = {}
+        counts = []
+
+        for word in (left_words + right_words):
+            if word in s:
+                if word in wc:
+                    wc[word] +=1
+                else:
+                    wc[word] = 1
+
+        for word in s:
+            if word in wc:
+                counts.append(wc[word])
+            else:
+                counts.append(0)
+
+        vectors[instance_id] = counts
+
+    # normalize labels
+    #le = preprocessing.LabelEncoder()
+    #all = set([ sense_id for instance_id, sense_id in labels.iteritems()])
+    #all_labels = []
+    #for w in all:
+        #all_labels.append(w)
+
+    #le.fit(all_labels)
+
+    #for key, sense in labels.iteritems():
+        #labels[key] = le.transform(sense)
+
+    return vectors, labels
+
+
+# A.2
+def classify(X_train, X_test, y_train):
+    '''
+    Train two classifiers on (X_train, and y_train) then predict X_test labels
+
+    :param X_train: A dictionary with the following structure
+            { instance_id: [w_1 count, w_2 count, ...],
+            ...
+            }
+
+    :param X_test: A dictionary with the following structure
+            { instance_id: [w_1 count, w_2 count, ...],
+            ...
+            }
+
+    :param y_train: A dictionary with the following structure
+            { instance_id : sense_id }
+
+    :return: svm_results: a list of tuples (instance_id, label) where labels are predicted by LinearSVC
+             knn_results: a list of tuples (instance_id, label) where labels are predicted by KNeighborsClassifier
+    '''
+
+    svm_results = []
+    knn_results = []
+
+    svm_clf = svm.LinearSVC()
+    knn_clf = neighbors.KNeighborsClassifier()
+
+    X = []
+    y = []
+    Xt = []
+
+    # implement your code here
+    for instance_id, counts in X_train.iteritems():
+        X.append(counts)
+        y.append(y_train[instance_id])
+
+    instance_array = []
+    for instance_id, counts in X_test.iteritems():
+        Xt.append(counts)
+        instance_array.append(instance_id)
+
+    svm_clf.fit(X, y)
+    labels = svm_clf.predict(Xt)
+
+    for id, instance_id in enumerate(instance_array):
+        svm_results.append((instance_id, labels[id]))
+
+    knn_clf.fit(X, y)
+    labels = knn_clf.predict(Xt)
+
+    for id, instance_id in enumerate(instance_array):
+        knn_results.append((instance_id, labels[id]))
+
+    return svm_results, knn_results
+
+# A.3, A.4 output
+def print_results(results, output_file):
+    '''
+
+    :param results: A dictionary with key = lexelt and value = a list of tuples (instance_id, label)
+    :param output_file: file to write output
+
+    '''
+
+    # implement your code here
+    # don't forget to remove the accent of characters using main.replace_accented(input_str)
+    # you should sort results on instance_id before printing
+    output = []
+    for lexelt, tuples in results.iteritems():
+        for (instance_id, label) in tuples:
+            output.append("%s %s %s\n" % (replace_accented(lexelt), replace_accented(instance_id), replace_accented(label.decode('utf-8'))))
+
+    output = sorted(output)
+
+    outfile = codecs.open(output_file, encoding='utf-8', mode='w')
+    sorted_output = sorted(output)
+    for o in sorted_output:
+        outfile.write(o)
+
+    outfile.close()
+
+# run part A
+def run(train, test, language, knn_file, svm_file):
+    s = build_s(train)
+    svm_results = {}
+    knn_results = {}
+    for lexelt in s:
+        X_train, y_train = vectorize(train[lexelt], s[lexelt])
+        X_test, _ = vectorize(test[lexelt], s[lexelt])
+        svm_results[lexelt], knn_results[lexelt] = classify(X_train, X_test, y_train)
+
+    print_results(svm_results, svm_file)
+    print_results(knn_results, knn_file)

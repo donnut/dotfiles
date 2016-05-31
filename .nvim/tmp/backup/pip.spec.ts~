@@ -1,0 +1,99 @@
+module Pip.Spec {
+    import G = Globals;
+    import PT = G.PipType;
+    import MK = G.MessageKey;
+    import ELM = G.Element;
+    import ON = G.OptionName;
+    import OV = G.OptionValue;
+    import AK = G.AddressKey;
+
+    declare var DEBUG;
+
+    export function isMulti(type: string) {
+        return R.contains(type, [ PT[PT.stateItem], PT[PT.eventItem], PT[PT.templateItem],
+            PT[PT.listItem], PT[PT.itemElement], PT[PT.collection],
+            PT[PT.list], PT[PT.select], PT[PT.targetItem],
+            PT[PT.router], PT[PT.navTree], PT[PT.nest] ]);
+    }
+
+
+    /**
+     * Constructs the pipId by using the ancestorId and appending that with the specified path
+     */
+    function definePipId(path: string[], ancestorId?: string) {
+        return ancestorId !== void 0
+            ? ancestorId + (path.length>0 ? '.' + R.join('.', path) : '')
+            : R.join('.', path);
+    }
+
+    export function defineSelectStates(options: { type: string, states: string }) {
+        // var unSelectState, selectState;
+        var pipType = options[ON[ON.type]];
+        //var states = options[ON[ON.states]];
+        var isStandardDefined = function(StandardName) {
+            return R.containsWith(s=> s.name === StandardName, options[ON[ON.states]]);
+        }
+        // var standardSelectedName = (pipType === PT[PT.select]) ? G.IS_SELECTED : G.IS_TARGET;
+        // var standardUnSelectedName = (pipType=== PT[PT.select])? G.IS_UNSELECTED : G.NO_TARGET;
+        var unSelectState = (pipType === PT[PT.select]) ? G.IS_UNSELECTED : G.NO_TARGET;
+        var selectState = (pipType === PT[PT.select]) ? G.IS_SELECTED : G.IS_TARGET;
+        if (!isStandardDefined(unSelectState) || !isStandardDefined(selectState)) {
+            throw new Error('the required stateNames are NOT used within select or target(Item)');
+        }
+        // var selectIsDefined = isStandardDefined(standardSelectedName);
+        // var unSelectIsDefined = isStandardDefined(standardUnSelectedName);
+
+        // if (selectIsDefined && unSelectIsDefined) {
+        //    selectState = standardSelectedName;
+        //   unSelectState = standardUnSelectedName;
+        // } else if (!selectIsDefined && !unSelectIsDefined) {
+        //     //via defaultState: gaat nu spaak
+        // } else if(!selectIsDefined){
+        //     unSelectState = standardUnSelectedName;
+        //     selectState = Pip.Values.otherToggleState(standardUnSelectedName, options);
+        // } else{//!unSelectIsDefined
+        //     selectState = standardSelectedName;
+        //     unSelectState = Pip.Values.otherToggleState(standardSelectedName, options);
+        // }
+
+        return {
+            selected: selectState,
+            unSelected: unSelectState
+        };
+    }
+    export function define(options: G.AllPipOptions, regAddressBook) {
+        var spec:G.IPipSpec, addresses:any,
+            ancestorId = Pip.Addresses.defineSelector(options[ON[ON.selector]]),
+            pipType = <string>options[ON[ON.type]],
+            path = Pip.Path.def[pipType](options),
+            pipId = definePipId(path, ancestorId);
+
+        if (ancestorId) {
+            switch (pipType){
+                case PT[PT.list]:
+                    addresses = Pip.Addresses.defineListAddresses(<G.IListPipOptions>options);
+                    break;
+                case PT[PT.listItem]:
+                    addresses = Pip.Addresses.defineListItemAddresses(<G.IListItemPipOptions>options);
+                    break;
+                case PT[PT.eventItem]:
+                    addresses = Pip.Addresses.defineEventAddresses(<G.IEventPipOptions>options, regAddressBook, true);
+                    break;
+                case PT[PT.event]:
+                    addresses = Pip.Addresses.defineEventAddresses(<G.IEventItemPipOptions>options, regAddressBook, false);
+                    break;
+                case PT[PT.tree]:
+                case PT[PT.nest]:
+                    addresses = Pip.Addresses.defineTreeNestAddresses(<G.ITreePipOptions>options);
+                    break;
+                default:
+                    addresses = R.assoc(AK[AK.anc], ancestorId, {});
+            }
+        }
+        spec = {
+            options: R.merge(Pip.Options.defaults[pipType], options),//Pip.Options.defaults[pipType](options)
+            addresses: R.merge({ pip: pipId }, addresses)
+        };
+        return spec;
+    }
+}

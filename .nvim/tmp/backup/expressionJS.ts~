@@ -1,0 +1,127 @@
+/// <reference path="../dts/ramda.d.ts"/>
+/// <reference path="./lb-globals.ts"/>
+/// <reference path="./expressionTree.ts"/>
+/// <reference path="./objectid.ts"/>
+
+namespace Expression {
+
+    function ifElse(write, items) {
+        if (items.length === 1) {
+            return `return ${write(items[0])}`;
+        }
+        else if (items.length === 2) {
+            return `${write(items[0])} else return ${write(items[1])}`;
+        }
+        else if (items.length === 3) {
+            return `${write(items[0])} else ${write(items[1])} else return ${write(items[2])}`;
+        }
+    }
+
+    export function writeJS(tree: Tree): string {
+        let args: string[] = [];
+
+        function write(item) {
+            if (item.constructor === Expression) {
+                return `{${write(item.children[0])}}`;
+            } else if (item.constructor === MessageArea) {
+                return `{${write(item.children[0])}}`;
+            } else if (item.constructor === MessageBranch) {
+                return `{${write(item.children[0])}}`;
+            } else if (item.constructor === Message) {
+                return `{${R.map(write, item.children).join(', ')}}`;
+            } else if (item.constructor === ExpressionArea) {
+                return `${write(item.children[0])}: ${write(item.children[1])}`;
+            } else if (item.constructor === Label) {
+                return `${item.value}`;
+            } else if (item.constructor === AreaOperator) {
+                return `${write(item.children[0])}`;
+            } else if (item.constructor === NumberOperator) {
+                switch (item.selected) {
+                    case 'plus':
+                        return `(${write(item.children[0])}+${write(item.children[1])})`;
+                    case 'minus':
+                        return `(${write(item.children[0])}-${write(item.children[1])})`;
+                    case 'multiply':
+                        return `(${write(item.children[0])}*${write(item.children[1])})`;
+                    case 'divide':
+                        return `(${write(item.children[0])}/${write(item.children[1])})`;
+                }
+            } else if (item.constructor === StringOperator) {
+                switch (item.selected) {
+                    case 'add':
+                        return `(${write(item.children[0])}+${write(item.children[1])})`;
+                }
+            } else if (item.constructor === BooleanOperator) {
+                switch (item.selected) {
+                    case 'not':
+                        return `!${write(item.children[0])}`;
+                }
+            } else if (item.constructor === ConnectiveOperator) {
+                switch (item.selected) {
+                    case 'and':
+                        return `(${write(item.children[0])} && ${write(item.children[1])})`;
+                    case 'or':
+                        return `(${write(item.children[0])} || ${write(item.children[1])})`;
+                }
+            } else if (item.constructor === MathOperator) {
+                switch (item.selected) {
+                    case 'count':
+                        return `length(${write(item.children[0])})`;
+                    case 'max':
+                        return `max(${write(item.children[0])})`;
+                    case 'min':
+                        return `min(${write(item.children[0])})`;
+                }
+            } else if (item.constructor === BranchOperator) {
+                switch (item.selected) {
+                    case 'branch':
+                        return ifElse(write, item.children);
+                        break;
+                }
+            } else if (item.constructor === CaseOperator) {
+                switch (item.selected) {
+                    case 'case':
+                        return `if (${write(item.children[0])}) ${write(item.children[1])}`;
+                        break;
+                }
+            } else if (item.constructor === ReduceOperator) {
+                switch (item.selected) {
+                    case 'findOne':
+                        return `find(${write(item.children[0])}, ${write(item.children[1])})`;
+                }
+            } else if (item.constructor === MapOperator) {
+                switch (item.selected) {
+                    case 'filter':
+                        return `filter(${write(item.children[0])}, ${write(item.children[1])})`;
+                    case 'sort':
+                        return `sort(${write(item.children[0])}, ${write(item.children[1])})`;
+                }
+            } else if (item.constructor === ComparativeOperator) {
+                switch (item.selected) {
+                    case 'eq':
+                        return `(${write(item.children[0])} === ${write(item.children[1])})`;
+                    case 'ne':
+                        return `(${write(item.children[0])} !== ${write(item.children[1])})`;
+                    case 'lt':
+                        return `(${write(item.children[0])} < ${write(item.children[1])})`;
+                    case 'lte':
+                        return `(${write(item.children[0])} <= ${write(item.children[1])})`;
+                    case 'gt':
+                        return `(${write(item.children[0])} > ${write(item.children[1])})`;
+                    case 'gte':
+                        return `(${write(item.children[0])} >= ${write(item.children[1])})`;
+                }
+            } else if (item.constructor === Value) {
+                if (item.value) {
+                    return item.type === 'string'
+                        ? `'${item.value}'`
+                        : `${item.value}`;
+                } else {
+                    return `${item.nid}`;
+                }
+            }
+        }
+        let exprBody = write(tree);
+        return exprBody;
+    }
+}

@@ -1,0 +1,16 @@
+from ocr.train import Train
+from ocr.features import ServiceKenLM, ServiceNgrams
+
+
+sents = """
+        Liz Taylor.
+        Later zag ik dat hij  die ring aan Liz Taylor had gegeven (zwijgt, even). Een vrouw, die zo verkeerd beoordeeld wordt. 
+        Ik ken haar goed, ze heeft nog een poosje in mijn flat in Los Angeles gewoond. Ze hing daar toen de schilderijen op, 
+        die Mike Todd mij had beloofd. Liz heeft een hart van goud. Ze heeft eens een deel van haar gage aan een vrouw gegeven 
+        die door haar man verlaten was. Zo is ze. Dialoog-regisseur Eimert Kruithof komt ons storen: hij moet een scène 
+        doornemen met Linda Schristian. Ze staat op zegt.  'He, het waj net zo gezellig.' Ergens in de studio hoor 
+        ik haar roepen: Ooh, die ellendige klok! Iederéén lacht. Producer Landré zegt: 't Iséen fyne vrouw en gevoel 
+        voor humor!"""
+service = ServiceKenLM()
+t = Train(service=service)
+t.predict(sents)

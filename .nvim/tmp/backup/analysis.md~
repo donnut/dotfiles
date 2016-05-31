@@ -1,0 +1,83 @@
+# Document structure 
+
+## pdf version
+
+Document consists of one or more pages
+Each page has an header area, main area and footer area
+The header area consists of the address, a document number, the company name and page number information.
+The footer area consists of the url of the document, and a data (of document generation?)
+
+The main area consists of a grid of zero or more images with three columns.
+
+Following the image grid, if any, is the address line
+
+Following the address line is a currency value
+
+Following the currency value is an "Listing ID:" and an id. On the right side of the page, on the
+same line are two symbols preceeded with numbers. The symbols represent a bedroom and a bathroom. The
+numbers the number of them. Instead of a single number, two number separated by a plus sign can appear.
+
+Vertical line
+Grid of key-value combinations. The keys have a bold typeface and are above the values. The values
+can be descriptive text, number or an area described by two reals separated by an 'X'. The key-value combis
+are positioned in a grid of three columns.
+
+There is a separated line showing the measurement units, metric of imperial.
+
+Keyword Description followed by a vertical line and one or more sentences, collected into one or more
+paragraphs.
+
+Keyword Details followed by a vertical line and a grid of key-value combinations.
+
+Keyword Building followed by a vertical line and a grid of key-value combinations.
+
+Keyword Rooms followed by a vertical line and a grid consisting of tree columns, each with an header.
+The first column is not filled each row, implying a repetition of the previous value. The second column
+is filled with words from a set (room types). The third column consists of value with a specific value
+pattern of the phrase "Measurements not available".
+
+Keyword Land followed by a vertical line and a grid of key-value combinations.
+
+Keywords Walk Score(R) followed by a vertical line and one key-value combination and one underlined number.
+
+A grid of contacts consisting of an optional image, a name (bold and underlined), optional address line,
+phone number preceeded by a phone icon and a fax number preceeded by the word "Fax:"
+
+Finally the area pattern is closed by two phrases stating "Data provided by: " followed by a linked name
+and a disclaimer text (one line)
+
+## Word version
+Bold-faced address line
+line with currency value
+list with Listing ID
+line with two solely number "10 10"
+A repeating pattern of key-value combinations (in some documents "\n" separated, in some with a ":")
+
+
+## Gestalt
+Patterns are directly recognised by the human eye. Pattern comprise of repeatability, releative positions
+
+## Vocabulary
+
+
+## Patterns
+
+Structural patterns on different levels:
+- document level
+- page level
+- header, main, footer area
+- grids, cells (within grids)
+
+Value patterns are:
+- currency
+- dimensions
+- telephone numbers
+- address line
+- zip codes
+- email address
+
+Structural patterns are determined by one or more of the following variabels
+- description
+- separation line
+- (repeating) subpattern(s)
+-

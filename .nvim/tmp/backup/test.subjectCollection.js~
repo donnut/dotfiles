@@ -1,0 +1,515 @@
+QUnit.module('SelectCollection');
+
+QUnit.test('make tree 1 element', function(assert) {
+    var collection = [{
+        type: 'subject',
+        it: 'p1',
+        parent: void 0,
+        children: [],
+        selected: 'minus'
+    }];
+
+    var tree = Expression.makeTree(collection);
+    assert.equal(tree.it, 'p1');
+    assert.deepEqual(tree.children, []);
+    assert.ok(true);
+});
+
+QUnit.test('make tree 1 parent - 2 children', function(assert) {
+    var collection = [{
+        type: 'value',
+        it: 'val1',
+        parent: 'p1'
+    }, {
+        type: 'value',
+        it: 'val2',
+        parent: 'p1'
+    }, {
+        type: 'subject',
+        it: 'p1',
+        parent: void 0,
+        children: ['val2', 'val1'],
+        selected: 'minus'
+    }];
+
+    var tree = Expression.makeTree(collection);
+    assert.equal(tree.it, 'p1');
+    assert.deepEqual( R.map(function(i) {return i.it;}, tree.children),['val2', 'val1']);
+    assert.ok(true);
+});
+
+// x - ( y * z )
+QUnit.test('make three-tier tree', function(assert) {
+    var collection = [{
+        type: 'value',
+        it: 'val3',
+        parent: 'tim1'
+    },{
+        type: 'subject',
+        it: 'tim1',
+        parent: 'p1',
+        children: ['val1', 'val3'],
+        selected: 'multiply'
+    }, {
+        type: 'value',
+        it: 'val2',
+        parent: 'p1'
+    }, {
+        type: 'subject',
+        it: 'p1',
+        parent: void 0,
+        children: ['val2', 'tim1'],
+        selected: 'minus'
+    },{
+        type: 'value',
+        it: 'val1',
+        parent: 'tim1'
+    }];
+
+    var tree = Expression.makeTree(collection);
+    assert.equal(tree.it, 'p1');
+    assert.deepEqual(R.map(function(i) {return i.it;}, tree.children),['val2', 'tim1']);
+    assert.deepEqual(R.map(function(i) {return i.it;}, tree.children[1].children),['val1', 'val3']);
+    assert.ok(true);
+});
+
+QUnit.test('minus', function(assert) {
+    var collection = [{
+        type: 'value',
+        it: 'val1',
+        parent: 'p1'
+    }, {
+        type: 'value',
+        it: 'val2',
+        parent: 'p1'
+    }, {
+        type: 'subject',
+        it: 'p1',
+        parent: void 0,
+        children: ['val2', 'val1'],
+        selected: 'minus'
+    }];
+
+    var linkOptions = {
+        drop: ['models.something']
+    }
+
+    var tree = Expression.makeTree(collection);
+    var result = Expression.makeExpression(tree, linkOptions);
+    assert.equal(result, 'function(val2,val1) {return (val2-val1);}');
+});
+
+QUnit.test('plus', function(assert) {
+    var collection = [{
+        type: 'value',
+        it: 'val1',
+        parent: 'p1'
+    }, {
+        type: 'value',
+        it: 'val2',
+        parent: 'p1'
+    }, {
+        type: 'subject',
+        it: 'p1',
+        parent: void 0,
+        children: ['val2', 'val1'],
+        selected: 'plus'
+    }];
+
+    var tree = Expression.makeTree(collection);
+    var result = Expression.makeExpression(tree);
+    assert.equal(result, 'function(val2,val1) {return (val2+val1);}');
+});
+
+QUnit.test('divide', function(assert) {
+    var collection = [{
+        type: 'value',
+        it: 'val1',
+        parent: 'p1'
+    }, {
+        type: 'value',
+        it: 'val2',
+        parent: 'p1'
+    }, {
+        type: 'subject',
+        it: 'p1',
+        parent: void 0,
+        children: ['val2', 'val1'],
+        selected: 'divide'
+    }];
+
+    var tree = Expression.makeTree(collection);
+    var result = Expression.makeExpression(tree);
+    assert.equal(result, 'function(val2,val1) {return (val2/val1);}');
+});
+
+// x - ( y * z )
+QUnit.test('make expression x - ( y * z )', function(assert) {
+    var collection = [{
+        type: 'value',
+        it: 'val3',
+        parent: 'tim1'
+    },{
+        type: 'subject',
+        it: 'tim1',
+        parent: 'p1',
+        children: ['val1', 'val3'],
+        selected: 'multiply'
+    }, {
+        type: 'value',
+        it: 'val2',
+        parent: 'p1'
+    }, {
+        type: 'subject',
+        it: 'p1',
+        parent: void 0,
+        children: ['val2', 'tim1'],
+        selected: 'minus'
+    },{
+        type: 'value',
+        it: 'val1',
+        parent: 'tim1'
+    }];
+
+    var tree = Expression.makeTree(collection);
+    var result = Expression.makeExpression(tree);
+    assert.equal(result, 'function(val2,val1,val3) {return (val2-(val1*val3));}');
+});
+
+QUnit.test('minus with drop variable and constant', function(assert) {
+    var collection = [{
+        type: 'value',
+        it: 'val1',
+        parent: 'p1',
+        selected: 'this[\'models.something\']'
+        // 'default': '4'
+    }, {
+        type: 'value',
+        it: 'val2',
+        parent: 'p1',
+        selected: '7'
+    }, {
+        type: 'subject',
+        it: 'p1',
+        parent: void 0,
+        children: ['val2', 'val1'],
+        selected: 'minus'
+    }];
+
+    var tree = Expression.makeTree(collection);
+    var result = Expression.makeExpression(tree);
+    assert.equal(result, "function() {return (7-this['models.something']);}");
+});
+
+QUnit.test('minus with drop variable and variable', function(assert) {
+    var collection = [{
+        type: 'value',
+        it: 'val1',
+        parent: 'p1',
+        selected: 'this[\'models.something\']'
+    }, {
+        type: 'value',
+        it: 'val2',
+        parent: 'p1'
+    }, {
+        type: 'subject',
+        it: 'p1',
+        parent: void 0,
+        children: ['val2', 'val1'],
+        selected: 'minus'
+    }];
+
+    var tree = Expression.makeTree(collection);
+    var result = Expression.makeExpression(tree);
+    assert.equal(result, "function(val2) {return (val2-this['models.something']);}");
+});
+
+QUnit.test('minus with drop variable and variable', function(assert) {
+    var collection = [{
+        type: 'value',
+        it: 'val1',
+        parent: 'p1',
+        selected: 'this[\'models.something\']'
+    }, {
+        type: 'value',
+        it: 'val2',
+        parent: 'p1'
+    }, {
+        type: 'subject',
+        it: 'p1',
+        parent: void 0,
+        children: ['val2', 'val1'],
+        selected: 'minus'
+    }];
+
+    var tree = Expression.makeTree(collection);
+    var result = Expression.makeExpression(tree);
+    assert.equal(result, "function(val2) {return (val2-this['models.something']);}");
+});
+
+QUnit.test('basic condition: eq', function(assert) {
+    var collection = [{
+        type: 'value',
+        it: 'val1',
+        parent: 'c1'
+    }, {
+        type: 'value',
+        it: 'val2',
+        parent: 'c1',
+        selected: '\'#ff431d\''
+    }, {
+        type: 'condition',
+        it: 'c1',
+        parent: void 0,
+        children: ['val1', 'val2'],
+        selected: 'eq'
+    }];
+
+    var tree = Expression.makeTree(collection);
+    var result = Expression.makeExpression(tree);
+    assert.equal(result, "function(val1) {return (val1 === '#ff431d');}");
+});
+
+QUnit.test('basic condition: lt', function(assert) {
+    var collection = [{
+        type: 'value',
+        it: 'val1',
+        parent: 'c1'
+    }, {
+        type: 'value',
+        it: 'val2',
+        parent: 'c1'
+    }, {
+        type: 'condition',
+        it: 'c1',
+        parent: void 0,
+        children: ['val1', 'val2'],
+        selected: 'lt'
+    }];
+
+    var tree = Expression.makeTree(collection);
+    var result = Expression.makeExpression(tree);
+    assert.equal(result, "function(val1,val2) {return (val1 < val2);}");
+});
+
+QUnit.test('complex condition', function(assert) {
+    var collection = [{
+        type: 'value',
+        it: 'val1',
+        parent: 'c1'
+    }, {
+        type: 'value',
+        it: 'val2',
+        parent: 'c1'
+    }, {
+        type: 'value',
+        it: 'val3',
+        parent: 'c1'
+    }, {
+        type: 'value',
+        it: 'val4',
+        parent: 'c1'
+    }, {
+        type: 'condition',
+        it: 'c1',
+        parent: 'c2',
+        children: ['val2', 'val4'],
+        selected: 'lt'
+    }, {
+        type: 'subject',
+        it: 'c2',
+        parent: 'c3',
+        children: ['val3', 'c1'],
+        selected: 'or'
+    }, {
+        type: 'subject',
+        it: 'c3',
+        parent: void 0,
+        children: ['val1', 'c2'],
+        selected: 'and'
+    }];
+
+    var tree = Expression.makeTree(collection);
+    var result = Expression.makeExpression(tree);
+    assert.equal(result, "function(val1,val3,val2,val4) {return (val1 && (val3 || (val2 < val4)));}");
+});
+
+QUnit.test('branch default', function(assert) {
+    var collection = [{
+        type: 'subject',
+        parent: void 0,
+        selected: 'branch',
+        it: 'b1',
+        children: ['val1']
+    },{
+        type: 'value',
+        parent: 'b1',
+        children: [],
+        it: 'val1'
+    }];
+    var tree = Expression.makeTree(collection);
+    var result = Expression.makeExpression(tree);
+    assert.equal(result, "function(val1) {return val1;}");
+});
+
+QUnit.test('branch with one return', function(assert) {
+    var collection = [{
+        type: 'value',
+        it: 'val1',
+        parent: 'c1'
+    }, {
+        type: 'value',
+        it: 'val2',
+        parent: 'c1'
+    }, {
+        type: 'subject',
+        it: 'c1',
+        parent: void 0,
+        children: ['val1', 'val2'],
+        selected: 'branch'
+    }];
+
+    var tree = Expression.makeTree(collection);
+    var result = Expression.makeExpression(tree);
+    assert.equal(result, "function(val1,val2) {return Utils.branch(val1, val2);}");
+});
+
+QUnit.test('branch with two returns', function(assert) {
+    var collection = [{
+        type: 'value',
+        it: 'val1',
+        parent: 'c1'
+    }, {
+        type: 'value',
+        it: 'val2',
+        parent: 'c1'
+    }, {
+        type: 'value',
+        it: 'val3',
+        parent: 'c1'
+    }, {
+        type: 'subject',
+        it: 'c1',
+        parent: void 0,
+        children: ['val1', 'val2', 'val3'],
+        selected: 'branch'
+    }];
+
+    var tree = Expression.makeTree(collection);
+    var result = Expression.makeExpression(tree);
+    assert.equal(result, "function(val1,val2,val3) {return Utils.branch(val1, val2, val3);}");
+});
+
+QUnit.test('branch condition - if else if else', function(assert) {
+    var collection = [{
+        type: 'value',
+        it: 'val1',
+        parent: 'c1'
+    }, {
+        type: 'value',
+        it: 'val2',
+        parent: 'c1'
+    }, {
+        type: 'subject',
+        it: 'c1',
+        parent: void 0,
+        children: ['val1', 'val2', 'c2'],
+        selected: 'branch'
+    }, {
+        type: 'subject',
+        it: 'c2',
+        parent: 'c1',
+        children: ['val3', 'val4', 'val5'],
+        selected: 'branch'
+    }, {
+        type: 'value',
+        it: 'val3',
+        parent: 'c2'
+    }, {
+        type: 'value',
+        it: 'val4',
+        parent: 'c2'
+    }, {
+        type: 'value',
+        it: 'val5',
+        parent: 'c2'
+    }];
+
+    var tree = Expression.makeTree(collection);
+    var result = Expression.makeExpression(tree);
+    assert.equal(result, "function(val1,val2,val3,val4,val5) {return Utils.branch(val1, val2, Utils.branch(val3, val4, val5));}");
+});
+
+QUnit.test('branch condition - if else if else minus', function(assert) {
+    var collection = [{
+        type: 'subject',
+        it: 'log1',
+        parent: 'c1',
+        selected: 'not',
+        children: ['val1']
+    }, {
+        type: 'value',
+        it: 'val1',
+        parent: 'log1'
+    }, {
+        type: 'value',
+        it: 'val2',
+        parent: 'c1'
+    }, {
+        type: 'subject',
+        it: 'c1',
+        parent: void 0,
+        children: ['log1', 'val2', 'c2'],
+        selected: 'branch'
+    }, {
+        type: 'subject',
+        it: 'c2',
+        parent: 'c1',
+        children: ['val3', 'val4', 'val5'],
+        selected: 'branch'
+    }, {
+        type: 'value',
+        it: 'val3',
+        parent: 'c2'
+    }, {
+        type: 'value',
+        it: 'val4',
+        parent: 'c2'
+    }, {
+        type: 'subject',
+        it: 'val5',
+        parent: 'c2',
+        selected: 'divide',
+        children: ['val2', 'val4']
+    }];
+
+    var tree = Expression.makeTree(collection);
+    var result = Expression.makeExpression(tree);
+    assert.equal(result, "function(val1,val2,val3,val4) {return Utils.branch((!val1), val2, Utils.branch(val3, val4, (val2/val4)));}");
+});
+
+QUnit.test('sort', function(assert) {
+    var collection = [{
+        type: 'value',
+        it: 'val1',
+        parent: 'c1'
+    }, {
+        type: 'value',
+        it: 'val2',
+        parent: 'c1'
+    }, {
+        type: 'value',
+        it: 'val3',
+        parent: 'c1'
+    }, {
+        type: 'subject',
+        it: 'c1',
+        parent: void 0,
+        children: ['val1', 'val2', 'val3'],
+        selected: 'branch'
+    }];
+
+    var tree = Expression.makeTree(collection);
+    var result = Expression.makeExpression(tree);
+    assert.equal(result, "function(val1,val2,val3) {return Utils.branch(val1, val2, val3);}");
+});

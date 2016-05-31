@@ -1,0 +1,155 @@
+module Pip.SetReg {
+    import G = Globals;
+    import ACT = G.Action;
+    import MK = G.MessageKey;
+
+    /**
+     * pipProps.setReg
+     *
+     * Internal Pip function that sets the private value register
+     */
+    export function basic(register: G.IRegister<string>, action: string, value: string): void {
+        register.value = value;
+    }
+
+    /**
+     * Internal Pip function that sets the private value register
+     */
+    export function item<T>(register: G.IRegister<T>, action: string, value: T, itemId?: string): void {
+        if (itemId) {
+            if ((action === ACT[ACT.remove]) || (action === ACT[ACT.delete])) {
+                if (register.value[itemId]) {
+                    // remove itemId from register
+                    delete register.value[itemId];
+                }
+            } else {
+                // update register value of itemId
+                register.value[itemId] = value;
+            }
+        } else {
+            register.value = value;
+        }
+    }
+
+    /**
+     * Internal Pip function that sets the private value register
+     * Function mutates the register
+     */
+    export function array(register: G.IRegister<string[]>, action: string, value: boolean|number, itemId?: string): void  {
+        if (itemId) {
+            let idx: number;
+            //TODO kan je hier niet alemen functies voor gebruiken???
+            function  findIndex() {
+                let temp = itemId.split(G.MERGETOKEN),
+                id = temp[0];
+                return R.indexOf(id, R.map((val) => val.split(G.MERGETOKEN)[0], register.value));
+            }
+
+            switch (action) {
+                case ACT[ACT.create]:
+                    if (typeof value === 'number') {//value[G.POS]
+                        Utils.insert(value, itemId, register.value);
+                    } else {
+                        if (value !== false) register.value.push(itemId);
+                    }
+                    // if (typeof value === 'boolean') {
+                    //     if (value !== false) register.value.push(itemId);
+                    // } else {//value = (for list) desiredIndex!
+                    //     Utils.insert(value, itemId, register.value);
+                    // }
+                    break;
+                case ACT[ACT.update]:
+                    if (typeof value === 'number') {//value[G.POS]
+                        idx = findIndex();
+                        //idx !== -1 &&  kan wel bij complexe sort en filter!: nee dan is het create geworden
+                        //throw new Error('itemId should be in current register')
+                        if (value !== idx) {
+                            //if(value !== idx) //aan het einde kan het zomaar niet meer nodig zijn?
+                            //en idx is ref naar het actuele aangepaste register, en daarom kan dit!!
+                            //en sprake van dif dus oude moet eerst verwijderd
+                            //werkt alleen als input in juiste volgorde (nl gesorteerd op desiredIndex)? gesorteerd binnenkomt
+                            //maar dat is zo dankzij correctList
+                            //en als idx de idx is actue al door vorige message aangepaste register
+                            Utils.remove(idx, 1, register.value);
+                            Utils.insert(value, itemId, register.value);
+                        }
+                    } else {
+                        if (value === false) {
+                            idx = findIndex();
+                            if(idx !== -1) {
+                                // remove existing id from register
+                                Utils.remove(idx, 1, register.value);
+                            }
+                        } else {//value === true)
+                            register.value.push(itemId);
+                        }
+                    }
+                    // if (typeof value === 'boolean') {
+                    //     if (value === false) {
+                    //         idx = findIndex();
+                    //         if(idx !== -1) {
+                    //             // remove existing id from register
+                    //             Utils.remove(idx, 1, register.value);
+                    //         }
+                    //     } else {//value === true)
+                    //         register.value.push(itemId);
+                    //     }
+                    // } else { //value = (for list) desiredIndex!
+                    //     idx = findIndex();
+                    //     //idx !== -1 &&  kan wel bij complexe sort en filter!: nee dan is het create geworden
+                    //     //throw new Error('itemId should be in current register')
+                    //     if (value !== idx) {
+                    //         //if(value !== idx) //aan het einde kan het zomaar niet meer nodig zijn?
+                    //         //en idx is ref naar het actuele aangepaste register, en daarom kan dit!!
+                    //         //en sprake van dif dus oude moet eerst verwijderd
+                    //         //werkt alleen als input in juiste volgorde (nl gesorteerd op desiredIndex)? gesorteerd binnenkomt
+                    //         //maar dat is zo dankzij correctList
+                    //         //en als idx de idx is actue al door vorige message aangepaste register
+                    //         Utils.remove(idx, 1, register.value);
+                    //         Utils.insert(value, itemId, register.value);
+                    //     }
+                    // }
+                    break;
+                case ACT[ACT.delete]:
+                    idx = findIndex();
+                    if(idx !== -1) {
+                        Utils.remove(idx, 1, register.value);
+                    }
+                    break;
+                default:
+                    break;
+            }
+        } else {
+            if (action === ACT[ACT.delete]) {
+                register.value = [];
+            }
+        }
+    }
+
+    export function navTree(register: G.IRegister<string>, action: string, value: any, itemId: string): void {
+        switch(action){
+            case ACT[ACT.remove]:
+                if (register.value[itemId]) {
+                    // remove itemId from register
+                    delete register.value[itemId];
+                }
+                break;
+            case ACT[ACT.create]:
+                if (!(register.value[itemId])) {
+                    register.value[itemId] = {children:[]};
+                }
+                register.value[itemId].children.push(value);
+                break;
+            case ACT[ACT.update]:
+                if(register.value[itemId]){
+                    let idx: number = R.indexOf(value , register.value[itemId].children);
+                    if(idx !== -1) {
+                        Utils.remove(idx, 1, register.value[itemId].children);
+                    }
+                }
+                break;
+            default://ACT[ACT.insert]
+                register.value[itemId] = value;
+        }
+    }
+}

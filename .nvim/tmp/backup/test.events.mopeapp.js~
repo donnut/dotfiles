@@ -1,0 +1,881 @@
+QUnit.module('Event and EventItem Pips', {
+    beforeEach: function() {
+        DEBUG = true;
+        Globals.idCounter = 0;
+    }
+});
+
+QUnit.test('eventPip, creates hidden Element', function(assert) {
+    var domStr = "<div id='main'></div>";
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        selector: '#main',
+        type: 'event',
+        events: 'click',
+        enable: true
+    }];
+    var app = new LinkingPips.App(domStr, [], pips, []);
+
+    var pipStr = app.getAll();
+    assert.deepEqual(R.keys(pipStr), ['#main', 'router', 'navTree']);
+    assert.deepEqual(R.keys(pipStr['#main']), ['__pip', 'events']);
+    assert.deepEqual(R.keys(pipStr['#main']['events']), ['click']);
+
+    assert.equal(app.get('#main.events.click').get(), true, 'event enabled through options');
+});
+
+// QUnit.test('eventPip on sub view, with no delegation', function(assert) {
+//     var domStr = "<div id='main'></div>";
+//     $('#qunit-fixture').append(domStr);
+//
+//     var nodes = [{
+//         type: 'sub',
+//         selector: '#main',
+//         tpl: "<div></div>",
+//         empty: '<p id="empty">not filled</p>'
+//     }];
+//
+//     var pips = [{
+//         type: 'event',
+//         selector: '#empty',
+//         events: 'click',
+//         enable: true,
+//         delegation: false
+//     }];
+//     var app = new LinkingPips.App(domStr, nodes, pips, []);
+//
+//     var pipStr = app.getAll();
+//     assert.deepEqual(R.keys(pipStr), ['#main', '#main>li', '#empty', 'router', 'navTree']);
+//     assert.deepEqual(R.keys(pipStr['#main']), ['__pip', 'sub']);
+//     assert.deepEqual(R.keys(pipStr['#empty']), ['__pip', 'events']);
+//     assert.deepEqual(R.keys(pipStr['#empty']['events']), ['click']);
+//
+//     assert.equal(app.get('#empty.events.click').get(), true, 'event enabled');
+// });
+//
+// QUnit.test('eventPip on sub view, with delegation', function(assert) {
+//     var domStr = "<div id='main'></div>";
+//     $('#qunit-fixture').append(domStr);
+//
+//     var nodes = [{
+//         type: 'sub',
+//         selector: '#main',
+//         tpl: "<li></li>",
+//         empty: '<p id="empty">not filled</p>'
+//     }];
+//
+//     var pips = [{
+//         type: 'event',
+//         selector: '#empty',
+//         events: 'click',
+//         enable: true,
+//         delegation: true
+//     }];
+//     var app = new LinkingPips.App(domStr, nodes, pips, []);
+//
+//     var pipStr = app.getAll();
+//     assert.deepEqual(R.keys(pipStr), ['#main', '#main>li', '#empty', 'router', 'navTree']);
+//     assert.deepEqual(R.keys(pipStr['#main']), ['__pip', 'sub']);
+//     assert.deepEqual(R.keys(pipStr['#empty']), ['__pip', 'events']);
+//     assert.deepEqual(R.keys(pipStr['#empty']['events']), ['click']);
+//
+//     assert.equal(app.get('#empty.events.click').get(), true, 'event enabled');
+//     //  note that the empty string might not be working correctly. Something with insert?
+// });
+
+QUnit.test('eventItemPip on static list view, with delegation', function(assert) {
+    var domStr = "<ul id='main'>" +
+        "<li><a href='i1'></a><span></span></li>" +
+        "<li><a href='i2'></a><span></span></li>" +
+        "<li><a href='i3'></a><span></span></li>" +
+        "<li><a href='i4'></a><span></span></li>" +
+    "</ul>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        selector: "#main>li",
+        type: "listItem",
+        idType: "href"
+    }];
+
+    var pips = [{
+        type: 'eventItem',
+        selector: '#main>li',
+        events: 'click',
+        enable: true,
+        delegation: true
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, []);
+
+    var pipStr = app.getAll();
+    assert.deepEqual(R.keys(pipStr), ['#main', '#main>li', '#main>li>a', '#main>li>span', 'router', 'navTree']);
+    assert.deepEqual(R.keys(pipStr['#main']), ['__pip']);
+    assert.deepEqual(R.keys(pipStr['#main>li']), ['__pip', 'events']);
+
+    assert.equal(app.get('#main>li.events.click').get(), true, 'event enabled');
+});
+
+QUnit.test('eventItemPip on static list view + listElement, with delegation', function(assert) {
+    var domStr = "<ul id='main'>" +
+        "<li><a href='i1'></a><span></span></li>" +
+        "<li><a href='i2'></a><span></span></li>" +
+        "<li><a href='i3'></a><span></span></li>" +
+        "<li><a href='i4'></a><span></span></li>" +
+    "</ul>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        selector: "#main>li",
+        type: "listItem",
+        idType: "href"
+    }];
+
+    var pips = [{
+        type: 'eventItem',
+        selector: '#main>li>span',
+        events: 'click',
+        enable: true,
+        delegation: true
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, []);
+
+    var pipStr = app.getAll();
+    assert.deepEqual(R.keys(pipStr), ['#main', '#main>li', '#main>li>a', '#main>li>span', 'router', 'navTree']);
+    assert.deepEqual(R.keys(pipStr['#main']), ['__pip']);
+    assert.deepEqual(R.keys(pipStr['#main>li']), ['__pip']);
+    assert.deepEqual(R.keys(pipStr['#main>li>span']), ['__pip', 'events']);
+    assert.deepEqual(R.keys(pipStr['#main>li>span']['events']), ['click']);
+
+    assert.equal(app.get('#main>li>span.events.click').get(), true, 'event enabled');
+});
+
+QUnit.test('eventItemPip on static list view, with no-delegation', function(assert) {
+    var domStr = "<ul id='main'>" +
+        "<li><a href='i1'></a><span></span></li>" +
+        "<li><a href='i2'></a><span></span></li>" +
+        "<li><a href='i3'></a><span></span></li>" +
+        "<li><a href='i4'></a><span></span></li>" +
+    "</ul>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        selector: "#main>li",
+        type: "listItem",
+        idType: "href"
+    }];
+
+    var pips = [{
+        type: 'eventItem',
+        selector: '#main>li',
+        events: 'click',
+        enable: true,
+        delegation: false
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, []);
+
+    var pipStr = app.getAll();
+    assert.deepEqual(R.keys(pipStr), ['#main', '#main>li', '#main>li>a', '#main>li>span', 'router', 'navTree']);
+    assert.deepEqual(app.get('#main>li.events.click').get(), ['i1','i2','i3','i4'], 'event enabled');
+});
+
+QUnit.test('eventItemPip on static list view + listElement, with no-delegation', function(assert) {
+    var domStr = "<ul id='main'>" +
+        "<li><a href='i1'></a><span></span></li>" +
+        "<li><a href='i2'></a><span></span></li>" +
+        "<li><a href='i3'></a><span></span></li>" +
+        "<li><a href='i4'></a><span></span></li>" +
+    "</ul>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        selector: "#main>li",
+        type: "listItem",
+        idType: "href"
+    }];
+
+    var pips = [{
+        type: 'eventItem',
+        selector: '#main>li>span',
+        events: 'click',
+        enable: true,
+        delegation: false
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, []);
+
+    var pipStr = app.getAll();
+    assert.deepEqual(app.get('#main>li>span.events.click').get(), ['i1','i2','i3','i4'], 'event enabled');
+});
+
+QUnit.test('eventItemPip on dynamic list view, with delegation', function(assert) {
+    var domStr = "<ul id='main'></ul>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'list',
+        selector: '#main',
+        idKey: 'strip',
+        it: 'li',
+        tpl: "<li><span></span></li>",
+        empty: 'no model data yet'
+    }];
+
+    var pips = [{
+        type: 'eventItem',
+        selector: '#main>li',
+        events: 'click',
+        enable: true,
+        delegation: true
+    },{
+        type: 'collection',
+        name: 'colorful',
+        model: [{
+            strip: 'one'
+        }, {
+            strip: 'two'
+        }, {
+            strip: 'three'
+        }, {
+            strip: 'four'
+        }],
+        index: 'id',
+        server: false,
+        silent: false
+    }];
+
+    var links = [{
+        pub: 'models.colorful',
+        sub: '#main.list',
+        options: {
+            value: ['map', function(i) {
+                return i.value;
+            }],
+            action: ['map', function(i) {
+                return i.action;
+            }],
+            it: ['map', function(i) {
+                return i.it;
+            }]
+        }
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+
+    var pipStr = app.getAll();
+    assert.deepEqual(R.keys(pipStr), ['#main', '#main>li',  '#main>li>span', 'models', 'router', 'navTree']);
+    assert.equal(app.get('#main>li.events.click').get(), true, 'event enabled');
+});
+
+QUnit.test('eventItemPip on dynamic list view + listElement, with delegation', function(assert) {
+    var domStr = "<ul id='main'></ul>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'list',
+        selector: '#main',
+        idKey: 'strip',
+        it: 'li',
+        tpl: "<li><span></span></li>",
+        empty: 'no model data yet'
+    }];
+
+    var pips = [{
+        type: 'eventItem',
+        selector: '#main>li>span',
+        events: 'click',
+        enable: true,
+        delegation: true
+    },{
+        type: 'collection',
+        name: 'colorful',
+        model: [{
+            strip: 'one'
+        }, {
+            strip: 'two'
+        }, {
+            strip: 'three'
+        }, {
+            strip: 'four'
+        }],
+        index: 'id',
+        server: false,
+        silent: false
+    }];
+
+    var links = [{
+        pub: 'models.colorful',
+        sub: '#main.list',
+        options: {
+            value: ['map', function(i) {
+                return i.value;
+            }],
+            action: ['map', function(i) {
+                return i.action;
+            }],
+            it: ['map', function(i) {
+                return i.it;
+            }]
+        }
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+
+    var pipStr = app.getAll();
+    assert.deepEqual(R.keys(pipStr), ['#main', '#main>li', '#main>li>span', 'models', 'router', 'navTree']);
+    assert.equal(app.get('#main>li>span.events.click').get(), true, 'event enabled');
+});
+
+QUnit.test('eventItemPip on dynamic list view + listElement, with no-delegation', function(assert) {
+    var domStr = "<ul id='main'></ul>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'list',
+        selector: '#main',
+        idKey: 'strip',
+        it: 'li',
+        tpl: "<li><span></span></li>",
+        empty: 'no model data yet'
+    }];
+
+    var pips = [{
+        type: 'eventItem',
+        selector: '#main>li>span',
+        events: 'click',
+        enable: true,
+        delegation: false
+    },{
+        type: 'collection',
+        name: 'colorful',
+        model: [{
+            strip: 'one'
+        }, {
+            strip: 'two'
+        }, {
+            strip: 'three'
+        }, {
+            strip: 'four'
+        }],
+        index: 'id',
+        server: false,
+        silent: false
+    }];
+
+    var links = [{
+        pub: 'models.colorful',
+        sub: '#main.list',
+        options: {
+            value: ['map', function(i) {
+                return i.value;
+            }],
+            action: ['map', function(i) {
+                return i.action;
+            }],
+            it: ['map', function(i) {
+                return i.it;
+            }]
+        }
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+
+    var pipStr = app.getAll();
+    assert.deepEqual(R.keys(pipStr), ['#main', '#main>li', '#main>li>span', 'models', 'router', 'navTree']);
+    assert.deepEqualSplitKeys(app.get('#main>li>span.events.click').get(),
+        ['1%%one', '2%%two', '3%%three', '4%%four'], 'event enabled');
+});
+
+QUnit.test('eventItemPip on dynamic list view, with no-delegation, deleting collection', function(assert) {
+    var domStr = "<ul id='main'></ul>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'list',
+        selector: '#main',
+        idKey: 'strip',
+        tpl: "<li><span></span></li>",
+        empty: '<span>no model data yet</span>'
+    }];
+
+    var pips = [{
+        type: 'eventItem',
+        selector: '#main>li',
+        events: 'click',
+        enable: true,
+        delegation: false
+    },{
+        type: 'collection',
+        name: 'colorful',
+        model: [{
+            strip: 'one'
+        }, {
+            strip: 'two'
+        }, {
+            strip: 'three'
+        }, {
+            strip: 'four'
+        }],
+        index: 'id',
+        server: false,
+        silent: false
+    }];
+
+    var links = [{
+        pub: 'models.colorful',
+        sub: '#main.list',
+        options: {
+            value: ['map', function(i) {
+                return i.value;
+            }],
+            action: ['map', function(i) {
+                return i.action;
+            }],
+            it: ['map', function(i) {
+                return i.it;
+            }]
+        }
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+
+    app.get('models.colorful').react({action: 'delete'});
+    assert.deepEqual(app.get('models.colorful').get(), [], 'empty collection');
+    assert.deepEqual(app.get('#main.list').get(), [], 'empty list');
+    assert.deepEqual(app.get('#main>li').get(), {}, 'empty listItems');
+    assert.deepEqual(app.get('#main>li.events.click').get(), [], 'empty eventItems');
+    assert.equal($('#main>span').html(), 'no model data yet', 'empty DOM');
+
+    app.get('models.colorful').react([{action: 'create', value: {strip: 'nine'}}]);
+    var id = R.last(app.get('models.colorful').get()).__it;
+    assert.deepEqualSplitKeys(app.get('#main.list').get(), ['5%%nine'], 'new list');
+    assert.ok(app.get('#main>li').get(id+'%%nine').equals(DOMIO.create('#main>li')), 'new listItems');
+    assert.deepEqualSplitKeys(app.get('#main>li.events.click').get(), ['5%%nine'], 'new eventItem');
+    assert.equal($('#main span').length, 1, 'new DOM element');
+});
+
+QUnit.test('eventItemPip on dynamic list view, with delegation, deleting collection', function(assert) {
+    var domStr = "<ul id='main'></ul>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'list',
+        selector: '#main',
+        idKey: 'strip',
+        tpl: "<li><span></span></li>",
+        empty: '<h5>no model data yet</h5>'
+    }];
+
+    var pips = [{
+        type: 'eventItem',
+        selector: '#main>li',
+        events: 'click',
+        enable: true,
+        delegation: true
+    },{
+        type: 'collection',
+        name: 'colorful',
+        model: [{
+            strip: 'one'
+        }, {
+            strip: 'two'
+        }, {
+            strip: 'three'
+        }, {
+            strip: 'four'
+        }],
+        index: 'id',
+        server: false,
+        silent: false
+    }];
+
+    var links = [{
+        pub: 'models.colorful',
+        sub: '#main.list',
+        options: {
+            value: ['map', function(i) {
+                return i.value;
+            }],
+            action: ['map', function(i) {
+                return i.action;
+            }],
+            it: ['map', function(i) {
+                return i.it;
+            }]
+        }
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+
+    app.get('models.colorful').react({action: 'delete'});
+    assert.deepEqual(app.get('models.colorful').get(), [], 'empty collection');
+    assert.deepEqual(app.get('#main.list').get(), [], 'empty list');
+    assert.deepEqual(app.get('#main>li').get(), {}, 'empty listItems');
+    assert.deepEqual(app.get('#main>li.events.click').get(), true, 'unchanged register');
+    assert.equal($('#main h5').html(), 'no model data yet', 'empty-string');
+
+    app.get('models.colorful').react([{action: 'create', value: {strip: 'nine'}}]);
+    var id = R.last(app.get('models.colorful').get()).__it;
+    assert.deepEqualSplitKeys(app.get('#main.list').get(), ['5%%nine'], 'new list');
+    assert.ok(app.get('#main>li').get(id+'%%nine').equals(DOMIO.create('#main>li')), 'new listItems');
+    assert.deepEqual(app.get('#main>li.events.click').get(), true, 'unchanged register');
+});
+
+QUnit.test('eventPip, event disabled through options', function(assert) {
+    var domStr = "<div id='main'></div>";
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        selector: '#main',
+        type: 'event',
+        events: 'click',
+        enable: false
+    }];
+    var app = new LinkingPips.App(domStr,[], pips,[]);
+
+    var pipStr = app.getAll();
+    assert.equal(app.get('#main.events.click').get(), false, 'event disabled through options');
+});
+
+QUnit.test('eventPip, model is disabling event', function(assert) {
+    var domStr = "<div id='main'></div>";
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        selector: '#main',
+        type: 'event',
+        events: 'click',
+        enable: true
+    },{
+        type: 'model',
+        name: 'control',
+        model: {enable: false},
+        server: false
+    }];
+
+    var links = [{
+        pub: 'models.control',
+        sub: '#main.events.click',
+        value: function(l) {
+            return l.value.enable;
+        },
+        action: 'update'
+    }];
+    var app = new LinkingPips.App(domStr, [], pips, links);
+
+    var pipStr = app.getAll();
+    assert.equal(app.get('#main.events.click').get(), false);
+});
+
+QUnit.test('eventPip, model is enabling event, that changes state through binding', function(assert) {
+    var domStr = "<div id='main'></div>";
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        selector: '#main',
+        type: 'event',
+        events: 'click',
+        enable: true
+    },{
+        type: 'model',
+        name: 'control',
+        model: {enable: true},
+        server: false
+    },{
+        selector: '#main',
+        defaultState :'isHidden',
+        type:'state',
+        states:[{
+            name: 'isHidden',
+            attr: 'display',
+            value: 'none'
+        },
+        {
+            name: 'isShown',
+            attr: 'display',
+            value: ''
+        }]
+    }];
+
+    var links = [{
+        pub: 'models.control',
+        sub: '#main.events.click',
+        value: function(l) {
+            return l.value.enable;
+        },
+        action: 'update'
+    },{
+        pub: '#main.events.click',
+        sub: '#main.states.isHidden',
+        value: 'isShown',
+        action: 'update',
+        binding: true
+    }];
+    var app = new LinkingPips.App(domStr, [], pips, links);
+
+    var pipStr = app.getAll();
+    assert.equal(app.get('#main.events.click').get(), true);
+
+    assert.equal($('#main').css('display'), 'none');
+    $('#main').trigger('click');
+    assert.equal($('#main').css('display'), 'block');
+});
+
+QUnit.test('two events sharing the same DOM element', function(assert) {
+    var domStr = "<div id='main'></div>";
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        selector: '#main',
+        type: 'event',
+        events: 'click',
+        enable: true
+    },{
+        selector: '#main',
+        type: 'event',
+        events: 'click touch',
+        enable: false
+    }];
+
+    var links = [{
+        pub: '#main.events.click',
+        sub: '#main.events.clickTouch',
+        binding: true,
+        value: function(l) {
+            return true;
+        },
+        action: 'update'
+    }];
+    var app = new LinkingPips.App(domStr, [], pips, links);
+
+    var pipStr = app.getAll();
+    assert.equal(app.get('#main.events.click').get(), true);
+    assert.equal(app.get('#main.events.clickTouch').get(), false);
+
+    $('#main').trigger('click');
+    assert.equal(app.get('#main.events.clickTouch').get(), true);
+});
+
+
+QUnit.test('eventItems disabled', function(assert) {
+    var domStr = "<ul id='main'>" +
+        "<li><a href='i1'></a><span></span></li>" +
+        "<li><a href='i2'></a><span></span></li>" +
+        "<li><a href='i3'></a><span></span></li>" +
+        "<li><a href='i4'></a><span></span></li>" +
+    "</ul>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        selector: "#main>li",
+        type: "listItem",
+        idType: "href"
+    }];
+
+    var pips = [{
+        type: 'eventItem',
+        selector: '#main>li',
+        events: 'click',
+        enable: false,
+        delegation: false
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, []);
+
+    assert.deepEqual(app.get('#main>li.events.click').get(), [], 'event disabled');
+});
+
+QUnit.test('two eventItems sharing static list items, without delegation', function(assert) {
+    var domStr = "<ul id='main'>" +
+        "<li><a href='i1'></a><span></span></li>" +
+        "<li><a href='i2'></a><span></span></li>" +
+        "<li><a href='i3'></a><span></span></li>" +
+        "<li><a href='i4'></a><span></span></li>" +
+    "</ul>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        selector: "#main>li",
+        type: "listItem",
+        idType: "href"
+    }];
+
+    var pips = [{
+        type: 'eventItem',
+        selector: '#main>li',
+        events: 'click',
+        enable: true,
+        delegation: false
+    },{
+        type: 'eventItem',
+        selector: '#main>li',
+        events: 'click touch',
+        enable: false,
+        delegation: false
+    }];
+
+    var links = [{
+        pub: '#main>li.events.click',
+        sub: '#main>li.events.clickTouch',
+        binding: true,
+        value: function(l) {
+            return true;
+        },
+        action: 'update'
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+
+    assert.deepEqual(app.get('#main>li.events.click').get(), ['i1', 'i2', 'i3', 'i4'], 'event enabled');
+    assert.deepEqual(app.get('#main>li.events.clickTouch').get(), [], 'event disabled');
+
+    $('#main>li').eq(2).trigger('click');
+    assert.deepEqual(app.get('#main>li.events.clickTouch').get(), ['i3'], 'event item 3 enabled');
+});
+
+QUnit.test('two eventItems sharing static list items, with delegation', function(assert) {
+    expect(4);
+    var domStr = "<ul id='main'>" +
+        "<li><a href='i1'></a><span></span></li>" +
+        "<li><a href='i2'></a><span></span></li>" +
+    "</ul>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        selector: "#main>li",
+        type: "listItem",
+        idType: "href"
+    }];
+
+    var pips = [{
+        type: 'eventItem',
+        selector: '#main>li',
+        events: 'click',
+        enable: true,
+        delegation: true
+    },{
+        type: 'stateItem',
+        selector: '#main>li>span',
+        states:[{
+            name: 'ok',
+            attr: 'class',
+            value: 'green'
+        },
+        {
+            name: 'fail',
+            attr: 'class',
+            value: 'red'
+        }]
+    }];
+
+    var links = [{
+        pub: '#main>li.events.click',
+        sub: '#main>li>span.states.ok',
+        binding: true,
+        value: function(l) {
+            return 'fail';
+        },
+        action: 'update',
+        it: function(l) {
+            assert.equal(l.it, 'i2');
+            return l.it;
+        }
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+
+    assert.deepEqual(app.get('#main>li.events.click').get(), true, 'event enabled');
+    assert.deepEqual(app.get('#main>li>span.states.ok').get(), {i1: 'ok', i2: 'ok'}, 'initial states');
+
+    $('#main a[href="i2"]').parent().find('span').click();
+    assert.deepEqual(app.get('#main>li>span.states.ok').get(), {i1: 'ok', i2: 'fail'}, 'updated states');
+});
+
+QUnit.test('two eventItems sharing dynamic list items, with delegation', function(assert) {
+    expect(7);
+    var domStr = "<ul id='main'></ul>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'list',
+        selector: '#main',
+        idKey: 'strip',
+        tpl: "<li><span></span><input></input></li>",
+        empty: '<span>no model data yet</span>'
+    }];
+
+    var pips = [{
+        type: 'eventItem',
+        selector: '#main>li>input',
+        events: 'keydown',
+        enable: true,
+        delegation: false
+    },{
+        type: 'eventItem',
+        selector: '#main>li>input',
+        events: 'keyup',
+        enable: true,
+        delegation: false
+    },{
+        type: 'collection',
+        name: 'colorful',
+        model: [{
+            strip: 'one'
+        }, {
+            strip: 'two'
+        }, {
+            strip: 'three'
+        }, {
+            strip: 'four'
+        }],
+        index: 'id',
+        server: false,
+        silent: false
+    }];
+
+    var links = [{
+        pub: 'models.colorful',
+        sub: '#main.list'
+    },{
+        pub: '#main>li>input.events.keydown',
+        sub: 'models.colorful',
+        binding: true,
+        pre: function(l) {
+            assert.ok(/.*%%three/.test(l[0].it));
+            return {
+                action: 'update',
+                value: 'morning',
+                it: l[0].it
+            };
+        }
+    },{
+        pub: '#main>li>input.events.keyup',
+        sub: 'models.colorful',
+        binding: true,
+        pre: function(l) {
+            assert.ok(/.*%%four/.test(l[0].it));
+            //assert.deepEqual(l[0].it, '4%%four');
+            return {
+                action: 'update',
+                value: 'afternoon',
+                it: l[0].it
+            };
+        }
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+
+    var id = R.head(app.get('models.colorful').get()).__it;
+    assert.deepEqualSplitKeys(app.get('#main.list').get(0), '1%%one', 'empty list');
+    assert.deepEqualSplitKeys(app.get('#main>li>input.events.keydown').get(0), '1%%one', 'eventItems');
+    assert.deepEqualSplitKeys(app.get('#main>li>input.events.keyup').get(0), '1%%one', 'eventItems');
+    assert.equal($('#main>li>span').eq(0).html(), '', 'empty DOM');
+
+    $('#main>li>input').eq(2).trigger('keydown');
+    $('#main>li>input').eq(3).trigger('keyup');
+
+
+});

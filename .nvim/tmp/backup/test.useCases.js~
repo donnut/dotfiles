@@ -1,0 +1,81 @@
+QUnit.module('Usecases', {
+    beforeEach: function() {
+        DEBUG = true;
+        Globals.idCounter = 0;
+        Globals.pips = Store.Storage(); // reset 'global' space
+    }
+});
+
+QUnit.test('eventPip on keydown adds input to collection', function(assert) {
+    $('#qunit-fixture').append('<input id="new-todo" placeholder="What needs to be done?" >');
+    function trim(str) {
+        return str.replace(/^\s+|\s+$/g, '');
+    }
+
+    function getVal($elem) {
+        return trim($elem.val());
+    }
+    var pips = [{
+        selector: '#new-todo',
+        events: 'keydown',
+        type: 'event',
+        //preventDefault: false,
+        //delegation: false,
+        bindFn: function(evtObj) {
+            return evtObj;
+        }
+    }, {
+        name: 'todoList',
+        type: 'collection',
+        model: [{
+            completed: true,
+            title: 'Create a TodoMVC template'
+        }, {
+            completed: false,
+            title: 'Rule the web'
+        }],
+        // keys: ['completed', 'title'],
+        index: 'id',
+        server: false,
+        silent: false
+    }];
+
+    var links = [ {
+        pub: '#new-todo.events.keydown',//type form
+        sub: 'models.todoList',
+        binding: true,
+        options: {
+            value: ['expand', function(i) {
+                var newToDo = i.sel
+                    ? i.sel.map(getVal).runIO()
+                    : i.item.map(getVal).runIO();
+                if (newToDo !== '') {
+                    return [{
+                        title: newToDo,
+                        completed: false
+                    }];
+                }
+            }],
+            action: ['expand', function() {return ['create'];}]
+        }
+    }];
+
+    CreateApp.create([], pips, links);
+
+    $('#new-todo').val('abcd');
+    $('#new-todo').trigger('keydown');
+    assert.deepEqual(Globals.pips.get('models.todoList').get(), {
+        "1": {
+            "completed": true,
+            "title": "Create a TodoMVC template"
+        },
+        "2": {
+            "completed": false,
+            "title": "Rule the web"
+        },
+        "3": {
+            "completed": false,
+            "title": "abcd"
+        }
+    });
+});

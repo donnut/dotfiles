@@ -1,0 +1,82 @@
+import pytest
+from hamcrest import *
+
+from nltk.tokenize.punkt import PunktSentenceTokenizer
+from nltk import word_tokenize
+
+from ocr.generator import Generator
+from ocr.features import ServiceNgrams
+
+@pytest.fixture(scope='session')
+def generator():
+    with open('./ocr/test/fixtures/samanthas-droom.txt', 'r') as f:
+        raw = f.read()
+        sents = PunktSentenceTokenizer().sentences_from_text(raw)
+        tokened_sents = [word_tokenize(s) for s in sents]
+    return Generator(service=ServiceNgrams(tokened_sents))
+
+def test_edit_distance_0(generator):
+    cand = generator.inword('ogen', 0)
+    assert_that(cand, equal_to(['ogen']))
+
+def test_unknown(generator):
+    cand = generator.inword('xxxx', 0)
+    assert_that(cand, is_not(equal_to(['xxxx'])))
+    assert_that(cand, empty())
+
+def test_edit_distance_1_1(generator):
+    cands = generator.inword('rap', 1)
+    assert_that(cands, contains_inanyorder('hap', 'rap', 'grap', 'ramp', 'lap', 'rat', 'sap', 'trap', 'pap', 'kap', 'krap'))
+
+def test_edit_distance_1_2(generator):
+    cands = generator.inword('aap', 1)
+    assert_that(cands, contains_inanyorder('hap', 'rap', 'lap', 'sap', 'pap', 'kap', 'aan'))
+
+def test_edit_distance_2_1(generator):
+    cands = generator.inword('iioot', 2)
+    assert_that(cands, contains_inanyorder('boot', 'sloot', 'noot', 'groot', 'ivoor', 'bloot', 'snoot', 'goot', 'liott', 'poot'))
+
+def test_delete_within_ed(generator):
+    cands = generator.inword('y',1)
+    assert_that(cands, has_items(''))
+
+def test_merging_1(generator):
+    cands = generator.merge('punt', ['begin'])
+    assert_that(cands, equal_to([('beginpunt', 1)]))
+
+def test_merging_2(generator):
+    cands = generator.merge('tree', ['trap'])
+    assert_that(cands, empty())
+
+def test_merging_3(generator):
+    cands = generator.merge('n', ['b','o','m','e'])
+    assert_that(cands, equal_to([('en',1),('men',2), ('bomen', 4)]))
+
+def test_merging_4(generator):
+    cands = generator.candidates('wat', ['<s>',''])
+    assert_that(cands, equal_to([('en',1),('men',2), ('bomen', 4)]))
+
+def test_split_1(generator):
+    cands = generator.split('achttienjaar')
+    assert_that(cands, equal_to(['achttien jaar']))
+
+def test_split_2(generator):
+    cands = generator.split('aghttien')
+    assert_that(cands, empty())
+
+def test_candidate_states_1(generator):
+    states = generator.candidates('rap', ['aap'])
+    assert_that(states, contains_inanyorder('rap', 'hap', 'grap', 'ramp', 'lap', 'rat', 'krap', '__null__', 'sap', 'pap', 'kap', 'trap'))
+
+def test_candidate_states_2(generator):
+    states = generator.candidates('punt', ['begin'])
+    assert_that(states, has_items('__null__', ('beginpunt', 1)))
+
+def test_candidate_states_3(generator):
+    states = generator.candidates('achttienjaar', ['trap'])
+    assert_that(states, contains_inanyorder('__null__', 'achttien jaar'))
+
+def test_candidate_states_4(generator):
+    states = generator.candidates('y', ['<s>'])
+    print(states)
+    assert_that(len(states), equal_to(13))

@@ -1,0 +1,44 @@
+interface CurriedFunction2<T1, T2, R> {
+    (t1: T1): (t2: T2) => R;
+    (t1: T1, t2: T2): R;
+}
+
+interface CurriedFunction3<T1, T2, T3, R> {
+    (t1: T1): CurriedFunction2<T2, T3, R>;
+    (t1: T1, t2: T2): (t3: T3) => R;
+    (t1: T1, t2: T2, t3: T3): R;
+}
+
+function curry<T1, T2, R>(fn: (a:T1, b:T2) => R): CurriedFunction2<T1, T2, R>
+
+function curry<T1, T2, T3, TResult>(fn: (a: T1, b: T2, c: T3) => TResult): CurriedFunction3<T1,T2, T3, TResult>
+function curry(fn) {
+    return function(a, b) {
+        switch (arguments.length) {
+            case 0:
+                new TypeError('Function called with no arguments');
+            case 1:
+                return function(b) {
+                    return fn(a, b);
+                };
+            default:
+                return fn(a, b);
+        }
+    };
+}
+
+
+const add = (x: number, y: number) => x + y;
+const curriedAdd = curry(add);
+const res1 = curriedAdd(1);
+const res2 = curriedAdd(1,2);
+
+const tripleAdd = (x: number, y: number, z: number) => x + y + z;
+const curriedTripleAdd = curry(tripleAdd);
+
+const trip1 = curriedTripleAdd(1);
+const trip2 = curriedTripleAdd(1, 3);
+const trip3 = curriedTripleAdd(1, 3, 6);
+// has key example
+export type hasKey<T> = CurriedFunction2<string, T, boolean>;
+export const hasKey: hasKey<string> = curry(<T>(key: string, someObject: T): boolean => key in someObject);

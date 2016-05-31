@@ -1,0 +1,126 @@
+/// <reference path="../dts/objectid.ts"/>
+/// <reference path="globals.ts"/>
+/// <reference path="monads.ts"/>
+
+namespace ServerAJAX {
+
+    import Future = Monads.Future;
+
+    export class Server {
+        url: string;
+        collection: string;
+        index: string;
+
+        constructor(url: string, collection: string, options?: {index?: string}) {
+            this.url = url;
+            this.collection = collection;
+            this.index = options && options.index ? options.index : void 0;
+        }
+
+        emit(serverActions: string|any[], callback: {(err: string, result?: any): void}) {
+            if (typeof serverActions === 'string') {
+                if (serverActions === 'fetch')  this.fetchData(callback);
+            } else {
+                let methods = R.keys(serverActions);
+                let methodsWithData = R.filter(method => serverActions[method].length>0, methods)
+                let futures: Future[] = [];
+                R.forEach(method => {
+                    let data = serverActions[method];
+                    switch (method) {
+                        case 'create':
+                            futures.push(this.createItems(data));
+                            break;
+                        case 'update':
+                            futures.push(this.updateItems(data));
+                            break;
+                        case 'delete':
+                            futures.push(this.deleteItems(data));
+                            break;
+                        case 'empty':
+                            futures.push(this.deleteAllItems());
+                            break;
+                    }
+                }, methodsWithData);
+                // make a future out of list of futures
+                let future = R.commute(Future.of, futures);
+                future.fork(function(err) {
+                    return callback(err);
+                }, function(data) {
+                    return callback(null, data);
+                });
+            }
+        }
+
+        createItems(data: Globals.IMessage[]) {
+            let future = new Future((reject, resolve) => {
+                let augmentedData = [];
+                if (this.index) {
+                    R.forEach(item => {
+                        item[this.index] = ObjectId.create();
+                        item[Globals.IT] = item.it;
+                        augmentedData.push(item);
+                    }, data);
+                } else {
+                    augmentedData = data;
+                }
+                $.ajax(this.url + "/" + this.collection + "/create", augmentedData)
+                .done(function(result, textStatus, jqXHR) {
+                    resolve(result);
+                })
+                .fail(function(jqXHR, textStatus, errorThrown) {
+                    reject(errorThrown);
+                });
+            });
+            return future;
+        }
+
+        updateItems(data: Globals.IMessage[]) {
+            let future = new Future((reject, resolve) => {
+                $.ajax(this.url + "/" + this.collection + "/update", data)
+                .done(function(result, textStatus, jqXHR) {
+                    resolve(result);
+                })
+                .fail(function(jqXHR, textStatus, errorThrown) {
+                    reject(errorThrown);
+                });
+            });
+            return future;
+        }
+
+        deleteItems(data: Globals.IMessage[]) {
+            let future = new Future((reject, resolve) => {
+                $.ajax(this.url + "/" + this.collection + "/delete", data)
+                .done(function(result, textStatus, jqXHR) {
+                    resolve(result);
+                })
+                .fail(function(jqXHR, textStatus, errorThrown) {
+                    reject(errorThrown);
+                });
+            });
+            return future;
+        }
+
+        deleteAllItems() {
+            let future = new Future((reject, resolve) => {
+                $.ajax(this.url + "/" + this.collection + "/deleteAll")
+                .done(function(result, textStatus, jqXHR) {
+                    resolve(result);
+                })
+                .fail(function(jqXHR, textStatus, errorThrown) {
+                    reject(errorThrown);
+                });
+            });
+            return future;
+        }
+
+        fetchData(cb: Function) {
+            $.ajax(this.url + "/" + this.collection + "/fetch")
+            .done(function(result, textStatus, jqXHR) {
+                cb(null, result);
+            })
+            .fail(function(jqXHR, textStatus, errorThrown) {
+                cb(errorThrown);
+            });
+        }
+    }
+}

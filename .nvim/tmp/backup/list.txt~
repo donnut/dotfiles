@@ -1,0 +1,247 @@
+@amsterdamnl
+@stadsdeel020NRD
+@adamzuidoost
+@NieuwWest
+@020West
+@StadsdeelZuid
+@020centrum
+"@stadsdeel_Oost"
+@020divv
+@verkeer020
+@FietsAmsterdam
+@GGDAmsterdam
+@noord020)
+
+(staking
+ klacht
+ klaag
+ klagen
+ telefoon*
+ #fail
+ form
+ formulier*
+ aanvraag
+ aanvragen
+ *mail
+ antwoord
+ service
+ contact
+ opgeruim~
+ opruimen
+ verbeterdebuurt
+ vdb
+ "buitenbeter melding"~
+ 14020
+ handhav*
+ ondergronds*
+ *overlast
+ last
+ vuil*
+ *afval
+ *vuil
+ zwerfie
+ rotzooi
+ smerig
+ ophaaldag*
+ prullenbak*
+ prullebak*
+ container*
+ huisvuilpas
+ *container
+ rommel
+ melding
+ "openbare ruimte"
+ wrak*
+ hond*
+ ratt*
+ duif
+ duiven*
+ meeuw*
+ hondenpoep
+ hondepoep
+ poep
+ staking
+ "openbare ruimte"
+ troep
+ "ondergrondse container"
+ "niet opgehaald"
+ "vuilniswagen"
+ "veegwagen"
+ "bezemwagen"
+ kliko
+ buurtmannetje
+ afvalbak
+ glasbak
+ "prullenbak vol"
+ kapot
+ stoep*
+ park
+ straat
+ papierbak
+ ruik*
+ schoon*
+ vies)
+
+ OR
+
+((plantsoen
+ snoei
+ heg
+ haag
+ sloot
+ planten
+ onkruid
+ voorziening
+ bladeren
+ struik
+ boom) -"den haag" )
+
+ OR
+
+(fietswrak
+ auto
+ *fiets
+ wrakken
+ *wrak
+ *overlast
+ "openbare ruimte"
+ stormschade
+ stankoverlast
+ ongedierte
+ ratten
+ muizen
+ graffiti
+ verstopt
+ stank*
+ wildplak
+ geluidsoverlast
+ horeca
+ cafe
+ feest
+ winkels
+ motor
+ plein
+ park
+ sticker
+ hinderlijk
+ geplaatst
+ scooter
+ belemmer*
+ hinder*)
+
+OR
+
+(lantaarn*
+ *verlichting
+ lichtmast*
+ stroom
+ storing
+ verkeerslicht*
+ stoplicht*
+ klok*)
+
+OR
+
+(onderhoud
+ stoep
+ straat
+ fietspad*
+ straatmeubilair
+ verzak*
+ *werkzaamheden
+ verkeer
+ afgesloten
+ stoplicht
+ gevaarlijk
+ kruispunt
+ *bord
+ signaal
+ kraam
+ onduidelijk
+ bank*
+ plantenbakken
+ sporttoestellen
+ speel*
+ afvalbak
+ zitbanken
+ paaltjes
+ paal
+ amsterdammertjes
+ omgevallen
+ aanrijding
+ scheef
+ hekk*
+ glad*
+ sneeuw
+ strooien
+ zout
+ omleiding
+ belijning
+ riolering
+ put
+ putdeksel
+ verstopt
+ elektriciteit
+ object
+ "buiten gebruik"
+ invalide*
+ toegankelijk
+ slecht
+ klimrek
+ fietsrek
+ nietjes
+ verwijderd
+ verkeersafzetting
+ bestrating
+ tegels
+ klinkers
+ beton
+ klep
+ zebrapad
+ kruising*
+ ruikt*
+ schoon*
+ wegdek
+ overstrom*
+ last
+ belemmeren
+ scootmobiel
+ canta
+ hinder*
+ trottoir
+ uitgegleden
+ donker
+ mist*
+ correspondentie*
+ "digitale kaart"
+ leefbaar
+ gebreken
+ file
+ bellen
+ MOR
+ MORA-
+ ingang
+ invaliden
+ kinderwagen
+ voetgangers
+ canta)
+
+OR
+
+(park*
+ scoot*
+ pont*
+ a'dam
+ asd
+ vop
+ dump
+ gestolen
+ onzin
+ overdreven
+ voetgangerslichten
+ touringcar~
+ halteplaats~
+ parkeerplaats~
+ bierfiets*
+ kabel*
+ probleem)

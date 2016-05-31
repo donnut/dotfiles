@@ -1,0 +1,897 @@
+var nodes = [],  pips = [], links = [];
+
+nodes.concat([
+  {
+    type: 'list',
+    selector: '#pre-fa',
+    idKey: 'areaName',
+    tpl:"<div>" +//class = 'expression-area'
+          "<label></label>" +
+          "<div class= 'value'>" + smallChunks.leftAdd +
+                        smallChunks.value + smallChunks.rightAdd +
+          "</div>" +
+        "</div>"
+  },
+  {
+    type: 'list',
+    selector: '#main-fa',
+    idKey: 'areaName',
+    tpl:"<div>" +//class = 'expression-area'
+          "<label></label>" +
+          "<div class= 'value'>" + smallChunks.leftAdd +
+                        smallChunks.value + smallChunks.rightAdd +
+          "</div>" +
+        "</div>"
+  },
+  {
+    type: 'listItem',
+    selector: '#expressions .subject',
+  },
+  {
+    type: 'listItem',
+    selector: '#expressions .condition',
+  },
+  {
+    type: 'listItem',
+    selector: '#expressions .value',
+  },
+  {
+    type: 'itemElement',//'listItem',
+    selector: '#expressions .comparator',
+  },
+  {
+    type:'itemElement',// 'listItem',
+    selector:'#expressions button.operator',
+  },
+  {
+    type: 'itemElement',//'listItem',
+    selector:'#expressions .add-left',
+  },
+  {
+    type: 'itemElement',//'listItem',
+    selector:'#expressions .add-right',
+  },
+]);
+
+links.concat([
+  {
+    pub: 'wrap',
+    sub:'#expressions .subject',
+    //default
+  },
+  {
+    pub: 'wrap',
+    sub:'#expressions .condition',
+  },
+  {
+    pub: 'wrap',
+    sub:'#expressions .value',
+  },
+  {
+    pub:'#expressions .subject',
+    sub:'#expressions .add-right'
+    //default
+  },
+  {
+    pub:'#expressions .condition',
+    sub:'#expressions .add-right'
+  },
+  {
+    pub:'#expressions .value',
+    sub:'#expressions .add-right'
+  },
+  {
+    pub:'#expressions .subject',
+    sub:'#expressions .add-left'
+  },
+  {
+    pub:'#expressions .condition',
+    sub:'#expressions .add-left'
+  },
+  {
+    pub:'#expressions .value',
+    sub:'#expressions .add-left'
+  },
+  {
+    pub:'#expressions .condition',
+    sub:'#expressions .comparator'
+  },
+  {
+    pub:'#expressions .subject',
+    sub:'#expressions button.operator'
+  },
+]);
+
+
+var nodes = [],  pips = [], links = [];
+//intro wrapPip
+extend(pipFactory.factoryDef, {
+  wrap: function(options, address) {
+    var pipProps = {
+      pipType:    options[ON[ON.type]],//'api'
+      pipClass:   PC[PC.chunks],
+      itType:     true, //wel waar is handig!!!
+      initReg:    null,
+      setReg:     Base.basicSetReg,
+      values:     function(){
+        return {
+          defaultValue: null,
+          reg: {},
+          create: function(pipIn, register, defaultValue, itemId) {
+            var $ancestor;
+            if(pipIn.parent){
+              $ancestor = Globals.LB.get('wrap').get(pipIn.parent);
+              var sel ='.'+ pipIn.type;
+              return DOMIO.create($ancestor, sel);
+            } else {
+              $ancestor = Globals.LB.get('#main-fa.list').get(pipIn.areaName)||
+                          Globals.LB.get('#pre-fa.list').get(pipIn.areaName);
+              return DOMIO.create($ancestor, '>div>.value');
+            }//,
+          },
+          //update
+        };
+      },
+      outActions: Base.nodeActions,
+      regActions: Base.nodeRegActions,
+      diffTest:   Base.modelDiffTest(options, address),
+      //emptyInput: APIFunctions.emptyInput,
+      //emitTest:   APIFunctions.emitTest(address),
+      //interpret:  Interpret.item,
+      pipFn:      function (options, address) {
+        var fns = DOMIO.facade.fns;
+
+        return {
+          C: function(evaluated) {
+            //var chunks = evaluated.reg.desiredValue;
+            //TODO probleem is pipIn wel beschikbaar????
+            if(pipIn.wrap){
+              evaluated.pipOut[MK[MK.value]] = fns(evaluated[ELM[ELM.anc]], chunks.wrap, OV[OV.wrap]);
+            }
+            if(pipIn.prepend){
+              fns(evaluated[ELM[ELM.anc]], chunks.prepend, OV[OV.prepend]);
+            }
+            if(pipIn.append){
+              fns(evaluated[ELM[ELM.anc]], chunks.append, OV[OV.append]);
+            }
+            return evaluated.pipOut;//verzoorzaakt emit incl pipOut.el
+          },
+          U: function(evaluated) {
+            //TODO oldRegister bevat dit niet mee, ook niet relevant,
+            //subject collection zend alleen échte updates
+            //dus compleet gewijzigd
+            // var
+            //   oldChunks = evaluated.reg.oldRegister,
+            //   newChunks = evaluated.reg.desiredValue;
+            //   checkAndDo = function(thisChunk, otherChunk, method){
+            //     if(!otherChunk || (otherChunk && thisChunk !== otherChunk) ){
+            //       fns(evaluated[ELM[ELM.anc]], thisChunk, method);
+            //     }
+            //   };
+            //
+            // if(oldChunks.prepend){
+            //   checkAndDo(oldChunks.prepend, newChunks.prepend, OV[OV.unPrepend]);
+            // }
+            // if(oldChunks.append){
+            //   checkAndDo(oldChunks.append, newChunks.append, OV[OV.unAppend]);
+            // }
+            // if(oldChunks.wrap){
+            //   checkAndDo(oldChunks.wrap, newChunks.wrap, OV[OV.unwrap]);
+            // }
+            //
+            // if(newChunks.wrap){
+            //   checkAndDo(newChunks.wrap, oldChunks.wrap, OV[OV.wrap]);
+            // }
+            // if(newChunks.prepend){
+            //   checkAndDo(newChunks.prepend, oldChunks.prepend, OV[OV.prepend]);
+            // }
+            // if(newChunks.append){
+            //   checkAndDo(newChunks.append, oldChunks.append, OV[OV.append]);
+            // }
+            return evaluated.pipOut;
+          },
+          D: function(evaluated) {
+            //var chunks = evaluated.reg.oldRegister;
+
+            //TODO probleem is pipIn wel beschikbaar????
+            if(pipIn.wrap){
+              fns(evaluated[ELM[ELM.anc]], chunks.wrap, OV[OV.unwrap]);
+            }
+            if(pipIn.prepend){
+              fns(evaluated[ELM[ELM.anc]], chunks.prepend, OV[OV.unPrepend]);
+            }
+            if(pipIn.append){
+              fns(evaluated[ELM[ELM.anc]], chunks.append, OV[OV.unAppend]);
+            }
+            return evaluated.pipOut;
+          }
+        };
+      },
+      switchFn:   function(address){
+        return function(pipFn, diff, action, empty, DOMIOinstances, oldRegister){
+          //alleen hier register nodig
+          var fnKey, domEl = {}, $anc = DOMIOinstances.$anc;
+          if ($anc) {//immers nodig tbv pipFn!
+            switch(action) {
+              case ACT[ACT.create]:
+                fnKey = 'C';
+                break;
+              case ACT[ACT.delete]:
+                if (diff && empty) {//$anc &&
+                  fnKey = 'D';
+                }
+                break;
+              case ACT[ACT.update]:
+                fnKey = 'U';
+                break;
+              case ACT[ACT.insert]: //hier onderscheid tov DOMswithFn
+                if (empty) {
+                  fnKey = 'D';
+                }  else {
+                  fnKey = 'C';
+                }
+                break;
+              default: // ACT[ACT.remove]:
+                //NIETS remove betekent nl immers dat $anc er niet is!,
+            }
+          }
+          if (fnKey && pipFn[fnKey]) {//bij remove niets
+            domEl[ELM[ELM.root]] = $anc;
+            //domEl[ELM[ELM.anc]] = $anc; gebeurt via DOMfn
+            return R.assoc('pipFn', pipFn[fnKey], domEl);
+          } else if (fnKey) {//te restricted??
+            throw new Error ('unexpected case in subSwitchFn for ' + action);
+          }
+        };
+      },
+    };
+  },
+  //TODO pipbuilder en linkbuiler in general builer.ts
+  pipbuilder: function(options, address) {
+    var pipProps = {
+      type: 'api',
+      path: ON[ON.name] + '.' + nameSpace,
+      options: {
+        name: 'pipBuilder',
+        nameSpace:'string',//default : 'pips'
+      },
+      itType: true,
+      //defineItemId: //pas op: bij move kan pipId wijzigen!!
+      initReg: function(apiPipOptions, apiPipAddress){
+        return {};
+      },
+      values: function(apiPipOptions, apiPipAddress){
+        return {
+          defaultValue: {}, //{ options:{},/* address:{}*/ },//address not for link
+          reg: {},
+          create: function(pipIn: Globals.IMessage): any {
+              return pipIn[MK[MK.value]];
+          },
+          update:  function(pipIn: Globals.IMessage): boolean {
+              return pipIn[MK[MK.value]];
+          },
+        };
+      },
+      //als wijziging óf options, óf address leidt tot conclusie diff
+      diffTest: function(apiPipOptions, apiPipAddress){
+        return function(desiredValue: any, register: Globals.IRegister<any>, itemId?: string): boolean {
+          var
+            current = itemId ? register.value[itemId] : register.value,
+            theSame: boolean;
+
+          if(current.options){
+              checkTheSame(current.options, desiredValue.options)
+          }
+          if(current.address){
+              checkTheSame(current.address, desiredValue.address)
+          }
+          return !theSame;
+        };
+      },
+      pipFn: function(apiPipOptions, apiPipAddress){
+        return {
+          C: function(evaluated: Globals.IResult): void {
+            var options = evaluated.desiredValue.options;
+            var address = evaluated.desiredValue.address;
+            addPip(options, address, nameSpace);
+          },
+          U: function(evaluated: Globals.IResult): void {
+            var itemId: string = evaluated.pipOut[MK[MK.it]];
+            var options = evaluated.desiredValue.options;
+            var newAddress = evaluated.desiredValue.address;
+            var oldAddress = evaluated.reg.old[itemId].address;
+            replacePip(options, newAddress, oldAddress, nameSpace);
+          },
+          D: function(evaluated: Globals.IResult): void{
+            var itemId: string = evaluated.pipOut[MK[MK.it]];
+            var oldAddress = evaluated.reg.old[itemId].address;
+            removePip(oldAddress.pip, nameSpace);
+          },
+          E: function(evaluated: Globals.IResult): void {
+            for(var itemId in evaluated.reg.old){
+                var oldAddress = evaluated.reg.old[itemId].address;
+                removePip(oldAddress.pip, nameSpace);
+            }
+          }
+        };
+      }
+    };
+  },
+  linkbuilder: function(options, address) {
+    var pipProps = {
+      type:'api',
+      name: 'linkBuilder',
+      itType: true,
+      //defineItemId: //pas op: bij move kan pipId wijzigen!!
+      initReg: function(apiPipOptions, apiPipAddress){
+        return {};
+      },
+      values: function(apiPipOptions, apiPipAddress){
+        return {
+          defaultValue: {}, //{ options:{},/* address:{}*/ },//address not for link
+          reg: {},
+          create: function(pipIn: Globals.IMessage): any {
+              return pipIn[MK[MK.value]];
+          },
+          update:  function(pipIn: Globals.IMessage): boolean {
+              return pipIn[MK[MK.value]];
+          },
+        };
+      },
+      //als wijziging óf options leidt tot conclusie diff
+      diffTest: function(apiPipOptions, apiPipAddress){
+        return function(desiredValue: any, register: Globals.IRegister<any>, itemId?: string): boolean {
+          var
+            current = itemId ? register.value[itemId] : register.value,
+            theSame: boolean;
+
+          if(current.options){
+            checkTheSame(current.options, desiredValue.options)
+          }
+          return !theSame;
+        };
+      },
+      pipFn:  function(apiPipOptions, apiPipAddress){
+        return {
+          C: function(evaluated: Globals.IResult): void {
+            var options = evaluated.desiredValue.options;
+            addLink(options);
+          },
+          U: function(evaluated: Globals.IResult): void {
+            var itemId: string = evaluated.pipOut[MK[MK.it]];
+            var newOptions = evaluated.desiredValue.options;
+            var oldOptions = evaluated.reg.old[itemId].options;
+            replaceLink(oldOptions, newOptions);
+          },
+          D: function(evaluated: Globals.IResult): void {
+            var itemId: string = evaluated.pipOut[MK[MK.it]];
+            var oldOptions = evaluated.reg.old[itemId].options;
+            removeLink(oldOptions.sub);
+          }
+          E: function(evaluated: Globals.IResult): void {
+            for(var itemId in evaluated.reg.old){
+              var oldOptions = evaluated.reg.old[itemId].options;
+              removeLink(oldOptions.sub);
+            }
+          }
+        };
+      }
+    }
+  }
+});
+
+var smallChunks = {
+  //with templatePips for setting content and eventPips for triggering userinteraction
+  operator:         "<button class ='operator'></button>",
+  //fixedOperator:    "<p class ='operator'></p>",
+  comparator:       "<button class = 'comparator'></button>",
+  //with templatePip and statePip: state = free or source of value: color?
+  value:            "<button class = 'value'></button>",
+
+  //no templatePip, eventual statePip, and id (theoretical not needed)?
+  subjectWrap:      "<div class= 'subject'></div>",
+  // caseWrap:         "<div class= 'case'></div>",
+  initCaseWrap:      "<div class= 'cases'></div>",
+  variableWrap:     "<div class= 'variable'></div>",
+  comma:            "<span> &#44; </span>",//class optional for optionalReduce
+
+  //fixed, without templatePip
+  leftAdd:          "<button class ='add-left'>&#8230;</button>",
+  rightAdd:         "<button class ='add-right'>&#8230;</button>",
+
+  leftParenthesis:  "<i class = 'parenthesis'>&#40;</i>",
+  rightParenthesis: "<i class = 'parenthesis'>&#41;</i>",
+  outerCondition:   "<p class = 'operator'>&#63;</p>",
+  'default':        "<p class = 'operator'>default</p>",
+  return:           "<p class = 'return'>-&#187;</p>",
+  caseOperator:     "<button class = 'operator'>case</button>",
+
+  //wrappingtags for seperate use
+  closeTag :       "</div>"
+  conditonOpenTag: "<div class= 'condition'>",
+  valueOpenTag:     "<div class= 'value'>"
+  outerConditionOpenTag:"<div class= 'subject outer-condition'>"
+  caseOpenTag: "<div class= 'case'>"
+};
+
+// var composedChunks = {
+//   valueBody : [
+//     'valueOpenTag',
+//       'leftAdd' ,'value' , 'rightAdd' ,
+//     'closeTag'
+//   ]
+// };
+// composedChunks.conditionBody = [
+//   'conditonOpenTag',
+//     'leftParenthesis', 'valueBody', 'comparator', 'valueBody', 'rightParenthesis',
+//   'closeTag'
+// ];
+// composedChunks.basicCondition = [
+//   'outerConditionOpenTag',
+//     'outerCondition', 'leftParenthesis', 'conditionBody', 'rightParenthesis', 'rightAdd',
+//   'closeTag'
+// ];
+// composedChunks.caseBody = [
+//   'caseOpenTag',
+//     'caseOperator','leftParenthesis', 'basicCondition', 'rightParenthesis', 'rightAdd',
+//     'return', 'valueBody',
+//   'closeTag'
+// ];
+// composedChunks.dflt = ['default', 'return'];
+
+var operatorDef = {//tbv standaardisatie anroep warp ook een array al mag lengte niet langer dan 1 zijn
+  andOrConditionRightWrapper : {
+    wrap:    ['subjectWrap]',
+    append:  ['operator', 'leftParenthesis', 'basicCondition',
+              'rightParenthesis', 'rightAdd'],
+    operator: ['operator']
+    right: ['basicCondition'],
+  },
+  andOrConditionLeftWrapper : {
+    wrap:    ['subjectWrap'],
+    prepend:  ['operator', 'leftParenthesis', 'basicCondition',
+              'rightParenthesis', 'rightAdd'],
+    left: ['basicCondition'],
+    operator: ['operator']
+  },
+  basicCase:{
+    //wrap:    'subjectWrap',
+    append:  ['caseBody'],
+    //geen operator?? of operator == casebody? KEUZE geen operator//operator: ['caseBody']
+    left: ['caseBody'],
+  },
+  initCase: {// let keuze niet ERNA caseBody initieren om casebody buitne defaultwrap, maar caseBody via prepend binnen wrap
+    wrap: ['initCaseWrap'],
+    prepend: ['caseBody', 'dflt'/*=operator hier!*/],
+    left:  ['caseBody'],
+    operator: ['dflt']/*=operator hier! */
+  },
+  not: {
+    wrap:    ['subjectWrap'],
+    prepend: ['leftAdd', 'operator', 'leftParenthesis'],
+    append:  ['rightParenthesis', 'rightAdd'],
+    operator: ['operator'],//LETOP alleen via left-add toegankelijk
+  },
+  singleLeft: {
+    wrap:    ['subjectWrap'],
+    prepend: ['leftAdd', 'leftParenthesis',  'valueBody', 'operator' ],
+    append:  ['rightParenthesis', 'rightAdd'],
+
+
+    left: [ 'valueBody'],
+    operator: ['operator'],
+  },
+  singleRight: {
+    wrap:    ['subjectWrap'],
+    prepend: ['leftAdd', 'leftParenthesis'],
+    append:  ['operator', 'valueBody',  'rightParenthesis', 'rightAdd'],
+    operator: ['operator'],
+    right: ['valueBody']
+  },
+  optionalReduce: {
+    wrap:    ['subjectWrap'],
+    prepend: ['leftAdd', 'operator', 'leftParenthesis'],
+    append:  ['comma', 'leftAdd', 'rightParenthesis', 'rightAdd'],
+    operator: ['operator'],
+    //right: ['comma']//special comma??
+  },
+  multipleCondition: {
+    wrap:    ['subjectWrap'],
+    prepend: ['leftAdd', 'operator', 'leftParenthesis'],
+    append:  ['comma',  'basicCondition' , 'rightParenthesis', 'rightAdd'],
+    operator: ['operator'],
+    right:    ['basicCondition']
+  },
+  multipleRange: {
+    wrap:    ['subjectWrap'],
+    prepend: ['leftAdd', 'operator', 'leftParenthesis'],
+    append:  ['comma', 'basicCondition' ,
+              'comma', 'valueBody',
+              'comma', 'valueBody',
+              'rightParenthesis', 'rightAdd'],
+    operator: ['operator'],
+    right:  ['basicCondition','valueBody','valueBody']
+  },
+
+  valueBody : {
+    //wrap: ['valueWrap'],
+    html: ['valueOpenTag','leftAdd' ,'value', 'rightAdd','closeTag']
+  },
+  conditionBody : {
+    //wrap:  ['conditonWrap'],
+    html: ['conditonOpenTag','leftParenthesis', 'valueBody', 'comparator', 'valueBody', 'rightParenthesis','closeTag'],
+
+    children:['valueBody','valueBody'],
+  },
+  basicCondition : {
+      //wrap:  ['outerConditionWrap'],
+      html: ['outerConditionOpenTag','outerCondition', 'leftParenthesis', 'conditionBody', 'rightParenthesis', 'rightAdd','closeTag'],
+
+      //operator:['outerCondition'],
+      children:['conditionBody']
+  },
+  caseBody : {
+      //wrap:  ['caseWrap'],
+      html: ['caseOpenTag', 'caseOperator','leftParenthesis', 'basicCondition', 'rightParenthesis', 'rightAdd',
+      'return', 'valueBody','closeTag'],
+
+      //operator:['caseOperator'],
+      children:['basicCondition', 'valueBody']
+  },
+  dflt : {
+    html: ['default', 'return'];
+  },
+};
+
+var defineGrammar = function(subjectSpecificator, locationSpecification){
+    var grammar;
+    switch (subjectSpecificator){
+      case 'case'://'default':
+        grammar = 'initialCase';
+        break;
+      case 'case+':
+        grammar = 'basicCase';
+        break;
+      case 'and':
+        //grammar ='andOrConditionRight';
+        //break;
+      case 'or':
+        grammar = (locationSpecification === 'left')? 'andOrConditionLeft' : 'andOrConditionRight';
+        break;
+      //case switch
+      case 'plus':
+        //grammar = (locationSpecification == 'left')? 'singleLeft':'singleRight';
+        //break;
+      case 'minus':
+        //grammar = (locationSpecification == 'left')? 'singleLeft':'singleRight';
+        //break;
+      case 'multiply':
+        //grammar = (locationSpecification == 'left')? 'singleLeft':'singleRight';
+        //break;
+      case 'divide':
+        grammar = (locationSpecification == 'left')? 'singleLeft':'singleRight';
+        break;
+      case 'not':
+        grammar = 'not';
+        break;
+      case 'count':
+        //grammar = 'optionalReduce';
+        //break;
+      case 'minimum':
+        //grammar ='optionalReduce';
+        //break;
+      case 'maximum':
+        grammar = 'optionalReduce';
+        break;
+      case 'findone':
+        //grammar = 'multipleCondition';
+        //break;
+      case 'filter':
+        //grammar = 'multipleCondition';
+        //break;
+      case 'sort':
+        grammar = 'multipleCondition';
+        break;
+      case 'findn':
+        grammar ='multipleRange';
+        break;
+      default://niks
+    }
+    return grammar;
+};
+
+var defineChunk = function(subjectSpecificator){
+  var composedChunks = ['valueBody', 'conditionBody', 'basicCondition', 'caseBody', 'dflt']
+  var addChunk = function(recipe){
+    var subChunk = '';
+    for(var i = 0, len = recipe.length; i < len; i++){
+      //if(R.contains(R.keys(composedChunks), recipe[i])){
+      //  subChunk = subChunk + addChunk(composedChunks[recipe[i]]);
+      if(R.contains(composedChunks, recipe[i])){
+        subChunk = subChunk + addChunk(operatorDef[recipe[i]].html);
+      } else {
+        subChunk = subChunk + smallChunks[recipe[i]];
+      }
+    }
+    return subChunk;
+  };
+  var grammarToUse = defineGrammar(subjectSpecificator);
+  var chunkDefinitionKeys = ['wrap', 'prepend' ,'append'];
+  var chunk = {};
+  for(var c = 0, clen =chunkDefinitionKeys.length; c<clen,c++){
+    if(operatorDef[grammarToUse][chunkDefinitionKeys[c]]){
+      chunk[chunkDefinitionKeys[c]] = addChunk(operatorDef[grammarToUse][chunkDefinitionKeys[c]]);
+    }
+  }
+  return chunk;
+};
+
+//nu even alleen voor action === create
+var defineSubjects = function(subjects, subjectId, operator, locationSpecification){
+  var
+    messageValues = [],
+    operatorId = unique(),
+    areaName = subjects[subjectId].areaName,
+    grammarToUse = defineGrammar(operator, locationSpecification),
+
+    addSubjects = function(recipe, parentId, leftOrRight){
+      for(var i = 0, len = recipe.length; i < len; i++){
+        var subSubjectId = (recipe[i] === 'operator')? operatorId: unique();
+        var messageValue = {
+          areaName: areaName,
+          id:   subSubjectId,
+        };
+        var earlierDefinedParentMessage = R.find(R.propEq('id', parentId))(messageValues);
+        var parentMessageValue;
+        if(earlierDefinedParentMessage){
+          parentMessageValue = earlierDefinedParentMessage;
+        } else if(subjects[parentId]){
+          parentMessageValue = R.clone(subjects[parentId]);
+        }
+
+        if(parentMessageValue){
+          if(leftOrRight === 'left'){
+            //omdat als left array.length nooit >1 gaat dit goed
+            parentMessageValue.children.unShift(subSubjectId);
+          } else {
+            parentMessageValue.children.push(subSubjectId);
+          }
+          messageValue.parent = parentId;
+        }// else {//operator = wrapper!
+        //  messageValue.children = [parentId];
+        //}
+        if(recipe[i] !== 'valueBody'){
+          messageValue.children = [];
+        }
+        switch(recipe[i]){
+          case 'valueBody':
+            messageValue = R.merge(messageValue,{
+              type: 'value',
+              selected:findDefaultValue(context) || this.pub.args,
+              //defaultValue: beter definieren in subjectCollection?: nee dat moet hier, met een globale functie die werkt met subjects en subjectId
+              //'default': args.pub.value, //als 2e van condition: kijken numbebr, text of boolean?
+              enum: R.keys(args), //possibleValues, contextafhankelijk,
+              //R.keys(args) = allpossiblevalues inthis context
+            });
+            break;
+          case 'conditionBody':
+            //var comparators = ['&#61;','&ne;','&lt;','&gt;','&le;','&ge;'];
+            messageValue = R.merge(messageValue,{
+              type: 'condition',
+              selected: CMP[CMP.eq],//'&#61;'
+              enum : CMP,//all comparators are allowed
+            });
+            break;
+          case 'basicCondition':
+            messageValue = R.merge(messageValue,{
+              type: 'subject',
+              selected:'?',
+              enum : ['delete'],//empty: no other operators allowed, only delete?
+            });
+            break;
+          case 'caseBody':
+            messageValue = R.merge(messageValue,{
+              type: 'subject',
+              selected:'case+',
+              enum : ['delete', 'case+'],//empty: no other operators allowed, only delete?
+            });
+            break;
+          case 'dflt' ://speciale variant van operator
+            messageValue = R.merge(messageValue,{
+              type: 'subject',
+              selected:'case',//zonder+ is case === default
+              enum : ['delete', 'case+'],//empty: no other operators allowed, only delete?
+            });
+            break;
+          default://case 'operator':
+            messageValue = R.merge(messageValue,{
+              type: 'subject',
+              selected: operator,
+              enum : (findInterchangeableOperaters(operator)).concat(findDeleteOperators(operator),//empty: no other operators allowed, only delete?
+            });
+        }
+        messageValues.push(messageValue);
+        if(!earlierDefinedParentMessage){
+           messageValues.push(parentMessageValue);
+        }
+
+        //onderstaande moet NAdat messageValue gepusht: die moet beschikbaar zijn als earlierDefinedParentMessage
+        if(recipe[i] === 'conditionBody' || recipe[i] === 'basicCondition' || recipe[i] ===  'caseBody'){
+          //dus (recipe[i] !== 'operator' && recipe[i] !== 'valueBody' && recipe[i] !=='dflt')
+          for (var sc = 0, sclen = operatorDef[recipe[i]].children; sc < sclen; sc++) {
+            var childRecipe = operatorDef[recipe[i]].children[sc];
+            messageValues.concat(addSubjects(childRecipe, subSubjectId, 'right'))
+          };
+        }
+      }
+    };
+
+  var subjectDefinitionKeys = ['operator', 'left' ,'right'];
+  //defineSubjects nu even alleen voor create gebruiken
+  for(var s = 0, slen = subjectDefinitionKeys.length; s < slen, s++){
+    if(operatorDef[grammarToUse][subjectDefinitionKeys[s]]){
+      var leftOrRight;
+      switch(subjectDefinitionKeys[s]){
+        case 'left': case 'right': leftOrRight = subjectDefinitionKeys[s]; break;
+        default: //undefined
+      }
+      messageValues.concat(addSubjects(operatorDef[grammarToUse][subjectDefinitionKeys[s]], subjectId, leftOrRight));
+    }
+  }
+  return messageValues;
+};
+
+links.concat([
+  {//correct subjectParent via bind van wrapPip!
+    pub:'models.subjects', //link-value ook wrap.action, wrap.it, wrap.variable1 etc
+    sub: 'wrap',
+    drop: ['models.subjects'],
+    pre: function(){
+      //update kan ongesorteerd door
+      //delete vereist andere sortering dan create
+      //soretering voor create: values  laatste en verder ordenen op parent (bron)
+      //alleen voor main komt er chunk en
+      //als create voor lager dan chunk bestaat telkens de directe parent
+      //soretering voor delete: juist bottom up eerst values
+      //en juist hoe hoger hoe verder naar achteren
+
+      ///TODO wat als mix delete en create? eerst delete!!
+
+      var input = this.pub;
+      if(input.action === 'create' || input.action === 'delete'){
+        var sortedArrays = {};
+        for(var i = 0, len = input.length; i<len, i++){
+          var subject = input[i].value;
+          var areaname = subject.areaName;
+          if(!sortedArrays[areaname]){
+            sortedArrays[areaname] = [];
+          }
+          if(subject.type === 'value'){
+            if(input.action === 'create'){
+              sortedArrays[areaname].push(input);
+            } else {//input.action === 'delete'
+              sortedArrays[areaname].unshift(input);
+            }
+          } else {
+            var
+              parentId = subject.parent,
+              parentPosition = R.findIndex(R.propEq('value.parent', parentId))(sortedArrays[areaname]),
+              insertPosition;
+            if(input.action === 'create') {
+              insertPosition = (parentId)
+              ? 1 + parentPosition;
+              : 0; //de mainChunk!
+            } else {//input.action === 'delete'
+              insertPosition = (parentId)
+              ? parentPosition - 1 ;
+              : sortedArrays[areaname].length; //de mainChunk!
+            }
+            sortedArrays[areaname] = R.insert(insertPosition, input, sortedArrays[areaname]);
+          }
+        }
+        var preProcessed = [];
+        for(var areanm in sortedArrays){
+          var
+            sortedInput = sortedArrays[areanm],
+            definebasicValue = function(subject){
+              return {
+                parent:subject.parent,
+                areaName:subject.areaName,
+                type:subject.type
+              };
+            };
+
+          if(input.action === 'create'){
+            var mainSubject = sortedInput[0].value;
+            var mainChunk = R.merge(definebasicValue(mainSubject), defineChunk.call(this, mainSubject.selected);
+            preProcessed.push({
+              value: mainChunk,
+              action: sortedInput[0].action,
+              it: sortedInput[0].it
+            });
+          }
+          var s  = (input.action === 'create')? 1 : 0;
+          for(s, len = sortedInput.length; s < slen, s++){
+            var subj = sortedInput[s].value;
+            preProcessed.push({
+              value:  definebasicValue(subject),
+              action: sortedInput[s].action,
+              it:     sortedInput[s].it
+            });
+          }
+        }
+        return preProcessed;
+      }
+    },
+    //action:function(){ return this.pre.action;},
+    //value: function(){return this.pre.value;},
+    //it: function(){return this.pre.it;},
+  },
+  {
+    pub: '#operators.select',
+    sub: 'models.subjects',
+    drop: ['models.operator', 'models.subjects'],
+    pre: function(){ //lekker:maar één tegelijk!
+      var operatorsModel = this.drop.models.operators;
+      var subjectId = operatorsModel.subjectId;
+      //var areaName = operatorsModel.areaName;
+      var subjects = this.drop.models.subjects;//moet array worden
+      var newOperatorId = (R.find(R.propEq('value', true))(this.pub)).it;
+      var messages = [];
+      if(operatorsModel.mode !== 'change'){  //add-left || add-right
+        var locationSpecification = (operatorsModel.mode === 'add-left')? 'left' : 'right';
+        messageValues = defineSubjects(subjects, newOperatorId, subjectId, locationSpecification));
+      } else {
+        var oldOperatorId = (R.find(R.propEq('value', false))(this.pub)).it;
+        if(R.contains(['delete', 'delete-left', 'delete-right'], newOperatorId)){
+          var locationSpecification = (newOperatorId === 'delete-right')? 'right' : 'left';
+
+
+
+        } else {//update
+          if (operatorsAreInterchangeable(oldOperatorId, newOperatorId )){
+            //simpele update
+          }
+          else{
+            //eerst delete old dan create new}
+        }
+      }
+
+
+      return messages;
+    }
+
+    //action: function(){return this.pre.action;},
+    //value: function(){ return this.pre.it;},
+    //it: function(){return this.pre.it;},
+
+  },
+  {//submit-linkje met speciale behandeling it!!
+    pub: '#comparators.select',
+    sub: 'models.subjects',
+    drop:['models.comparator'],
+    pre: function(){//standaard submit-pre
+      return (R.find(R.propEq('value', true))(this.pub));
+    }
+    action: function(){ return MK[MK.update];},
+    value: function(){return this.pre[MK[MK.it]];},
+    it: function(){return this.models.comparator.conditionId;},
+  },
+  {
+    pub: '#values.select',
+    sub: 'models.subjects',
+    drop:['models.value'],
+    pre: function(){//standaard submit-pre
+      return (R.find(R.propEq('value', true))(this.pub));
+    }
+    action: function(){ return MK[MK.update];},
+    value: function(){
+
+
+      //TODO
+
+      return this.pre[MK[MK.it]];
+    },
+    it: function(){return this.models.value.valueId;},
+  },
+]);

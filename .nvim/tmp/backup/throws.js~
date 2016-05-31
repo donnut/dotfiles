@@ -1,0 +1,18 @@
+'use strict';
+
+function parsePromised(json) {
+  let promise = new Promise(function(fulfill, reject) {
+    try {
+      const result = JSON.parse(json)
+      fulfill(result)
+    } catch(e) {
+      reject(e)
+    }
+  })
+  return promise;
+}
+
+parsePromised(process.argv[2])
+  .then(console.log)
+  .then(null, console.log)
+

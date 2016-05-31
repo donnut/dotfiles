@@ -1,0 +1,783 @@
+module Tree {
+
+    import PT = Globals.PipType;
+
+    export interface Attributes {
+        [index: string]: string;
+    }
+
+    export interface IAnalyser {
+        showTree(tree: ExtElement): void;
+        extract(domStr: string, rootId?: string, isList?: boolean): ExtElement;
+        groupChildren(root: ExtElement): Groups;
+        getIdFromSelector(selector: string): string;
+        getSelectorFromId(idString: string): string;
+        useSelectorIds(selector: string): string;
+        isValidId(selector: string): boolean;
+    }
+
+    export interface ExtElement  {
+        attribs: Attributes;
+        name: string;
+        next: ExtElement;
+        prev: ExtElement;
+        type: string;
+        path: string;
+        isRoot: boolean;
+        element?: Element;
+        listItem?: ListItem;
+        itemElement?: ItemElement;
+        shadowElement?: ShadowElement;
+        parent: ExtElement;
+        listItemPath: string[];
+        rootPath: string[];
+        children: ExtElement[];
+    }
+
+    export class Element {
+        anc: string;
+        selector: string;
+        sel: string;
+        constructor(obj) {
+            this.anc = obj.anc;
+            this.selector = obj.selector;
+            this.sel = obj.sel;
+        }
+        value() {
+            return {
+                anc: this.anc,
+                selector: this.selector,
+                sel: this.sel
+            };
+        }
+    }
+    export class ListItem {
+        root: string;
+        sel: string;
+        anc: string;
+        selector: string;
+        constructor(obj) {
+            this.anc = obj.anc;
+            this.selector = obj.selector;
+            this.root = obj.root;
+            this.sel = obj.sel;
+        }
+        value() {
+            return {
+                anc: this.anc,
+                selector: this.selector,
+                root: this.root,
+                sel: this.sel
+            };
+        }
+    }
+
+    export class ItemElement {
+        item: string;
+        root: string;
+        sel: string;
+        anc: string;
+        selector: string;
+        constructor(obj) {
+            this.anc = obj.anc;
+            this.selector = obj.selector;
+            this.root = obj.root;
+            this.sel = obj.sel;
+            this.item = obj.item;
+        }
+        value() {
+            return {
+                anc: this.anc,
+                selector: this.selector,
+                root: this.root,
+                sel: this.sel,
+                item: this.item
+            };
+        }
+    }
+
+    export class ShadowElement {
+        sel: string;
+        anc: string;
+        selector: string;
+        constructor(obj) {
+            this.anc = obj.anc;
+            this.selector = obj.selector;
+            this.sel = obj.sel;
+        }
+        value() {
+            return {
+                anc: this.anc,
+                selector: this.selector,
+                sel: this.sel
+            };
+        }
+    }
+
+    type ElementType = {[elem: string]: (ListItem|ItemElement|Element|ShadowElement)[]};
+
+    interface Parent {
+        rootPath: string[];
+        listItemPath: string[];
+    }
+
+    export type Gate = [string, boolean, string[]];
+    export type Group = Gate[];
+    export type Groups = Group[];
+
+    export function Analyser() {
+        var Parser = htmlparser2.Parser;
+        var DomHandler = htmlparser2.DomHandler;
+
+        var handler = new DomHandler();//function(err, dom) {
+        var parser = new Parser(handler);
+
+        const analysisDepth = 2;
+
+        var pathTable: {[index: string]: string} = {};
+        var invertedPathTable: {[index: string]: string} = {};
+        var pathTableKeys: string[] = [];
+
+        function invertPaths() {
+            invertedPathTable = R.invertObj(pathTable);
+        }
+
+        function getIdFromSelector(selector: string) {
+            return pathTable[selector] ? pathTable[selector] : selector;
+        }
+
+        function isValidId(selector: string) {
+            return invertedPathTable[selector] !== void 0;
+        }
+
+        function getSelectorFromId(idString: string) {
+            return invertedPathTable[idString] ? invertedPathTable[idString] : idString;
+        }
+
+        function getParent(elem: ExtElement) {
+            return elem.parent;
+        }
+
+        /**
+         * Returns the name of object `elem`.
+         */
+        function getName(elem: ExtElement) {
+            return elem.name;
+        }
+
+        /**
+         * Returns the type of object `elem`
+         */
+        function getType(elem: ExtElement) {
+            return elem.type;
+        }
+
+        /**
+         * Returns the names of array `elems`. `elems` consist of items with property `name`.
+         */
+        function getNames(elems: ExtElement[]) {
+            return R.map((elem) => getName(elem), elems);
+        }
+
+        /**
+         * Return children of type 'tag'
+         */
+        function getChildren(elem: ExtElement) {
+            return R.filter((s) => getType(s) === 'tag', elem.children);
+        }
+
+        function getTailElement(selector: string) {
+            return R.head(R.split('(', R.last(R.split('>', selector))));
+        }
+
+        /**
+         * Returns true if array `names` contains duplicates
+         */
+        function hasDuplicateNames(names: string[]) {
+            return names.length !== R.uniq(names).length;
+        }
+
+        /**
+         * Returns the attribute value of `elem` identified by `name`
+         */
+        function getAttributeValue(elem: ExtElement, name: string): string {
+            if (elem.attribs) {
+                return elem.attribs[name];
+            }
+            return void 0;
+        }
+
+        /**
+         * Adds path to `elem`. `elem` must be an object and may have property `children`.
+         * `elem` will be mutated.
+         */
+        function addPaths(elem: ExtElement, root?: string) {
+            if (!elem.path) {
+                if (root) {
+                    elem.path = root + '>' + getName(elem); //getId(elem) || getName(elem);
+                }
+                else {
+                    elem.path = getName(elem); //getId(elem) || getName(elem);
+                }
+            }
+            var id = getId(elem);
+            if (id) pathTable[elem.path] = id;
+
+            var path = elem.path;
+            var children = getChildren(elem);
+
+            if (hasDuplicateNames(getNames(children))) {
+                R.forEach((c) => {
+                    var id = getId(c);
+                    var pos = getChildPosition(c);
+
+                    c.path = path + '>' + numberTag(getName(c), pos);
+                    if (id) pathTable[c.path] = id;
+                    addPaths(c);
+                }, children);
+            }
+            else {
+                R.forEach((c) => {
+                    var id = getId(c);
+                    c.path = path + '>' + getName(c);
+                    if (id) pathTable[c.path] = id;
+                    addPaths(c);
+                }, children);
+            }
+        }
+
+        function optimizePathTable() {
+            // order by alphabet
+            pathTableKeys = Utils.quicksort(R.keys(pathTable));
+        }
+
+        function useSelectorIds(selector: string): string {
+            if (!selector) return void 0;
+            let i = pathTableKeys.length - 1;
+            let matched = false;
+
+            while (i >= 0 && !matched) {
+                if (selector.length >= pathTableKeys[i].length
+                        && selector.substr(0, pathTableKeys[i].length) === pathTableKeys[i]) {
+                    matched = true;
+                    return pathTable[pathTableKeys[i]] + selector.substr(pathTableKeys[i].length);
+                } else {
+                    i--;
+                }
+            }
+            return selector;
+        }
+
+        function replacePathById(element, keys: string[]) {
+            return R.mapObjIndexed((v: string, key: string) => R.contains(key, keys) ? useSelectorIds(v) : v, element);
+        }
+
+        // returns id of elem or undefined
+        function getId(elem: ExtElement) {
+            var id = getAttributeValue(elem, 'id');
+            return id !== void 0
+                ? '#' + id
+                : void 0;
+        }
+
+        // returns the sequence number of elem if multiple children of the
+        // same type exist. Otherwise returns undefined.
+        function getChildPosition(elem: ExtElement) {
+            var children = getChildren(getParent(elem));
+            if (R.filter((c) => c.name === elem.name, children).length > 1) {
+                // at least one more element of this type of found
+
+                // get (zero-based) position of this element
+                var pos = 0;
+                var head = R.merge({}, elem);
+                while (head.prev !== null) {
+                    if (head.prev.name === elem.name) {
+                        pos++;
+                    }
+                    head = head.prev;
+                }
+                return pos;
+            }
+            else {
+                return void 0;
+            }
+        }
+
+        // return tag name appended with position number
+        function numberTag(tag: string, pos: number) {
+            return pos !== void 0
+                ? tag + '(' + pos + ')'
+                : tag;
+        }
+
+        function relativeElementSelector(selector: string, root: string) {
+            var minusRoot = selector.substr(root.length + 1);
+            var matches = /(.*?)(\(\d+\))?$/.exec(minusRoot);
+            return matches[1];
+        }
+
+        function isEqualTruncatedArrays(a: string[], b: string[], bTruncatedAt: number): boolean {
+            if (a.length !== b.length) return false;
+            var truncatedB = R.map((item) => {
+                var chunks = item.split('>');
+                return R.take(chunks.length - bTruncatedAt, chunks).join('>');
+            }, b);
+            return R.difference(a, truncatedB).length === 0;
+        }
+
+        /**
+         * Group contains methods to analyse a subtree. Each level in the subtree is collected in a group od that level.
+         * A group consist of one of more gates. Gates are triples with format (0: tag, 1: isRoot, 2: [paths]).
+         */
+        function Group() {
+
+            var groups: Groups = [];
+
+            /**
+             * Adds candidate to group of a given level. This can be as a new gate or as an update of an existing gate.
+             * Candidate is added to existing gate when `greedy` is set to true or when the gate is a root
+             * (gate[1] == true).
+             */
+            function add(candidate: ExtElement, level: number, greedy=false) {
+                groups[level] = groups[level] || [];
+                var matched = false;
+                var gates = groups[level];
+                var len = gates.length;
+                var i = -1;
+
+                // add to existing gate if gate with tag (name) exists and gate is a root or when
+                // the level is set to `greedy`
+                while (!matched && ++i < len) {
+                    var gate: Gate = gates[i];
+                    if ((gate[1] || greedy) && gate[0] === candidate.name) {
+                        _add(gate, candidate, level);
+                        matched = true;
+                    }
+                }
+
+                // if candidate can not be added to existing gate, create a new gate
+                if (!matched) _createGate(candidate, level);
+            }
+
+            function _add(gate: Gate, candidate: ExtElement, level: number) {
+                gate[1] = false;
+                gate[2].push(candidate.path);
+            }
+
+            function _createGate(candidate: ExtElement, level: number) {
+                groups[level].push([candidate.name, false, [candidate.path]]);
+            }
+
+            // Reset groups starting at `level` and all those above
+            function reset(level: number): void {
+                if (groups[level]) {
+                    var len = groups.length; //R.keys(groups).length;
+                    var i = level - 1;
+                    while (++i < len) {
+                        R.forEach((tuple) => {tuple[1] = true}, groups[i]);
+                    }
+                }
+            }
+
+            function get() {
+                return groups;
+            }
+
+            return {
+                add: add,
+                reset: reset,
+                get: get
+            };
+        }
+
+        /**
+         * Analysis a subtree starting at `root`.
+         */
+        function groupChildren(root: ExtElement) {
+            let group = Group();
+            let level = 0;
+
+            function collect(elem: ExtElement, level: number): void {
+                // limit the depth of the subtree analysis
+                if (level > analysisDepth) return void 0;
+
+                var children = getChildren(elem);
+                if (children.length > 0) {
+                    level++;
+                    var greedy = level === 1
+                        ? true
+                        : false;
+                    R.forEach((c) => {
+                        group.add(c, level, greedy);
+                        collect(c, level);
+                    }, children);
+                    // itemElems are collected and start from level 2 downwards
+                    if (level <= 2) group.reset(level);
+                }
+            }
+
+            group.add(root, level);
+            collect(root, level);
+            return group.get();
+        }
+
+        function extractListItem(root: string, groups: Group[]): [{[node:string]: ListItem}, {[node:string]: ShadowElement}] {
+            let listItems: {[node:string]: ListItem} = {};
+            let shadowElements: {[node:string]: ShadowElement} = {};
+
+            // check for ListItem: number of Gates on level 1 should be 1
+            if (groups[1].length === 1) {
+                // one set of ListItems exist, check the number of DOM-elements
+                if (groups[1][0][2].length === 1) {
+                    // this level has one DOM-element. This can act as an template, otherwise stop as this is not a
+                    // subtree.
+                    // Check its tagname in relation to its ancestor
+                    let ancTagName = groups[0][0][0];
+                    let DOMElemTagName = groups[1][0][0];
+                    if (!R.contains((ancTagName, DOMElemTagName), [('ul', 'li'), ('ol', 'li'), ('dl', 'dt')])) {
+                        // this is not a valid list or template
+                        return [{},{}];
+                    }
+                    // a list template is detected
+                }
+                const selector = generalizeSelector(R.head(groups[1][0][2]));
+                let listItem = new ListItem({
+                    anc: root,
+                    root: root,
+                    selector: selector,
+                    sel: elementLast(selector)
+                });
+
+                listItems = R.reduce((acc, node) => {
+                    acc[node] = listItem;
+                    return acc;
+                }, listItems, groups[1][0][2]);
+                // listItem must have (shadow)Element as root. Add root as shadowElement only when root's path has
+                // seq number indicating it is (or can be?) a listItem. Otherwise is will become an Element
+                let chunks = R.split('>', root);
+                let shadowElementPaths: {[elem: string]: string} = {};
+                if (/\(\d+\)$/.test(R.last(chunks))) {
+                    shadowElementPaths[root] = root;
+                    shadowElements = createShadowElementsFromPaths(shadowElementPaths, generalizeSelector(root));
+                }
+            }
+            return [listItems, shadowElements];
+        }
+
+        function extractOtherElements(groups: Group[], listItemElems: {[elem: string]: ListItem}):  {[elem: string]: (ItemElement|Element|ShadowElement)[]} {
+            const nrElementsInListItem = groups[1][0][2].length;
+            let itemElement: ItemElement;
+            let itemElementsOnLevel;
+            let elementAncestor: string;
+            let shadowElementPaths: {[elem: string]: string} = {};
+            let level = 2;
+            let collection: {[elem: string]: (ItemElement|Element|ShadowElement)[]} = {};
+
+            if (groups.length <= level) return null;
+            do {
+                itemElementsOnLevel = false;
+                // check each gate if it's number of elements is equal to the number of elements in listItem
+                R.forEach(gate => {
+                    if (gate[2].length === nrElementsInListItem) {
+                        // we found a set DOM elements that forms an itemElement
+                        const elem = R.head(gate[2]);
+                        const listItem = R.head(R.values(listItemElems));
+                        const [anc, selector] = generalizeAncestors(listItem, elem);
+                        const sel = elementLast(selector);
+                        itemElement = new ItemElement({
+                            anc: anc,
+                            root: listItem.root,
+                            item: listItem.selector,
+                            selector: selector,
+                            sel: sel
+                        });
+                        R.forEach(elem => {
+                            collection[elem] = collection[elem] || [];
+                            collection[elem].push(itemElement);
+                        }, gate[2]);
+                        itemElementsOnLevel = true;
+                    } else {
+                        // we found a bunch of DOM elements not forming an ItemElement, but just separate Elements
+                        // the ancestor of these DOM elements needs to become a shadowElement for the first level and
+                        // their parent Element for the next levels. The element selves are not generated, that is done
+                        // during normalizing
+                        R.forEach(elem => {
+                            // the ancestor
+                            let chunks = R.split('>', elem);
+                            let anc = R.join('>', R.init(chunks));
+                            let listItemSelector = R.join('>', R.take(chunks.length - level + 1, chunks));
+                            if (!shadowElementPaths[listItemSelector]) {
+                                // shadowElement doesn't exist yet, so store its path
+                                shadowElementPaths[listItemSelector] = listItemSelector;
+                            }
+                        }, gate[2]);
+                    }
+                }, groups[level]);
+                level++;
+
+            } while (itemElementsOnLevel && groups.length > level);
+            let shadows = createShadowElementsFromPaths(shadowElementPaths, <string>R.prop('selector', R.head(R.values(listItemElems))));
+            R.forEach(elem => {
+                collection[elem] = collection[elem] || [];
+                collection[elem].push(shadows[elem]);
+            }, R.keys(shadows));
+
+            return collection;
+        }
+
+        /**
+         * generalize the ancestors and selector (used for ItemElements)
+         */
+        function generalizeAncestors(listItem: ListItem, selector: string) {
+            const nrListItemSelectorChunks = R.split('>', listItem.selector).length;
+            const selectorChunks = R.split('>', selector);
+            const tailChunks = R.drop(nrListItemSelectorChunks, selectorChunks);
+            const strippedTail = R.map(R.replace(/\(\d+\)/, ''), R.init(tailChunks));
+            const ancestor = listItem.selector + (strippedTail.length > 0
+                        ? ('>' + R.join('>', strippedTail))
+                        : '');
+            return [ancestor, ancestor + '>' + R.last(tailChunks)];
+        }
+
+        /**
+         * generalize the last element only (selector)
+         */
+        function generalizeSelector(selector: string) {
+            let chunks = R.split('>',selector);
+            const replaceAnc = R.lensIndex(chunks.length-1);
+            return R.join('>', R.over(replaceAnc, R.replace(/\(\d+\)/, ''), chunks));
+        }
+
+        function elementLast(selector: string) {
+            return R.last(R.split('>', selector));
+        }
+
+        function createShadowElementsFromPaths(elems: {[elem: string]: string}, listItemSelector: string): {[elem: string]: ShadowElement} {
+            let collection: {[elem: string]: ShadowElement} = {};
+            R.forEach(elem => {
+                let matchSeqNo = /.*\((\d+)\)/.exec(elems[elem]);
+                if (matchSeqNo !== null) {
+                    let seqNo = matchSeqNo[1];
+                    let shadowElement = new ShadowElement({
+                        selector: elems[elem],
+                        sel: ':' + seqNo,
+                        anc: listItemSelector
+                    });
+                    collection[elem] = shadowElement;
+                }
+            }, R.keys(elems));
+            return collection;
+        }
+
+        // The analysis is recursive
+        function analyseGroups(groups: Group[], isList?: boolean): ElementType {
+            // if there are no children, stop
+            if (groups.length <= 1) return null;
+
+            let collection: ElementType = {};
+            const root = R.head(groups[0][0][2]);
+
+            // extract ListItem (plus shadowElements if necessary)
+            let [listItemElems, shadowElements] = extractListItem(root, groups);
+
+            if (R.keys(listItemElems).length === 0) return null; // abort the analyses
+
+            // extract ItemElements, elements and shadowElements, if any
+            let otherElems = extractOtherElements(groups, listItemElems);
+
+            // merge all results together
+            R.forEach(elem => {
+                collection[elem] = collection[elem] || [];
+                collection[elem].push(listItemElems[elem]);
+            }, R.keys(listItemElems));
+            R.forEach(elem => {
+                collection[elem] = collection[elem] || [];
+                collection[elem].push(shadowElements[elem]);
+            }, R.keys(shadowElements));
+            R.forEach(elem => {
+                collection[elem] = collection[elem] || [];
+                collection[elem] = R.concat(collection[elem], otherElems[elem]);
+            }, R.keys(otherElems));
+
+            return collection;
+        }
+
+        /**
+         * walks through the HTML tree and for every tree elem:
+         * - analyse children of elem
+         * - store results in object with path as key
+         * - if path already existing, merge results
+         * - add node to tree or update the node if it already exists. This is done to conserve the tree structure
+         * This function mutates elem
+         */
+        function addPipInfo(elem: ExtElement, isList?: boolean) {
+
+            function addInfo(elem: ExtElement, isList?: boolean): void {
+                // compute groups based on current tree node (elem), `Analysis.analysisDepth` levels deep
+                var groups = groupChildren(elem);
+
+                // extract tree element types from the groups
+                var elementTypes = analyseGroups(groups, isList);
+
+                // if no element types were found, we are done
+                if (elementTypes === null) return void 0;
+
+                // attach the element types to the tree
+                addResultsToNodes(elem, elementTypes);
+
+                // walk the rest of the tree recursively
+                R.forEach((child) => {
+                    addInfo(child);
+                }, getChildren(elem));
+            }
+
+            addInfo(elem, isList);
+        }
+
+        function addResultsToNodes(elem: ExtElement, elementTypes: ElementType) {
+
+            function addResults(elem: ExtElement, elementTypes: ElementType) {
+                let nodeTypeAttrs = elementTypes[elem.path];
+                if (nodeTypeAttrs) {
+                    R.forEach(elementType => {
+                        if      (elementType instanceof ItemElement)   elem.itemElement = elementType;
+                        else if (elementType instanceof ListItem)      {
+                            elem.listItem = elementType;
+                            if (elem.parent) elem.parent.isRoot = true
+                        }
+                        else if (elementType instanceof ShadowElement) elem.shadowElement = elementType;
+                        else if (elementType instanceof Element)       elem.element = elementType;
+                    }, nodeTypeAttrs);
+                }
+
+                R.forEach((child) => {
+                    addResults(child, elementTypes);
+                }, getChildren(elem));
+            }
+
+            addResults(elem, elementTypes);
+        }
+
+        function normalize(elem: ExtElement, rootId?: string) {
+            var level = 0;
+            optimizePathTable();
+
+            function addNode(elem: ExtElement, parent: Parent={rootPath: [], listItemPath: []}, rootPath: string = '', listItemPath: string = '') {
+                var node: any = {rootPath:[], listItemPath:[]};
+
+                node.rootPath = (rootPath !== '' && rootPath !== R.last(parent.rootPath))
+                    ? R.concat(parent.rootPath, [useSelectorIds(rootPath)])
+                    : parent.rootPath;
+
+                if (elem.isRoot) {
+                    rootPath = useSelectorIds(elem.path);
+                }
+
+                node.listItemPath = (listItemPath !== '' && listItemPath !== R.last(parent.listItemPath))
+                    // ? R.concat(parent.listItemPath, [useSelectorIds(listItemPath)])
+                    ? R.concat(parent.listItemPath, [listItemPath])
+                    : parent.listItemPath;
+
+                if (elem.listItem) {
+                    listItemPath = elem.listItem.selector;
+                    // listItemPath = useSelectorIds(elem.listItem.selector);
+                }
+
+                // create an `element` if it's parent is a `shadowElement` or an `element` or if is has no parent
+                // AND it is not a `listItem`, `shadowElement` or an `element`,
+                if ((!elem.parent || elem.parent.shadowElement || elem.parent.element)
+                        && (!elem.element && !elem.listItem && !elem.shadowElement)) {
+                    elem.element = new Element ({
+                        selector: elem.path,
+                        sel: elem.parent ? relativeElementSelector(elem.path, elem.parent.path) : elem.path,
+                        anc: elem.parent ? elem.parent.path : void 0
+                    });
+                }
+
+                node.attribs = elem.attribs;
+                node.name = elem.name;
+                node.isRoot = elem.isRoot;
+                if (elem.element) node.element = replacePathById(elem.element.value(), ['selector', 'anc']);
+                if (elem.shadowElement) node.shadowElement = replacePathById(elem.shadowElement.value(), ['selector', 'anc']);
+                if (elem.listItem) node.listItem = replacePathById(elem.listItem.value(), ['root', 'anc', 'selector']);
+                if (elem.itemElement) node.itemElement = replacePathById(elem.itemElement.value(), ['root', 'anc', 'selector', 'item']);
+
+                // apply element ids to appropriate selector strings
+                var children = getChildren(elem);
+
+                node.children = R.map((c) => addNode(c, node, rootPath, listItemPath), children);
+                return node;
+            }
+            let tree = addNode(elem);
+            return rootId
+                ? tree.children
+                : tree;
+        }
+
+        // print tree selectors (for debugging only)
+        function showTree(tree: ExtElement) {
+            var level = ' ';
+            function show(elem: ExtElement) {
+                level += ' ';
+                R.forEach((elem: any) => {
+                    console.log(level + elem.name + ' ' + (elem.attribs.id ? elem.attribs.id+' ' : ' ') + (elem.element ? 'element ' : ' ') + (elem.shadowElement ? 'shadow ' : ' ') + (elem.listItem ? 'listItem ' : ' ') + (elem.itemElement ? 'itemElement ' : ' '));
+                    show(elem);
+                }, R.filter((c) => c != void 0, elem.children));
+                level = level.substr(1);
+            }
+            show(tree);
+        }
+
+        function extract(domStr: string, rootId?: string, isList?: boolean) {
+            let wrappedDomStr = '';
+            if (rootId) {
+                if (rootId.charAt(0) !== '#') throw new Error("RootId `" + rootId + "` should start with an `#`");
+                let rootElem = document.getElementById(rootId.substr(1));
+                if (rootElem) {
+                    // construct the wrapper without adding it to the DOM
+                    let tag = rootElem.tagName;
+                    let id = rootElem.id;
+                    wrappedDomStr = "<" + tag + " id=" + id + ">" + domStr + "</" + tag + ">";
+                }
+            } else {
+                wrappedDomStr = domStr;
+            }
+
+            try {
+                parser.reset();
+                parser.write(wrappedDomStr);
+                parser.end();
+            } catch(e) {
+                console.log(e);
+            }
+
+            var elem = handler.dom[0].type === 'tag' ? handler.dom[0] : null;
+
+            // abort if parsed domString did not provide a valid tree
+            if (elem === null) return null;
+
+            addPaths(elem);
+            invertPaths();
+
+            function walk(elem: ExtElement, isList?: boolean) {
+                addPipInfo(elem, isList);
+
+                R.forEach((elem) => {
+                    walk(elem);
+                }, getChildren(elem));
+            }
+            walk(elem, isList);
+            return normalize(elem, rootId);
+        }
+
+        return {
+            showTree: showTree,
+            extract: extract,
+            groupChildren: groupChildren,
+            getIdFromSelector: getIdFromSelector,
+            getSelectorFromId: getSelectorFromId,
+            useSelectorIds: useSelectorIds,
+            isValidId: isValidId
+        };
+    }
+}

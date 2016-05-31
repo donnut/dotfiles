@@ -1,0 +1,88 @@
+module Pip.Actions {
+    import G = Globals;
+    import ACT = G.Action;
+    import MK = G.MessageKey;
+
+    /**
+     * register mutation actions
+     */
+    export function DOMReg(pipIn: G.IMessage) {
+        const mapping = {
+            create: ACT[ACT.create],
+            update: ACT[ACT.update],
+            'delete': ACT[ACT.update],
+            insert: ACT[ACT.create],
+            remove: ACT[ACT.delete]
+        };
+        return mapping[pipIn.action];
+    }
+
+    export function nodeReg(pipIn: G.IMessage) {
+        const mapping = {
+            create: ACT[ACT.create],
+            update: ACT[ACT.update],//?? no out?
+            //update is allowed but wil result in no diff
+            //but can be very interesting for sorting!!
+            'delete': ACT[ACT.delete],
+            insert: ACT[ACT.create],//mag bij node niet tot zenden leiden
+            remove: ACT[ACT.delete]//mag bij node niet tot zenden leiden
+        };
+        return mapping[pipIn.action];
+    }
+
+    /**
+     * Output actions
+     */
+    export function basic(pipIn: G.IMessage) {//in = out ook al zijn voor pip niet alle syntaxen beschikbaar : verg model en regpips!
+        const mapping = {
+            create: ACT[ACT.create],
+            update: ACT[ACT.update],
+            'delete': ACT[ACT.delete],
+            insert: ACT[ACT.insert],//meaning DOM-ancestor is inserted
+            remove: ACT[ACT.remove] //meaning DOM-ancestor is removed
+        };
+        return mapping[pipIn.action];
+    }
+
+    export function model(pipIn: G.IMessage) {
+        if (pipIn[MK[MK.action]] === ACT[ACT.create]) {
+            return ACT[ACT.create];
+        } else if (pipIn[MK[MK.action]] === ACT[ACT.update]) {
+            if (pipIn[MK[MK.value]] && R.keys(pipIn[MK[MK.value]]).length > 0) {
+                return ACT[ACT.update];
+            } else {
+                return ACT[ACT.delete];
+            }
+        } else if (pipIn[MK[MK.action]] === ACT[ACT.delete]) {
+            return ACT[ACT.delete];
+        } else if (pipIn[MK[MK.action]] === ACT[ACT.insert]) {
+            return ACT[ACT.insert];
+        } else if (pipIn[MK[MK.action]] === ACT[ACT.remove]) {
+            return ACT[ACT.remove];
+        }
+    }
+
+    export function DOM(pipIn: G.IMessage) {
+        const mapping = {
+            create: ACT[ACT.update],
+            update: ACT[ACT.update],
+            'delete': ACT[ACT.update],
+            insert: ACT[ACT.update],
+            remove: ACT[ACT.update]
+        };
+        return mapping[pipIn.action];
+    }
+
+    export function node(pipIn: G.IMessage) {
+        const mapping = {
+            create: ACT[ACT.insert],
+            update: ACT[ACT.insert],//??
+            // update is allowed but wil result in no diff
+            //but can be very interesting for sorting!!
+            'delete': ACT[ACT.remove],
+            insert: ACT[ACT.insert],//mag bij node niet tot zenden leiden
+            remove: ACT[ACT.remove]//mag bij node niet tot zenden leiden
+        };
+        return mapping[pipIn.action];
+    }
+}

@@ -1,0 +1,148 @@
+module Monads {
+    export interface Mapper {
+        map(fn: Function): any;
+    }
+
+    export interface IOStatic {
+        runIO(): IOInstance;
+        of(fn: Function): IOInstance;
+    }
+
+    // export interface FutureStatic {
+    //   of(fn: Function): FutureInstance;
+    // }
+
+    interface Fn {
+        (x?: any): any;
+    }
+
+    export interface IOInstance {
+        new(fn: Function): void;
+        chain(fn: (...args: any[]) => IOInstance): IOInstance;
+        map(fn: Function): IOInstance;
+        ap<T extends Mapper>(io: T): IOInstance;
+        runIO(): IOInstance;
+        of(fn: Function): IOInstance;
+        equals(io: IOInstance): boolean;
+        get(): any;
+    }
+
+    // export interface FutureInstance {
+    //   new(fn: Function): void;
+    //   chain(fn: (...args: any[]) => FutureInstance): FutureInstance;
+    //   map(fn: Function): FutureInstance;
+    //   ap<T extends Mapper>(io: T): FutureInstance;
+    //   runIO(): FutureInstance;
+    //   of(fn: Function): FutureInstance;
+    //   equals(io: FutureInstance): boolean;
+    // }
+
+    export class IO {
+
+        fn: Fn;
+
+        static runIO = function(io) {
+            return io.runIO.apply(io, [].slice.call(arguments, 1));
+        }
+
+        static of = IO.prototype.of;
+
+        constructor(fn: Fn) {
+            this.fn = fn;
+        }
+
+        // `f` must return an IO
+        chain(f) {
+            var io = this;
+            return new IO(function() {
+                return f(io.fn()).fn();
+            });
+        }
+
+        map(f) {
+            var io = this;
+            return new IO(R.compose(f, io.fn));
+        }
+
+        // `this` IO must wrap a function `f` that takes an IO (`m`) as input
+        // `f` must return an IO
+        ap(m) {
+            return this.chain(function(f) {
+                return m.map(f);
+            });
+        }
+
+        runIO() {
+            return this.fn.apply(this, arguments);
+        }
+
+        of(x) {
+            return new IO(function() {
+                return x;
+            });
+        }
+
+        get() {
+            return this.fn();
+        }
+
+        // this is really only to accommodate testing ....
+        equals(that) {
+            // return this === that ||
+            //   this.fn === that.fn ||
+            //   IO.runIO(this) === IO.runIO(that);
+            return IO.runIO(this).is( IO.runIO(that));
+        }
+    }
+
+    export class Future {
+
+        fork: { (reject: (err: any) => any, resolve: (data: any) => any) };
+
+        static of = Future.prototype.of;
+
+        // `fn` is a function that takes two function arguments: `reject` (failure) and `resolve` (success)
+        constructor(fn: (reject: (err: any) => any, resolve: (data: any) => any) => void) {
+            this.fork = fn;
+        }
+
+        // functor
+        map(f) {
+            return this.chain(function(a) {
+                return Future.of(f(a));
+            });
+        }
+
+        // apply
+        ap(m) {
+            return this.chain(function(f) {
+                return m.map(f);
+            });
+        }
+
+        // applicative
+        of(x) {
+            // should include a default rejection?
+            return new Future(function(_, resolve) {
+                return resolve(x);
+            });
+        }
+
+        // chain
+        //  f must be a function which returns a value
+        //  f must return a value of the same Chain
+        //  chain must return a value of the same Chain
+        chain(f) {  // Sorella's:
+            return new Future(function(reject, resolve) {
+                return this.fork((a) => reject(a), (b) => f(b).fork(reject, resolve))
+            }.bind(this));
+        }
+
+        // equality method to enable testing
+        equals(that) {
+            void that;
+            // TODO: how do you define equality for two Futures?
+            return true;
+        }
+    }
+}

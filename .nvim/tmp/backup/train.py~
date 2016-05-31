@@ -1,0 +1,114 @@
+from nltk.tokenize.punkt import PunktSentenceTokenizer
+from nltk import word_tokenize
+
+from ocr.corrections import Corrections
+from functools import reduce
+import re
+
+class Train:
+
+    def __init__(self, service):
+        # set the initial weight factors
+        self.training_steps = 5
+        self.correction = Corrections(service=service)
+
+    def _cleanup(self, sent):
+        # remove nulls and pair
+        sent = reduce(lambda acc, x: acc + [x[0]] if isinstance(x, tuple) else acc + [x], sent, [])
+        sent = reduce(lambda acc, x: acc + x.split(' '), sent, [])
+        return list(filter(lambda x: x != '__null__', sent))
+
+    def assert_sents(self, best, clean):
+        best = self._cleanup(best)
+        clean = self._cleanup(clean)
+        pairs = zip(clean, best)
+        for pair in pairs:
+            b, c = pair
+            if b != c:
+                if isinstance(c, tuple):
+                    if c != b[0]:
+                        return False
+                else:
+                    return False
+        return True
+
+
+    def delta_transition_weights(self, clean, best):
+        best_score = best[0][2]
+        return self.correction.tf.logprob_sent(clean) - best_score[0]
+
+    def delta_emission_weights(self, dirty, clean, best):
+        """Return the delta weight by comparing the feature function to get from
+           dirty to best, and to get from dirty to clean. The required transformation
+           of the latter is known (stored in clean).
+        """
+        delta = {'inword': 0.0, 'merge': 0.0, 'split': 0.0}
+        best_score = best[0][2]
+        for i, ref in enumerate(clean):
+            if isinstance(ref, tuple):
+                delta['merge'] += self.correction.ef.logprob_merge(ref)
+            elif len(ref.split(' ')) > 1:
+                delta['split'] += self.correction.ef.logprob_split(ref)
+            elif ref == '__null__':
+                pass
+            else:
+                # TODO: is dirty[i] als arg correct, of moet dit best zijn?
+                delta['inword'] += self.correction.ef.logprob_wed(ref, dirty[i])
+
+        return (delta['inword']-best_score[1], delta['merge']-best_score[2], delta['split']-best_score[3])
+
+    def train(self, dirty, clean, n=5):
+        """
+           dirty and clean are tokenized lists of sentences.
+           clean inclused transformation required to get from dirty to clean
+        """
+
+        self.training_steps = n
+        # set weights randomly
+        self.correction.set_weights({'trans':0.25, 'inword':0.25, 'merge':0.25, 'split':0.25})
+
+        if len(dirty) != len(clean):
+            raise Exception("dirty and clean sets do not match")
+
+        for o in range(self.training_steps):
+            for i in range(0, len(clean)):
+                best = self.correction.best(dirty[i])
+                best_sent = best[0][0]
+                best_weighted_score = best[0][1]
+                best_score = best[0][2]
+                if not self.assert_sents(best_sent, clean[i]):
+                    delta_trans = self.delta_transition_weights(clean[i], best)
+                    delta_emission = self.delta_emission_weights(dirty[i], clean[i], best)
+
+                    #scale weight factors
+                    delta_sum = delta_trans + sum(delta_emission)
+                    self.correction.w_trans += delta_trans/delta_sum
+                    self.correction.w_inword += delta_emission[0]/delta_sum
+                    self.correction.w_merge += delta_emission[1]/delta_sum
+                    self.correction.w_split += delta_emission[2]/delta_sum
+
+                print(o, i,
+                    self.correction.w_trans,
+                    self.correction.w_inword,
+                    self.correction.w_merge,
+                    self.correction.w_split
+                )
+
+        print(best_sent)
+        return (self.correction.w_trans/self.training_steps,
+                self.correction.w_inword/self.training_steps,
+                self.correction.w_merge/self.training_steps,
+                self.correction.w_split/self.training_steps)
+
+    def predict(self, raw, weights=(0.9332,0.0034,0.0609,0.0025)):
+        weights=(0.05,0.25,0.25,0.25)
+        self.correction.w_trans = weights[0]
+        self.correction.w_inword = weights[1]
+        self.correction.w_merge = weights[2]
+        self.correction.w_split = weights[3]
+        sents = PunktSentenceTokenizer().sentences_from_text(raw)
+        for s in sents:
+            print(s)
+            print(self.correction.best(word_tokenize(s))[0][0])
+            print()
+        return True

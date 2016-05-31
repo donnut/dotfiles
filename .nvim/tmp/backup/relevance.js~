@@ -1,0 +1,35 @@
+var Twitter = require('twitter');
+var mongoose = require('mongoose');
+var fs = require('fs');
+var async = require('async');
+
+var client = new Twitter({
+    consumer_key: 'cWN3UpsbOqG7jn0m8EmvoqtSV',
+    consumer_secret: 'e5Ep2oM1FRVHXgXKiEJwGEZasytAuNDv6h69XS0nPLGmDLx3gz',
+    access_token_key: '15123362-RkHEznCU2x8RhIhu4vWNEzb5BETha2nsLIp7M0vXf',
+    access_token_secret: 't9GeqpH4ufn2fix14BEdM5EKrrOHGGYUDVVbVFkeENsYy'
+});
+
+
+// initialize model(s)
+require('../models/tweet');
+var Tweet = mongoose.model('Tweet');
+
+mongoose.connect('mongodb://localhost/spijt_vluchtelingen', {
+    db:{safe: { j: 1, w: 0, wtimeout: 10000 }}
+});
+
+Tweet.
+    find({}).
+    limit(10).
+    sort({"user.followers_count": -1}).
+    exec(function(err, tweets) {
+        if (err) console.log(err);
+        tweets.forEach(function(tweet) {
+            console.log(tweet.user.followers_count, tweet.user.name, tweet.text);
+        });
+        mongoose.disconnect();
+    });
+
+
+

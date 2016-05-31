@@ -1,0 +1,810 @@
+'use strict';
+/********** No todos ***********/
+// When there are no todos, #main and #footer should be hidden.
+//pips:
+var DEBUG = true;
+var nodes = [];
+var pips = [];
+var links = [];
+
+function trim(str) {
+    return str.replace(/^\s+|\s+$/g, '');
+}
+
+function getVal($elem) {
+    return trim($elem.val());
+}
+
+function isChecked($elem) {
+    return $elem.prop('checked');
+}
+
+pips = pips.concat([
+    {
+        selector: '#main',
+        type: 'target',
+        router: false
+    },
+    {
+        selector: '#footer',
+        type: 'target',
+        router: false
+    }
+]);
+
+links = links.concat([
+    {
+        pub: 'models.todoList',//type monitor
+        sub: '#main.target',
+        drop: ['models.todoList'],
+        pre: function() {
+            var ls = this['models.todoList'].get();
+            if (R.length(ls) !== 0) return {value: 'target'};
+            else return {value: 'no_target'};
+        },
+        action: 'update'
+    },
+    {
+        pub: 'models.todoList',//type monitor
+        sub: '#footer.target',
+        drop:['models.todoList'],
+        pre: function() {
+            var ls = this['models.todoList'].get();
+            if (R.length(ls) !== 0) return {value: 'target'};
+            else return {value: 'no_target'};
+        },
+        action: 'update'
+    }
+]);
+
+
+/***********New todo**********/
+// New todos are entered in the input at the top of the app.
+//pip
+pips = pips.concat([
+    {
+        type: 'template',
+        selector: '#new-todo',
+        attr: 'value',
+        empty: ''
+    },
+    //The input element should be focused when the page is loaded
+    //preferably using the autofocus input attribute.
+    //pip
+    {
+        type: 'state',
+        selector: '#new-todo',
+        'default': 'focus',
+        states:[{
+            name: 'focus',
+            attr: 'autofocus',
+            value: true
+        },
+        {
+            name:'nofocus',
+            attr:'autofocus',
+            value: false
+        }]
+    },
+    {
+        type: 'event',
+        selector: '#new-todo',
+        events: 'blur'
+    },
+    {
+        type: 'event',
+        selector: '#new-todo',
+        events: 'focus'
+    }
+]);
+//link
+
+links = links.concat([
+    {
+        pub: '#new-todo.events.blur',//type event
+        sub: '#new-todo.states.focus',
+        binding: true, //default
+        value: function() { return 'nofocus'; },
+        action: 'update',
+    },
+    {
+        pub: '#new-todo.events.focus',//type event
+        sub: '#new-todo.states.focus',
+        binding: true, //default
+        value: function() { return 'focus'; },
+        action: 'update',
+    }
+]);
+
+//Pressing Enter creates the todo,
+//appends it to the todo list and
+//clears the input.
+//Make sure to .trim() the input and then check that it's not empty before creating a new todo.
+//pips
+pips = pips.concat([
+    {
+        type: 'event',
+        selector: '#new-todo',
+        events: 'keydown',
+        preventDefault: false,
+        bindFn: function(evtObj) {
+            var ENTER_KEY = 13;
+            if (evtObj.evt.which === ENTER_KEY){
+                return evtObj;
+            }
+        },
+    },
+    {
+        type: 'event',
+        selector: '#new-todo',
+        events: 'keyup',
+        //preventDefault: false,
+        bindFn: function(evtObj) {
+            var ENTER_KEY = 13;
+            if (evtObj.evt.which === ENTER_KEY){
+                return evtObj;
+            }
+        },
+    },
+    // /** Persistence **/
+    // // Your app should dynamically persist the todos to localStorage.
+    // //If the framework has capabilities for persisting data (e.g. Backbone.sync),
+    // //use that, otherwise vanilla localStorage.
+    // //If possible, use the keys id, title, completed for each item.
+    // //Make sure to use this format for the localStorage name: todos-[framework].
+    // //Editing mode should not be persisted.
+    {
+        type: 'collection',
+        name: 'todoList',
+        // model: [{
+        //     completed: true,
+        //     title: 'Create a TodoMVC template'
+        // }, {
+        //     completed: false,
+        //     title: 'Rule the web'
+        // }],
+        //keys: ['completed', 'title'],
+        //index: 'id',
+        server: false,
+        //emit: true default
+    },
+    {
+        type: 'templateItem',
+        selector: '#todo-list>li>div>label',
+        attr: 'html',//default 'html' if not defined,
+        method: 'html' // default
+        //empty:'',
+    }
+]);
+//nodePip
+nodes = nodes.concat([
+    {
+        type: 'list',
+        selector: '#todo-list',
+        // idKey: 'title',
+        tpl: "<li class='completed'>" +
+                "<div class='view' >" +
+                   "<input class='toggle' type='checkbox'>" +
+                   "<label></label>" +
+                   "<button class='destroy'></button>" +
+                "</div>" +
+                "<input class='edit'>" +
+             "</li>",
+        empty: '<span></span>'
+    }
+]);
+//links
+links = links.concat([
+    {
+        pub: '#new-todo.events.keydown',//type form
+        sub: 'models.todoList',
+        binding: true, //default
+        value: function(evt) {
+            var newToDo = evt.el.map(getVal).runIO();
+            if (newToDo !== '') {
+                return {
+                    title: newToDo,
+                    completed: false
+                };
+            }
+            //TODO zorgen message met value of action undefined genegeerd (tenzij action is delete //or remove)
+        },
+        action: function() { return 'create'; }
+    },
+    {
+        pub: '#new-todo.events.keyup',//type event->template
+        sub: '#new-todo.value',
+        binding: true, //default
+        action: 'delete'
+    },
+    {
+        pub: 'models.todoList', //type order: sort, filter, pagination
+        sub: '#todo-list.list',
+        drop: ['#filters.select.subset'],
+        filter:/*[*/ function(inp){ //testFunction
+            var filterName = this['#filters.select.subset'].get()[0];
+            var testValue  = filterName === 'completed';//#/
+            return !filterName || filterName === 'all' || inp.completed === testValue;
+        }/*]*/,//, 'models.todoList'
+    },
+    {
+        pub: 'models.todoList',//type template
+        sub: '#todo-list>li>div>label.html',
+        value: function(i) {
+            return i.value && i.value.title
+                ? i.value.title
+                //TODO zorgen message met value of action undefined genegeerd
+                : '';
+        }
+    }
+
+]);
+
+/**** Mark all as complete****/
+//This checkbox toggles all the todos to the same state as itself.
+//Make sure to clear the checked state after the the "Clear completed" button is clicked.
+//The "Mark all as complete" checkbox should also be updated when single todo items are checked/unchecked.
+//Eg. When all the todos are checked it should also get checked.
+pips = pips.concat([
+    {
+        type: 'event',
+        selector: "#toggle-all",
+        events: 'click', //'keyup',
+        // delegation: 'false',
+        // enable: true
+    },
+    {
+        type: 'state',
+        selector: '#toggle-all',
+        'default':'is_not_checked',
+        states:[{
+            name: 'is_checked',
+            attr: 'checked',
+            value: true
+        },
+        {
+            name: 'is_not_checked',
+            attr: 'checked',
+            value: false
+        }]
+    }
+]);
+links = links.concat([
+    {
+        pub: "#toggle-all.events.click",//type form
+        sub: 'models.todoList',
+        drop: ['models.todoList'],
+        binding: true, //default
+        pre: function(e) {
+            return this['models.todoList'].get();
+        },
+        it: function(p) {return p.__it;},//TODO ook automatisch naar __.it zoeken?
+        action: 'update',
+        value:function(p) {return R.merge(p.value, {completed: true});}
+    }
+]);
+
+/***** Item****/
+// A todo item has three possible interactions:
+
+// Clicking the checkbox marks the todo as complete by updating its completed value
+//and toggling the class completed on its parent <li>
+pips = pips.concat([
+    {
+        type: 'stateItem',
+        selector: '#todo-list>li',
+        'default': 'is_not_completed',
+        states:[{
+            name: 'is_completed',
+            attr: 'class',
+            value: 'completed'
+        },
+        {
+            name: 'is_not_completed',
+            attr: 'class',
+            value: ''
+        }]
+    },
+    {
+        type: 'eventItem',
+        selector: '#todo-list>li>div>input', //.toggle',
+        events: 'click',
+        //delegation: true,
+        preventDefault: false // needed!! to enable checkbox behavior
+    },
+    {
+        type: 'stateItem',
+        selector: '#todo-list>li>div>input', //.toggle',
+        'default': 'is_not_checked',
+        states:[{
+            name: 'is_not_checked',
+            attr: 'checked',
+            value: false
+        },
+        {
+            name: 'is_checked',
+            attr: 'checked',
+            value: true
+        }]
+    }
+]);
+links = links.concat([
+    {
+        pub: '#todo-list>li>div>input.events.click', //type form
+        sub: 'models.todoList',
+        drop: ['models.todoList'],
+        binding: true, //default
+        value: function(i) {
+            return {'completed': !this['models.todoList'].get(i.it).completed};
+        },
+        action: 'update' //default
+    },
+    {
+        pub: 'models.todoList',//type monitor
+        sub: '#todo-list>li.states.is_not_completed',
+        value: function(i) {
+            //TODO wat als geen i.value?
+            return (i.value && i.value.completed)
+                ? 'is_completed'
+                : 'is_not_completed';
+        }
+    },
+    {
+        pub: 'models.todoList',//type monitor
+        sub: '#todo-list>li>div>input.states.is_not_checked',
+        value: function(i) {
+            //TODO wat als geen i.value?
+            return (i.value && i.value.completed)
+                ? 'is_checked'
+                : 'is_not_checked';
+        }
+    }
+]);
+// Double-clicking the <label> activates editing mode,
+//by toggling the .editing class on its <li>
+                     //pips
+
+pips = pips.concat([
+    {
+        type: 'eventItem',
+        selector: '#todo-list>li>div>label',
+        events: 'dblclick',
+        //delegation: true default
+        //TODO bindFn for doubleClick detetction
+        //bindFn: function(handler, preventDefault, event) {},
+    },
+    {
+        type:'stateItem',
+        selector: '#todo-list>li',
+        'default': 'noediting',
+        states:[{
+            name: 'editing',
+            attr:'class',
+            value: 'editing'
+        },
+        {
+            name:'noediting',
+            attr:'class',
+            value: ''
+        }]
+    }
+]);
+links = links.concat([
+    //link:
+    {
+        pub:'#todo-list>li>div>label.events.dblclick', //type event
+        sub:'#todo-list>li.states.noediting',
+        binding: true,//default
+        value: 'editing',
+        action: 'update',
+        //it: (l)=> l.it;//default
+    }
+]);
+// pips = pips.concat([
+//     // Hovering over the todo shows the remove button (.destroy)
+//     {
+//         type: 'targetItem',
+//         selector: '#todo-list',
+//         it: 'button', //'.destroy' deze oplossing bij MOPEapp
+//         router: false,
+//     },
+//     {
+//         it: 'li', /* default */
+//         events: 'mouseenter',
+//         root: '#todo-list',
+//         type: 'eventItem'
+//     },
+//     {
+//         it: 'li',/* default */
+//         events: 'mouseout',
+//         root: '#todo-list',
+//         type: 'eventItem'
+//     }
+// ]);
+// links = links.concat([
+//     {
+//         pub: '#todo-list.li.events.mouseenter',//type event
+//         sub: '#todo-list.targetItem',
+//         value: 'target'
+//     },
+//     {
+//         pub: '#todo-list.li.events.mouseout',//type event
+//         sub: '#todo-list.targetItem',
+//         value: 'no-target'
+//     }
+// ]);
+// //not specified: clicking on remove button should remove item
+pips = pips.concat([
+    {
+        type: 'eventItem',
+        selector: '#todo-list>li>div>button',
+        events: 'click',//default
+        //delegation: true//default
+    }
+]);
+links = links.concat([
+    {
+        pub: '#todo-list>li>div>button.events.click',//type form
+        sub: 'models.todoList',
+        binding: true,//default
+        action: 'delete',
+        //it: (i) => i.it //default
+    }
+]);
+
+// /** Editing **/
+// // When editing mode is activated it will hide the other controls and
+// //bring forward an input that contains the todo title,
+// //which should be focused (.focus()).
+pips = pips.concat([
+    {
+        type: 'stateItem',
+        'default' :'outOfFocus',
+        selector: '#todo-list>li>input',
+        states:[{
+            name: 'outOfFocus',
+            attr: 'class',
+            value: ''
+        },
+        {
+            name:'onFocus',
+            attr:'class',
+            value:'focus'
+        }]
+    },
+    //%%('.edit', 'li', '#todo').stateItem()
+    {
+        type: 'templateItem',
+        selector: '#todo-list>li>input',
+        attr: 'value',
+        'default': 'html', // if not defined,
+        method: 'html', // default,
+        empty: ''
+    }
+]);
+//links
+links = links.concat([
+    {
+        pub:'models.todoList', //type template
+        sub:'#todo-list>li>input.value',
+        value: function(l) {
+            //TODO wat als undefined?//of is deze test overbodig?? binne schrijven van linkopties!!!
+            if (l.value) return l.value.title;
+        }
+    },
+
+    //%%.link('models.todoList','#todo-list..edit.value',{key:'title'});
+
+    //TODO of gewoon altijd focus op editing?
+    //default focus?
+    {
+        pub:'#todo-list>li>div>label.events.dblclick', //type event
+        sub:'#todo-list>li>input.states.outOfFocus',
+        binding: true,//
+        value: 'onFocus',
+        action: 'update',
+        //it: (l) => l.it;
+    }
+]);
+// //TODO hoe moet die focus nu precies togglen
+// //wat zijn nou de specs
+// //{//type event
+// //   pub:'#todo-list..edit.blur keyup',
+// //   sub:'#todo-list..edit.outOfFocus',
+// //   fnOptions: {
+// //     state:'outOfFocus'
+// //   }
+// // },
+
+// The edit should be saved on both blur and enter,
+// and the editing class should be removed.
+// Make sure to .trim() the input and then check that it's not empty.
+// If it's empty the todo should instead be destroyed.
+// If escape is pressed during the edit,
+// the edit state should be left and any changes be discarded.
+pips = pips.concat([
+    {//name: submitEditing
+        selector: '#todo-list>li>input',//.edit',
+        type: 'eventItem',
+        //events: 'keyup',
+        events: 'blur keyup',
+        delegation: false,
+        //enable: true, default
+        bindFn: function(evtObj) {
+            var ENTER_KEY = 13;
+            if (evtObj.evt.which === ENTER_KEY || evtObj.evt.which === 0) {
+                return evtObj;
+            }
+        }
+    },
+    { //name: cancelEditing
+        selector: '#todo-list>li>input',//.edit',
+        type: 'eventItem',
+        events: 'keyup',
+        delegation: true,//default
+        //enable: true, default
+        bindFn: function(evtObj) {
+            var ESCAPE_KEY = 27;
+            if (evtObj.evt.which === ESCAPE_KEY) {
+                return evtObj;
+            }
+        }
+    }
+]);
+
+//links
+links = links.concat([
+    {
+        //pub:'#todo-list>li>input.events.keyup',//submitEditing
+        pub:'#todo-list>li>input.events.blurKeyup',//submitEditing
+        sub:'models.todoList',
+        binding: true, //default
+        value :function(e) {
+            var $input = e.item.fn().val()
+            return { title: $input.trim()};
+        }, //to do default trim?
+        action: 'update',
+    },
+    {
+        pub:'#todo-list>li>input.events.keyup',//cancelEditing
+        sub:'#todo-list>li>input.value',
+        drop: ['models.todoList'],
+        binding: true,//
+        value: function(i) {
+            var model =this['models.todoList'].get(i.it);
+            return model.title;
+        },
+        action: 'update',
+        //it: default
+    },
+    {
+        pub:'#todo-list>li>input.events.keyup',//cancelEditing
+        sub:'#todo-list>li.states.noediting',
+        binding: true,//
+        value: 'noediting',
+        action: 'update'
+        //it: default
+    },
+    {
+        pub:'#todo-list>li>input.events.blurKeyup',//submitEditing
+        //pub:'#todo-list>li>input.events.keyup',//submitEditing
+        sub:'#todo-list>li.states.noediting',
+        binding: true,//
+        value: 'noediting',
+        action: 'update'
+        //it: default
+    }
+]);
+
+/** Counter **/
+// Displays the number of active todos in a pluralized form.
+//Make sure the number is wrapped by a <strong> tag.
+//Also make sure to pluralize the item word correctly: 0 items, 1 item, 2 items. Example: 2 items left
+pips = pips.concat([
+    {
+        type: 'template',
+        selector: '#todo-count',
+        method: 'html', //attr: 'html', //default 'html' if not defined,
+        empty: '<strong>0</strong> items'
+    }
+]);
+links = links.concat([
+    {
+        pub: 'models.todoList',//template
+        sub: '#todo-count.html',
+        drop: ['models.todoList'],
+        value: function() {
+            var nrTodos = R.length(R.keys(this['models.todoList'].get()));
+            var leader = '<strong>'+nrTodos+'</strong>';
+            var unit = nrTodos === 1 ? 'item' : 'items';
+            return leader + ' ' + unit;
+        },
+        action: 'update'
+    }
+]);
+
+// /** Clear completed button **/
+// // Displays the number of completed todos, and when clicked, removes them.
+// //Should be hidden when there are no completed todos.
+pips = pips.concat([
+    {
+        type: 'target',
+        selector: '#clear-completed',
+        router: false,
+    },
+    {
+        type: 'template',
+        selector: '#clear-completed',
+        method: 'html',
+        empty:'(0)'
+    },
+    {
+        type: 'event',
+        selector: '#clear-completed',
+        events: 'click'
+    }
+]);
+//link
+links = links.concat([
+    {
+        pub: 'models.todoList',//template
+        sub: '#clear-completed.html',
+        drop: ['models.todoList'],
+        action: 'update',
+        value: function() {
+            var nrCompleted = R.length(R.filter(function(p) {return p.completed;}, this['models.todoList'].get()));
+            return "Clear completed (" + nrCompleted + ")";
+        }
+    },
+    {
+        pub:'#clear-completed.events.click',//form
+        sub:'models.todoList',
+        binding: true,//
+        drop: ['models.todoList'],
+        pre: function(evt) {
+            //alleen getriggerd als wijzinging in collection
+            //maar doet niks met linkIn, wel initialisatie read
+            var completedItems = R.filter(function(p) {return p.completed;}, this['models.todoList'].get())
+            return R.map(function(i) {
+                return {action: 'delete', it: i.__it };//TODO nu geen value evreist!!!
+            }, completedItems);
+        }
+    }, {
+        // make button 'clear-completed' visible if completed items exist
+        pub: 'models.todoList',
+        sub: '#clear-completed.target',
+        drop: ['models.todoList'],
+
+        pre: function() {
+            var ls = this['models.todoList'].get();
+            if (R.length(ls) !== 0) return {value: 'target'};
+            else return {value: 'no_target'};
+        },
+        value: function() {
+            // var someCompleted = R.reduce(function(acc, item) {
+            //     return acc || item.completed;
+            // }, false, this['models.todoList'].get());
+            //  return someCompleted
+            //     ? 'target'
+            //     : 'no_target';
+            //alternatief
+            var nrCompleted = R.length(R.filter(function(p) {return p.completed;}, this['models.todoList'].get()));
+            return nrCompleted === 0
+                ? 'no_target'
+                : 'target';
+        },
+        action: 'update'// default
+    }
+]);
+
+
+// /** Routing**/
+// //Routing is required for all frameworks.
+// //Use the built-in capabilities if supported,
+// //otherwise use the Flatiron Director routing library located in the /assets folder.
+// //The following routes should be implemented:
+// //#/ (all - default), #/active and #/completed (#!/ is also allowed).
+// // When the route changes the todo list should be filtered on a model level
+// //and the selected class on the filter links should be toggled.
+// //When an item is updated while in a filtered state, it should be updated accordingly.
+// //E.g. if the filter is Active and the item is checked, it should be hidden.
+// //Make sure the active filter is persisted on reload.
+nodes = nodes.concat([{
+    type: 'listItem',
+    selector: '#filters>li',
+    idType: 'href',
+}]);
+
+ pips = pips.concat([
+    {
+        type: 'select',
+        name: 'subset',
+        selector: '#filters',
+        it: 'a',
+        required: true,
+        one: true,
+        'default': "IS_UNSELECTED",
+        states:[{
+            name: "IS_UNSELECTED",
+            attr: 'class',
+            value: ''
+        },
+        {
+            name: "IS_SELECTED",
+            attr: 'class',
+            value: "selected"
+        }]
+        //reselectable: false;// TODO wat wil je???
+    },
+    // {
+    //     type: 'targetItem',
+    //     selector: '#filters',
+    //     router:true,
+    //     required: true,
+    //     one: true,
+    //     'default': 'no_target',
+    //     states:[{
+    //         name: 'no_target',
+    //         attr: 'class',
+    //         value: ''
+    //     },
+    //     {
+    //         name: 'target',
+    //         attr: 'class',
+    //         value: 'target'
+    //     }]
+    // },
+    {
+        type: 'eventItem',
+        selector: '#filters>li>a',
+        events: 'click'
+        //delegated: true
+    }]);
+links = links.concat([
+    // {
+    //     pub: '#filters.select.subset', //TODO address
+    //     sub: '#filters.target'
+    // },
+    // {
+    //     pub: '#filters.target',
+    //     sub: '#filters.select.subset'//TODO address
+    // },
+    {
+        pub: '#filters>li>a.events.click',
+        sub: '#filters.select.subset', //TODO address
+        binding: true,
+        value: true,
+        action: "update"
+    },
+    {
+        pub: '#filters.select.subset', //type order: sort, filter, pagination
+        sub: '#todo-list.list',
+        drop:['#filters.select.subset'],
+        filter:[ function(inp){
+            var pubRegister = this['#filters.select.subset'].get();
+            var filterName =  pubRegister[0];
+            var testValue  = filterName === 'completed';//#/
+            return !filterName || filterName === 'all' || inp.completed === testValue;
+        }, 'models.todoList'],
+    },
+]);
+var domStr = document.body.outerHTML;
+//Globals.pips = Store.Storage();
+var app = new LinkingPips.App(domStr, nodes, pips, links);
+
+
+// Global.pips.get('model.todoList').react({
+//     [{
+//         action: 'create',
+//         value: {
+//                 completed: true,
+//                 title: 'Create a TodoMVC template'
+//             }
+//         }, {
+//         action: 'create',
+//         value: {
+//             completed: false,
+//             title: 'Rule the web'
+//         }
+//     }]
+// });

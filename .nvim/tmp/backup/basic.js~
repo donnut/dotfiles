@@ -1,0 +1,6 @@
+function x() {}
+x.prototype.hi = function() {
+    console.log('hi');
+}
+
+(new x).hi();

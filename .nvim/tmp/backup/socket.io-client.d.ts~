@@ -1,0 +1,78 @@
+// Type definitions for socket.io-client
+// Project: http://socket.io/
+// Definitions by: Erwin Poeze <https://github.com/donnut>
+// Definitions: https://github.com/borisyankov/DefinitelyTyped
+
+
+///<reference path='../node/node.d.ts' />
+
+declare var io_client: io.Static;
+declare var manager: manager.Static;
+declare var socket: socket.Static;
+
+
+declare module "socket.io-client" {
+    export = io_client;
+}
+
+declare module io {
+
+    interface Opts {
+        'force new connection': boolean;
+    }
+
+    interface Static {
+        protocol: number;
+        socket: socket.Instance;
+        manager: manager.Instance;
+        emitter:NodeJS.EventEmitter;
+        (uri: string, opts?: Opts): manager.Instance;
+        new(url: string): manager.Instance;
+        disconnect(): manager.Instance;
+    }
+}
+
+declare module manager {
+
+    interface Opts {
+        path: string;
+        reconnection: boolean;
+        reconnectionAttempts: number;
+        reconnectionDelay: number;
+        reconnectionDelayMax: number;
+        timeout: number;
+        autoConnect: boolean;
+    }
+
+    interface Static {
+        (url: string, opts: Opts): Instance;
+        new(url: string, opts: Opts): Instance;
+    }
+
+    interface Instance {
+        reconnection(v: boolean): Instance;
+        reconnectionAttempts(v: number): Instance;
+        reconnectionDelay(v: number): Instance;
+        reconnectionDelayMax(v: number): Instance;
+        timeout(v: number): Instance;
+        open(fn: Function): Instance;
+        connect(fn: Function): Instance;
+        socket(nsp: string): socket.Instance
+    }
+}
+
+declare module socket {
+
+    interface Static {
+        new(io: io.Instance, nsp: string): void;
+    }
+
+    interface Instance {
+        open(): Instance;
+        connect(): Instance;
+        send(...args: any[]): Instance;
+        emit(ev: string, ...args: any[]): Instance;
+        close(): Instance;
+        disconnect(): Instance;
+    }
+}

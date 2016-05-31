@@ -1,0 +1,75 @@
+import re
+import pickle
+from ocr.lcsubstr import LCS
+
+class Confusion:
+
+    def __init__(self, type='base'):
+        self.cmatrix = dict()
+        self.type = type
+
+    def create(self, file_in):
+        with open(file_in, 'r') as f_i:
+            self.cmatrix = self._analyse(f_i)
+
+    def _analyse(self, file_in):
+        cmatrix = dict()
+        for line in file_in:
+            groups = re.search(r"'(.*?)';'(.*?)'", line)
+            inc_string = groups.group(1)
+            cor_string = groups.group(2)
+
+            inc_string = inc_string.strip(" ")
+            cor_string = cor_string.strip(" ")
+
+            inc_string = re.sub('-\*|-|\[.*?\]|\^{.*?}| ', '', inc_string)
+            cor_string = re.sub('-\*|-|\[.*?\]|\^{.*?}| ', '', cor_string)
+
+            cor = cor_string
+            inc = inc_string
+            linc = len(inc)
+            lcor = len(cor)
+            if abs(linc - lcor):
+                pieces = LCS.diffs(inc, cor)
+                #for piece in pieces:
+                    ## remove obvious unequal strings
+                    #if len(piece[0]) < 3 and len(piece[1]) < 3:
+                        #if piece in cmatrix:
+                            #cmatrix[piece] += 1
+                        #else:
+                            #cmatrix[piece] = 1
+                for piece in pieces:
+                    # remove obvious unequal strings
+                    p0 = piece[0]
+                    p1 = piece[1]
+                    if len(p0) < 3 and len(p1) < 3:
+                        if p0 in cmatrix:
+                            if p1 in cmatrix[p0]:
+                                cmatrix[p0][p1] += 1
+                            else:
+                                cmatrix[p0][p1] = 1
+                        else:
+                            cmatrix[p0] = {}
+                            cmatrix[p0][p1] = 1
+
+        # convert counts to probabilities
+
+        return cmatrix
+
+    def dump(self, file_out, type='text'):
+        if type == 'text':
+            with open(file_out, 'w') as f_o:
+                for pair in self.cmatrix:
+                    value = self.cmatrix[pair]
+                    f_o.write("%s: %s\n" % (pair, value))
+        else:
+            with open(file_out, 'wb') as f_o:
+                pickle.dump(self.cmatrix, f_o)
+
+    def logprob(self, inc, cor):
+        if self.type == 'base':
+            ed = max(len(inc), len(cor))
+            return math.log10(1/(1+ed*10))
+        else:
+            raise Exception('Confusion method not implemented')
+

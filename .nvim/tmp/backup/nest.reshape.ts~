@@ -1,0 +1,269 @@
+/// <reference path="./utils.ts"/>
+/// <reference path="./objectid.ts"/>
+/// <reference path="./lb-globals.ts"/>
+/// <reference path="../dts/ramda.d.ts" />
+
+module Nest.Reshape {
+
+    export class TNode {
+        tpl: string;
+        nid: string;
+        children: TNode[];
+        constructor(tpl: string, nid: string, ...children: TNode[]) {
+            this.tpl = tpl;
+            this.nid = nid ? nid : ObjectId.create();
+            this.children = children;
+        }
+    }
+
+    interface IIndex {
+        pos: string;
+        node: TNode;
+        parent: TNode;
+    }
+
+    export function morf(current: TNode, to: TNode, $root, address, storage, effect, idKey = 'nid', contentKey = 'tpl', childKey = 'children') {
+
+        const toIndex = indexTree(to, idKey, contentKey, childKey);
+        let currentIndex = indexTree(current, idKey, contentKey, childKey);
+        const removedIds = R.difference(R.keys(currentIndex), R.keys(toIndex));
+
+        var pipOut = remove(removedIds);
+        if (removedIds.length > 0) {
+            // remove `removedIds` from current
+            cleanTree(current, removedIds);
+            // update the current index
+            currentIndex = indexTree(current, idKey, contentKey, childKey);
+        }
+
+        var baton = {'type': 'parent', value: $root};
+        walk(to, baton);
+
+        return pipOut.length > 0
+            ? pipOut
+            : void 0;
+
+        // removes nodes listed in `removedIds` from tree `node`
+        function cleanTree(node: TNode, removedIds): void {
+            if (removedIds.length === 0 || R.keys(node).length === 0) return;
+            walk(node);
+
+            function walk(node) {
+                if (node[childKey] && node[childKey].length > 0) {
+                    let i = 0;
+                    while (i < node[childKey].length) {
+                        if (R.contains(node[childKey][i][idKey], removedIds)) {
+                            Utils.remove(i, 1, node[childKey]);
+                        } else {
+                            walk(node[childKey][i]);
+                            i++;
+                        }
+                    }
+                }
+            }
+        }
+
+        function walk(node: TNode, baton) {
+
+            if (R.keys(node).length === 0) return;
+
+            if (currentIndex[node[idKey]]) {
+                // this node exists in current tree too
+
+                if (currentIndex[node[idKey]].pos !== toIndex[node[idKey]].pos) {
+
+                    // move the node in the current tree
+                    move(current, currentIndex[node[idKey]], toIndex[node[idKey]]);
+
+                    // update the current index
+                    currentIndex = indexTree(current, idKey, contentKey, childKey);
+                }
+
+                // sets the baton to the current node
+                baton.value = storage.get(address.el).unsafeGet(node[idKey]);
+
+            } else {
+                // node in current tree does not exist: insert
+
+                let message;
+                if (baton.type === 'sibling') {
+                    // insert node after its sibling
+                    message = insert(current, node, toIndex[node[idKey]], baton.value, 'insertAfter');
+
+                } else {
+                    // insert node as the first child of parent
+                    message = insert(current, node, toIndex[node[idKey]], baton.value, 'append');
+                }
+
+                baton.type = 'sibling';
+                baton.value = message.value;
+
+                pipOut.push(message);
+
+                // update the current index
+                currentIndex = indexTree(current, idKey, contentKey, childKey);
+            }
+
+            if (node[childKey] && node[childKey].length > 0) {
+                // node has one of more children
+
+                for (let i = 0; i < node[childKey].length; i++) {
+                    baton = i === 0
+                        ? { type: 'parent', value: baton.value }
+                        : { type: 'sibling', value: baton.value };
+                        //: { type: 'sibling', value: getPip(node[childKey][i-1][idKey]) };
+
+                    walk(node[childKey][i], baton);
+                }
+            }
+        }
+
+        // get the node specified traveling down the hierarchy are stored in the
+        // string `pos` that has the format `xxx` where x stands for the child
+        // position for that particular level -- `120` means child 1 of node,
+        // then child  2 of child 1, then child 0 of child 2 of child 1.
+        function getNode(node: TNode, pos: string) {
+            const trail = pos.split('');
+            const stepIn = (node, childNr) => node.children[childNr];
+
+            for (let i = 1; i < trail.length; i++) {
+                node = stepIn(node, trail[i]);
+            }
+            return node;
+        }
+        //function getNode(node: TNode, pos: string) {
+            //const trail = pos.split('');
+            //const stepIn = (node, childNr) => node.children[childNr];
+
+            //for (let i = 1; i < trail.length; i++) {
+                //node = stepIn(node, trail[i]);
+            //}
+            //return node;
+        //}
+
+        // mutates current tree by moving node `from.node` to position `to.pos`
+        function move(current: TNode, from: IIndex, to: IIndex): void {
+            // adding node to new parent
+            const toPos = to.pos;
+            const toChildPos = parseInt(toPos[toPos.length-1], 10);
+            const toParentPos = toPos.substr(0, toPos.length-1);
+
+            // remove node from old parent
+            const fromPos = from.pos;
+            const fromChildPos = parseInt(fromPos[fromPos.length-1], 10);
+            const fromParentPos = fromPos.substr(0, fromPos.length-1);
+
+            let toParent, toParentNew;
+            if (toParentPos === fromParentPos) {
+                // switch two children of same parent
+                toParentNew = to.parent || {};
+                toParent = getNode(current, toParentPos);
+                const ref = toParent[childKey][toChildPos];
+                toParent[childKey][toChildPos] = toParent[childKey][fromChildPos];
+                toParent[childKey][fromChildPos] = ref;
+
+            } else {
+                // move node from one parent to other
+                toParent = getNode(current, toParentPos);
+                toParent.children[toChildPos] = from.node;
+
+                const fromParent = getNode(current, fromParentPos);
+                fromParent.children = R.remove(fromChildPos, 1, fromParent.children);
+            }
+
+            // modify the DOM
+            if (toChildPos === 0) {
+                // append node to parent
+                effect.moveAppend(toParent[idKey], from.node[idKey]);
+
+            } else {
+                // insert node after its sibling
+                effect.moveInsertAfter(toParent[childKey][toChildPos - 1][idKey], from.node[idKey]);
+            }
+        }
+
+        function insert(current: TNode, node: TNode, to: IIndex, $ref, method: string) {
+
+            // mutate current tree by inserting new node
+            const toPos = to.pos;
+            const toChildPos = parseInt(toPos[toPos.length-1], 10);
+            const toParentPos = toPos.substr(0, toPos.length-1);
+            let toParentNew = to.parent || {};
+            let toParent = getNode(current, toParentPos);
+
+            // create the new node to insert
+            let single = new TNode(to.node[contentKey], to.node[idKey]);
+
+            if (R.keys(toParent).length === 0) {
+                // single is the top of the tree
+                Utils.merge(current, single);
+
+            } else {
+                // single is the child of its parent
+                // move trailing children to right to create space for insert
+                let i = toParent.children.length;
+                while (i > toChildPos) {
+                    toParent[childKey][i] = toParent[childKey][i - 1];
+                    i--;
+                }
+
+                // add node to current tree without its children
+                toParent.children[toChildPos] = single;
+            }
+
+            let $node;
+            // mutate the DOM by inserting new DOM element
+            if (method === 'append') {
+                // add new node into the parent -- prepend assures it will be the first child
+                $node = effect.append($ref, node[contentKey]);
+            } else {
+                // insert node after the sibling
+                $node = effect.insertAfter($ref, node[contentKey]);
+            }
+
+            return {
+                action: 'insert',
+                it: node[idKey],
+                value: $node
+            };
+        }
+
+        // removes nodes listed in `nodeIds` from the DOM and returns
+        // a pipOut message that reflects this.
+        function remove(nodeIds: string[]) {
+            let pipOut = [];
+
+            for (let i = 0; i < nodeIds.length; i++) {
+
+                const $node = effect.remove(nodeIds[i]);
+
+                pipOut.push({
+                    action: 'remove',
+                    it: nodeIds[i],
+                    value: $node
+                });
+            }
+            return pipOut;
+        }
+    }
+
+    // generates an index (ids -> IIndex) for all nodes in `tree`
+    function indexTree(tree: TNode, idKey = 'nid', contentKey = 'tpl', childKey = 'children') {
+        let index = {};
+        walk(tree, void 0, '0');
+        return <IIndex>index;
+
+        function walk(node: TNode, parent: TNode, trail: string): void {
+
+            if (!node || !node[idKey]) return;
+
+            index[node[idKey]] = {pos: trail, node: node, parent: parent};
+
+            let childs = node[childKey] || [];
+
+            for (let i = 0; i < childs.length; i++) {
+                walk(childs[i], node, trail + i);
+            }
+        }
+    }
+}

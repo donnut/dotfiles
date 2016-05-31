@@ -1,0 +1,16 @@
+QUnit.module('DOM Tree reshaping', {
+    beforeEach: function() {
+        DEBUG = true;
+        Globals.idCounter = 0;
+        Globals.pips = Store.Storage(); // reset 'global' space
+    }
+});
+
+QUnit.test('one-node tree, unchanged', function(assert) {
+
+    var from = {
+        nid: '1',
+        tpl: '<div></div>'
+        children: []
+    }
+});

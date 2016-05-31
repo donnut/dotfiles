@@ -1,0 +1,28 @@
+import * as fs from 'fs';
+import * as Handlebars from 'handlebars';
+
+export function merger(config) {
+    // open config file
+    let i, count = 0;
+    //let inFile = fs.readFileSync(config, {encoding: 'utf8'});
+    const data = require(config);
+    data.pips.unshift({name: 'new'});
+    return data.pips;
+}
+
+function filler(match, file, options, offset, str) {
+    let chunk = fs.readFileSync(file+'.hbs', {encoding: 'utf8'});
+    let template = Handlebars.compile(chunk);
+    return options !== void 0
+        ? template(JSON.parse(options))
+        : template({})
+}
+
+function inserter(match, file, options) {
+    let chunk = fs.readFileSync(file+'.hbs', {encoding: 'utf8'});
+    return source.replace(/\@import\s+'(.*)',?\s*({.*})?\s*;/g, inserter);
+}
+
+export function importer(source) {
+    return source.replace(/\@import\s+'(.*)',?\s*({.*})?\s*;/g, inserter);
+}

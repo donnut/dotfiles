@@ -1,0 +1,17 @@
+def pytest_assertrepr_compare(config, op, left, right):
+    equal = True
+    if op == '==' and isinstance(left, list) and isinstance(right, list):
+        if len(left) != len(right):
+            equal = False
+        for l in left:
+            if not l in right:
+                equal = False
+        if equal:
+            for r in right:
+                if not r in left:
+                    equal = False
+    if not equal:
+        return ['Comparing lists:',
+                '   vals: %s != %s' % (left, right)]
+
+

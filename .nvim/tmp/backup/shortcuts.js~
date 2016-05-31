@@ -1,0 +1,7 @@
+'use strict';
+
+var promise = new Promise(function(fulfill, reject) {})
+promise.resolve('FULFILLED')
+promise.reject(new Error('rejected'))
+promise.catch(console.log)
+

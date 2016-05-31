@@ -1,0 +1,62 @@
+define(['require'], function(require) {
+
+  var
+    mongoose             = require('mongoose'),
+    RepoObjectSchema     = require('lib/schemas/repo/style/RepoObject').Schema,
+    ColorSelectionSchema = require('lib/schemas/repo/style/ColorSelection').Schema,
+    AreaSelectionSchema = require('lib/schemas/repo/style/AreaSelection').Schema,
+    FontSelectionSchema  = require('lib/schemas/repo/style/FontSelection').Schema,
+    IconSelectionSchema  = require('lib/schemas/repo/style/IconSelection').Schema,
+
+    StyleSetSchema       = require('lib/schemas/repo/style/StyleSet').Schema,
+    ComponentSetSchema   = require('lib/schemas/repo/ComponentSet').Schema,
+    BrickSchema          = require('lib/schemas/project/Brick').Schema,
+    DeviceDimensionSchema = require('lib/schemas/repo/style/DeviceDimension').Schema;
+
+  var ThemeSchema = RepoObjectSchema.extend({
+    //tags                : mongoose.Schema.Types.Mixed,
+
+    //hier ook al bricks??? default niet en gewoon default sets
+    //nee wel ; maar alleen nodig als niet volgens de default styleset-definitie!
+
+    bricks            : [{ type: mongoose.Schema.Types.ObjectId, ref: 'Brick' }],// zullen er meer in zitten, zoeken op cat
+    dims              : [{ type: mongoose.Schema.Types.ObjectId, ref: 'DeviceDimension' }],
+    comps             : [{ type: mongoose.Schema.Types.ObjectId, ref: 'ComponentSet' }],// zullen er meer in zitten, zoeken op cat
+    style             : [{ type: mongoose.Schema.Types.ObjectId, ref: 'StyleSet'}],     // zullen er meer in zitten, zoeken op kind
+
+    colors/*election*/: [{ type: mongoose.Schema.Types.ObjectId, ref: 'ColorSelection' }], // zal er een in zitten of drie, vier: basic, form, wireframe, desaturated:??
+    fonts/*election*/ : [{ type: mongoose.Schema.Types.ObjectId, ref: 'FontSelection' }],  // zal er een in zitten
+    areas/*election*/ : [{ type: mongoose.Schema.Types.ObjectId, ref: 'AreaSelection' }],  // zal er een in zitten
+    //icons/*election*/ : [{ type: mongoose.Schema.Types.ObjectId, ref: 'IconSelection' }],  // zal er een in zitten
+
+  });
+
+  // //vanuit projectomgeving een theme genereren
+  // ThemeSchema.statics.createFromProject = function(projectId, themeName, themeTags, cb){
+  //   var
+  //     //FunctionSet    = require('lib/schemas/repo/style/FunctionSet').Model,
+  //     ColorSelection = require('lib/schemas/repo/style/ColorSelection').Model,
+  //     FontSelection  = require('lib/schemas/repo/style/FontSelection').Model,
+  //     IconSelection  = require('lib/schemas/repo/style/IconSelection').Model,
+  //     Units          = require('lib/schemas/repo/style/Unit').Model,
+  //     Project        = require('lib/schemas/Project').Model,
+
+  //     theme = new this();
+
+  //   Project.findById(projectId, function(err, project){
+  //     return cb(err, project);
+  //   });
+
+  //   //moet unique zijn en door browser al aangeroepen voor validate
+  //   theme.set('name', themeName);
+
+  //   //TODO iets met versie doen?
+  //   theme.set('tags' , themeTags);
+  // };
+
+  return {
+    Schema: ThemeSchema,
+    Model : mongoose.model('Theme', ThemeSchema)
+  };
+
+});

@@ -1,0 +1,129 @@
+## Grammar
+
+<expression> ::= [<expression-area-vars>] [<expression-area-filter] <message-area> [<expression-area-sort>]
+
+<expression-area-vars> ::= [ <expression-area-vars> ] <expression-area-var>
+<expression-area-var> ::= <label-var> <area>
+<expression-area-filter> ::= <label-filter> <area>
+<expression-area-sort> ::= <label-sort> <area>
+
+<message-area>        ::= [<message-areacase>] <message-branch>
+<message-areacase>    ::= <message-case> | <message-case> <message-areaCase>
+<message-case>        ::= <if> "(" <condition> ")" <message-area>
+<message-branch>      ::= "return" <message>
+
+<message> ::= <expression-area-action> [ <expression-area-value> ] [ <expression-area-it> ]
+
+<sfactors> ::= "[" [ <sfactors> "," ] <sfactor> "]"
+<nfactors> ::= "[" [ <nfactors> "," ] <nfactor> "]"
+<bfactors> ::= "[" [ <bfactors> "," ] <bfactor> "]"
+<sfactor> ::= <string>  | "(" <sfactorBody> ")"
+<nfactor> ::= <number>  | "(" <nfactorBody> ")"
+<bfactor> ::= <boolean> | "(" <bfactorBody> ")"
+
+; number related expressions
+<nfactorBody> ::= <nleft> <nfactor> <nright> | <nleft> <nfactor> | <nfactor> <nright> | <nfactor> |
+                  <reduce> <nfactors> | <arrayCondition> <nfactors>
+<nleft>       ::= <nfactor> <minus> | <nfactor> <plus> | <nfactor> <divide> | <nfactor> <multiply>
+<nright>      ::= <minus> <nfactor> | <plus> <nfactor> | <divide> <nfactor> | <multiply> <nfactor>
+
+; string related expressions
+<sfactorBody> ::= <sleft> <sfactor> <sright> | <sleft> <sfactor> | <sfactor> <sright> | <sfactor> |
+                  <arrayCondition> <sfactors>
+<sleft>       ::= <sfactor> <plus>
+<sright>      ::= <plus> <sfactor>
+
+; boolean related expressions
+<bfactorBody> ::= <reduce> <bfactors> | <arrayCondition> <bfactors>
+
+; cases
+<area>        ::= [<areacase>] <branch>
+<areacase>    ::= <case> | <case> <areaCase>
+<case>        ::= <if> "(" <condition> ")" <area>
+<branch>      ::= "return" <sfactor> | "return" <nfactor> | "return" <bfactor> | "return" <undefined>
+
+<condition>   ::= <comparison> | <not> <condition> | <condition> <and> <condition> | <condition> <or> <condition>
+<comparison>  ::= "(" [<sfactor>|<nfactor>] <comparator> [<sfactor>|<nfactor>] ")"
+<comparator>  ::= <lt> | <lte> | <eq> | <neq> | <gt> | <gte>
+
+<arrayCondition> ::= <findOne> <condition> | <filter> <condition> | <sort> <condition>
+
+<reduce> ::= <count> | <maximum> | <minimun>
+
+<string>  ::= "'" [ <string> ] <char> "'"
+<char>    ::= a..z
+<boolean> ::= true | false
+<number>  :: = number
+<undefined> ::= void 0
+
+<return> ::= "return"
+<and> ::= "&&"
+<or> ::= "||"
+<if> ::= "if"
+<eq> ::= "=="
+<neq> ::= "!="
+<lt> ::= "<"
+<lte> ::= "<="
+<gt> ::= ">"
+<gte> ::= ">="
+<minus> ::= "-"
+<plus> ::= "+"
+<divide> ::= "/"
+<multiply> ::= "*"
+<not> ::= "!"
+<findOne> ::= "findOne"
+<filter> ::= "filter"
+<sort> ::= "sort"
+<count> ::= "count"
+<maximum> ::= "max"
+<minimum> ::= "min"
+
+## Examples
+`i` stands for imported value
+
+branch = return i
+    return factor
+    return value
+    return import
+
+branch = return i * a
+    return <nfactor>
+    return (<nfactorBody>)
+    return (<nfactor> <nright>)
+    return (<nfactor> <multiply> <nfactor>)
+    return (<number> <multiply> <number>)
+    return (i * @var[a])
+
+branch = return if !(i == 4) return true else false
+    return <bfactor>
+    return (<bfactorBody>)
+    return (<case> <branch> <else> <branch>)
+    return (if (<condition>) <return> <bfactor> <else> <branch>)
+    return (if (<not> <condition>) <return> <bfactor> <else> <branch>)
+    return (if (<not> <comparison>) <return> <bfactor> <else> <branch>)
+    return (if (<not> (<nfactor><eq><nfactor>)) <return> <boolean> <else> <return> <boolean>)
+    return (if (<not> (<nfactor><eq><nfactor>)) <return> true <else> <return> false)
+    return (if (!(<nfactor> == <nfactor>)) return true else return false
+
+branch = return filter (i<10 && not i*i>2) is
+    <return> <nfactors>
+    <return> <nfactors>
+    <return> (<nfactorBody>)
+    <return> (<arrayConditions> <nfactors>)
+    <return> (filter (<condition>) <factors>)
+    <return> (filter (<condition> and <comparison>) <factors>)
+    <return> (filter (<comparison> and <comparison>) <factors>)
+    <return> (filter ((<factor> <comparator> <factor>) and <comparison>) <factors>)
+    <return> (filter ((<factor> <comparator> <factor>) and (<factor> <comparator> <factor>)) <factors>)
+    <return> (filter ((<value> < <value>) and ((<factor>) <comparator> <factor>)) <factors>)    <-- not kan hier niet in
+....
+
+branch = return (case (i < 10) i
+    return <factor>
+    return (<valueBody>)
+    return (<case> <factor>)
+    return (case <condition> <factor>)
+    return (case <comparison> <factor>)
+    return (case (<factor> <comparator> <factor>) <factor>)
+    return (case (i < @const[a]) <factor>)
+    return (case (i < @const[a]) i)

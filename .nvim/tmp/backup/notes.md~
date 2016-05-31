@@ -1,0 +1,7 @@
+# Notes to build jQuery
+
+Version `1.8.3` only compiles using `v0.10.40`. To enable compiling with 0.12.x do:
+Remove all references to \*-compare-size from grunt.js and package.json
+Remove all references to testswarm from grunt.js and package.json
+Run `grunt default` manually to make sure the `submodules` and `selection` are handled, before
+running `grunt custom:`

@@ -1,0 +1,20 @@
+from pattern.nl import sentiment
+text = [
+    'Een onwijs spannend goed boek!',
+    'Dit is echt goed',
+    'Dit is gaaf',
+    'Onwijs druk op het strand',
+    'Wat een klote weer',
+    'Gras is groen',
+    'De aarde is rond',
+    ':)',
+    ':(',
+    ';)',
+    'Gisteren was weer een gewone dag',
+    'Gisteren was weer een gewone dag ;)',
+    'Gisteren was weer een gewone dag :)'
+    'Gisteren was weer een gewone dag :('
+]
+
+for t in text:
+    print "t: %s", (t, sentiment(t))

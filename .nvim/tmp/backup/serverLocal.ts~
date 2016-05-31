@@ -1,0 +1,87 @@
+module ServerLocal {
+
+    export class Server {
+        collection: string;
+        index: string;
+
+        constructor(serverAddress: string, collection: string, options?: {index?: string}) {
+            // check if browser supports localStorage
+            if (!window.localStorage) throw new Error('The browser does not support localStorage');
+            this.collection = collection;
+            this.index = options && options.index ? options.index : void 0;
+        }
+
+        emit(serverActions: string|Globals.ICollectedActions, callback: {(err: string, result?: any): void}) {
+            if (typeof serverActions === 'string') {
+                if (serverActions === 'fetch') this.fetchData(callback);
+            } else {
+                let methods = R.keys(serverActions);
+                let methodsWithData = R.filter(method => serverActions[method].length>0, methods)
+                R.forEach(method => {
+                    let data = serverActions[method];
+                    switch (method) {
+                        case 'create':
+                            this.createItems(data);
+                            break;
+                        case 'update':
+                            this.updateItems(data);
+                            break;
+                        case 'delete':
+                            this.deleteItems(data);
+                            break;
+                        case 'empty':
+                            this.deleteAllItems();
+                            break;
+                    }
+                }, methodsWithData);
+                callback(null);
+            }
+        }
+
+        createItems(data: Globals.IMessage[]) {
+            R.forEach(item => {
+                let key = item.it;
+                window.localStorage.setItem(this.collection + '.' + key, JSON.stringify(item.value));
+            }, data);
+        }
+
+        updateItems(data: Globals.IMessage[]) {
+            R.forEach(item => {
+                let key = item.it;
+                window.localStorage.setItem(this.collection + '.' + key, JSON.stringify(item.value));
+            }, data);
+        }
+
+        deleteItems(data: Globals.IMessage[]) {
+            R.forEach(item => {
+                window.localStorage.removeItem(this.collection + '.' + item.it);
+            }, data);
+        }
+
+        deleteAllItems() {
+            let dataKeys = this.getCollectionKeys();
+            R.forEach(key => {
+                window.localStorage.removeItem(this.collection + '.' + key);
+            }, dataKeys);
+        }
+
+        getCollectionKeys() {
+            return R.filter(key => this.collection === R.slice(0, this.collection.length, key), R.keys(window.localStorage));
+        }
+
+        fetchData(cb: Function) {
+            let dataKeys = this.getCollectionKeys();
+            if (dataKeys.length > 0) {
+                // transform data in collection format (object)
+                let data = {};
+                R.forEach(item => {
+                    let key = R.slice(this.collection.length + 1, Infinity, item);
+                    data[key] = JSON.parse(window.localStorage[item]);
+                }, dataKeys);
+                cb(null, data);
+            } else {
+                cb(null, {});
+            }
+        }
+    }
+}

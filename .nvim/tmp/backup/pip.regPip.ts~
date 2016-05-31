@@ -1,0 +1,156 @@
+module Pip.RegPip {
+    import G = Globals;
+    import PT = G.PipType;
+    import MK = G.MessageKey;
+    import ELM = G.Element;
+    import ON = G.OptionName;
+    import OV = G.OptionValue;
+    import IStorage = Store.IStorage;
+    import AK = G.AddressKey;
+
+    declare var DEBUG;
+
+
+    function isValidSelector(selector: string, analyser: Tree.IAnalyser): boolean {
+        const id = R.head(R.split('>', selector));
+        if (R.nthChar(0, id) === '#') {
+            return analyser.isValidId(id);
+        }
+        return true;
+    }
+
+    function getSelectorSequence(sel: string) {
+        // get last (\d) occurrence
+        const match = /.*\((\d+)\)/.exec(sel);
+        return match[1];
+    }
+
+    // returns the selector string of the ancestor
+    function getAncestorSelString(str: string) {
+        const chunks = R.split('>', str);
+        return [R.join('>', R.init(chunks)), R.last(chunks)];
+    }
+
+    function stripListPathItem(str: string) {
+        const chunks = R.split('>', str);
+        return chunks.length > 1
+           ? R.join('>', R.init(chunks))
+           : str;
+    }
+
+    function getGeneralizeSelector(str: string, analyser: Tree.IAnalyser, storage) {
+        if (R.nthChar(0, str) === '#') {
+            str = analyser.getSelectorFromId(str);
+        }
+        const match = /(.*)(\(\d+\))(.*)/.exec(str);
+        if (!match) return str;
+        const generalStr = match[2] !== ''
+            ? `${match[1]}${match[3]}`
+            : str;
+        const idSelector = analyser.getIdFromSelector(generalStr);
+        return storage.exists(idSelector)
+            ? generalStr
+            : getGeneralizeSelector(generalStr, analyser, storage);
+    }
+
+    function getPathSelector(selector: string, analyser: Tree.IAnalyser) {
+        return analyser.getSelectorFromId(selector);
+    }
+
+    // anc = listItem, selector = shadowElement
+    function createShadowElementSpec(anc: string, selector: string, sequenceNumber: string, analyser: Tree.IAnalyser) {
+        const pipId = analyser.useSelectorIds(selector);
+        return {
+            addresses: {
+                selector: pipId,
+                pip: pipId,
+                sel: `:${sequenceNumber}`,
+                anc: analyser.useSelectorIds(anc)
+            },
+            options: {
+                attr: 'nth',
+                value: `:${sequenceNumber}`,
+                type: PT[PT.shadowElement]
+            }
+        };
+    }
+
+    // anc = itemElement, selector = element
+    function createElementSpec(anc: string, selector: string, analyser: Tree.IAnalyser) {
+        const pipId = analyser.useSelectorIds(selector);
+        return {
+            addresses: {
+                selector: pipId,
+                pip: pipId,
+                sel: R.last(R.split('>', selector)),
+                anc: analyser.useSelectorIds(anc)
+            },
+            options: {
+                type: PT[PT.element]
+            }
+        };
+    }
+
+    export function assure(options, storage: IStorage): boolean {
+        var selector = Pip.Addresses.defineSelector(options[ON[ON.selector]]);
+
+        if (selector && !this.regAddressBook[selector]) {
+            // selector is pointing to a non-existing element.
+            // check if new register pip is necessary and create it
+
+            // Step 1
+            // check if requested piptype may create an register pip
+            let pipType = <string>options[ON[ON.type]];
+            if (!R.contains(pipType, [PT[PT.state], PT[PT.event], PT[PT.eventItem], PT[PT.template],
+                                      PT[PT.target], PT[PT.targetItem], PT[PT.list], PT[PT.sub]]) ||
+                (pipType === PT[PT.eventItem] && options[ON[ON.delegation]] === false)) {
+                // check if referred register pip exists, if not reture orphanPip = true
+                if (storage.exists(selector)) {
+                    // pip is not an orphan
+                    return true;
+                } else {
+                    // pip is an orphan
+                    return false;
+                }
+            }
+
+            if (!isValidSelector(selector, this.analyser)) throw new Error(`Selector ${selector} does not exist.`);
+
+            const pathSelector = getPathSelector(selector, this.analyser);
+            const generalizedSelector = getGeneralizeSelector(pathSelector, this.analyser, this.storage);
+            const selectorSequence = getSelectorSequence(pathSelector);
+            const ancestorSelString = getAncestorSelString(generalizedSelector);
+
+            const ancestorId = this.analyser.getIdFromSelector(ancestorSelString[0]);
+            const normalizedSelector = R.join('>', [ancestorId, ancestorSelString[1]]);
+
+            const ancestorPip = storage.get(this.analyser.useSelectorIds(normalizedSelector));
+
+            const ancestorPipType = ancestorPip.getType();
+
+            if (ancestorPipType === PT[PT.listItem]) {
+                // Step 3
+                // create a shadowElement
+                const shadowElementSpec = createShadowElementSpec(normalizedSelector, selector, selectorSequence, this.analyser);
+                Pips.create(shadowElementSpec.options, shadowElementSpec.addresses, storage);
+                this.regAddressBook[shadowElementSpec.addresses[AK[AK.pip]]]  = shadowElementSpec.addresses;
+
+            } else if (ancestorPipType === PT[PT.itemElement]) {
+                // create shadowElement and element
+
+                const elementSpec = createElementSpec(normalizedSelector, selector, this.analyser);
+                Pips.create(elementSpec.options, elementSpec.addresses, storage);
+                this.regAddressBook[elementSpec.addresses.pip] = elementSpec.addresses;
+
+                const shadowElementSpec = createShadowElementSpec(stripListPathItem(normalizedSelector), stripListPathItem(pathSelector), selectorSequence, this.analyser);
+                Pips.create(shadowElementSpec.options, shadowElementSpec.addresses, storage);
+                this.regAddressBook[shadowElementSpec.addresses[AK[AK.pip]]] = shadowElementSpec.addresses;
+
+            } else {
+                // pip is an orphan
+                return false;
+            }
+        }
+        return true;
+    }
+}

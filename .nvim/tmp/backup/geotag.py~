@@ -1,0 +1,8 @@
+import googlemaps
+gmaps = googlemaps.Client(key="AIzaSyAvN9BHN-T5FHscEN0GEnlMEahnMoLXcvw")
+geocode_result = gmaps.geocode('gemeentehuis, Nederland')
+
+
+for result in geocode_result:
+    print result['formatted_address']
+

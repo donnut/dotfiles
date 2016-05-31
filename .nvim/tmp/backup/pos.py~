@@ -1,0 +1,7 @@
+from pattern.nl import singularize, pluralize
+from pattern.nl import parse, split
+
+s = parse("Johan fietst van Amsterdam naar Hoofddorp. Op weg naar gemeentehuis Haarlemmermeer in Hoofddorp.")
+for sentence in split(s):
+    print sentence
+

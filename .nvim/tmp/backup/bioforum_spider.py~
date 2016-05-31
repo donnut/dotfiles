@@ -1,0 +1,97 @@
+import scrapy
+import re
+
+from bioforum.items import BioforumItem
+
+class Bioforum(scrapy.Spider):
+    name = "bioforum"
+    allowed_domains = ["www.bioforumvlaanderen.be"]
+    query = "values[bedrijfsnaam]=&values[soort][boer]=boer&values[soort][winkelier]=winkelier&values[soort][foodservice]=foodservice&values[soort][verwerker]=0&values[soort][loonwerker]=0&values[soort][distimp]=0&values[postcode]=3000&values[slider][value]=30&values[submit]=Zoek&values[form_build_id]=form-jd_dyv9hmnkegMffhFJzBpVv7PUpI3ta_zP2m8DgVlk&values[form_id]=a1_form&values[op]=Zoek"
+    start_urls = [
+        "http://www.bioforumvlaanderen.be/nl/resultaten?%s" % query
+    ]
+
+    def parse(self, response):
+        for section in response.xpath("//div[@id='bgglijst']").css('.lijstitem'):
+            item = BioforumItem()
+            rightblock = section.css('.rightblock')
+            certinfo = rightblock.css(".certinfo")
+            for cert in certinfo.xpath('./ul/li').extract():
+                if re.search('bioboer', cert) != None:
+                    item['cert_bioboer'] = True
+                if re.search('verkooppunt', cert) != None:
+                    item['cert_verkooppunt'] = True
+            extralijst = certinfo.xpath('./img').extract_first()
+            if extralijst != None and re.search('biogarantielijst', extralijst) != None:
+                item['cert_biogarantie'] = True
+            else:
+                item['cert_biogarantie'] = False
+
+            leftblock = section.css('.leftblock')
+
+            item['name'] = leftblock.xpath("h3/text()").extract()
+
+            ## get details
+            item_url = section.xpath("./a[@class='button']/@href").extract_first()
+            if item_url != None:
+                request = scrapy.Request( "http://www.bioforumvlaanderen.be/nl/%s" % item_url, callback=self.parse_item)
+                request.meta['item'] = item
+                yield request
+            else:
+                yield item
+
+        for page in response.xpath('//li[@class="pager-next"]/a/@href').extract():
+            yield scrapy.Request("http://www.bioforumvlaanderen.be%s" % page, callback=self.parse)
+
+    def parse_item(self, response):
+        item = response.meta['item']
+
+        content = response.xpath("//div[@id='content']")
+
+        try:
+            latlong = content.xpath("./script/text()").extract()[0]
+            item['lat'], item['long'], key = re.findall('(\d\d.\d*?),(\d.\d*?),(\d+)', latlong)[0]
+        except:
+            pass
+
+        chunks = content.css('.column.first').xpath('./p').extract()
+        if len(chunks) > 0:
+            item['description'] = re.search('<p>(.*)<\/p>', chunks[0], flags=re.DOTALL).group(1)
+
+        if len(chunks) > 1:
+
+            user_contact = re.search('<p>(.*)<\/p>', chunks[1], flags=re.DOTALL).group(1).split('<br>')
+            item['address'] = user_contact[0].strip()
+            item['postcode'] = user_contact[1].strip()
+            item['city'] = user_contact[2].strip()
+            item['phone'] = user_contact[3].strip()
+            item['email'] = user_contact[4].strip()
+
+        if len(chunks) > 2:
+            item['url'] = re.search('blank">(.*)<\/a', chunks[2]).group(1)
+
+        products = content.css('.column .first').xpath('./ul/li/text()').extract()
+
+        for product in products:
+            if re.search('Kleinfruit vers', product) != None or re.search('Pitfruit vers', product) != None:
+                item['fruit'] = True
+            if re.search('Aardappelen', product) != None:
+                item['aardappelen'] = True
+            if re.search('Gevogelte', product) != None:
+                item['pluimvee'] = True
+            if re.search('Lams', product) != None or re.search('Rundsvlees', product) != None or re.search('Varkensvlees', product) != None:
+                item['vlees'] = True
+            if re.search('Verse eieren', product) != None:
+                item['ei'] = True
+            if re.search('Verse groenten', product) != None:
+                item['groente'] = True
+            if re.search('Granen', product) != None:
+                item['granen'] = True
+
+        # biomijnnatuur id
+        id_str = content.xpath('./div[@class="button"]/a/@href').extract_first()
+        if id_str != None:
+            bio_id = re.search('\?id=(\d+)', id_str).group(1)
+            if bio_id != None:
+                item['bio_id'] = bio_id
+        return item

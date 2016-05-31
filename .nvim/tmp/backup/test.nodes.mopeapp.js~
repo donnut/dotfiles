@@ -1,0 +1,415 @@
+QUnit.module('Node Pips', {
+    beforeEach: function() {
+        DEBUG = true;
+        Globals.idCounter = 0;
+    }
+});
+
+QUnit.test('sub in empty case', function(assert) {
+    var domStr = "<div id='main'></div>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'sub',
+        selector: '#main',
+        tpl: "<li></li>",
+        empty: '<p id="empty">not filled</p>'
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, [], []);
+
+    var pipStr = app.getAll();
+    assert.deepEqual(R.keys(pipStr), ['#main', '#main>li', 'router', 'navTree']);
+    assert.deepEqual(R.keys(pipStr['#main']), ['__pip', 'sub']);
+
+    assert.equal(app.get('#main.sub').get(), false);
+    assert.equal($('#main>p').html(), 'not filled', 'empty default text');
+
+});
+
+QUnit.test('sub in empty case, deleted', function(assert) {
+    var domStr = "<div id='main'></div>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'sub',
+        selector: '#main',
+        tpl: "<li></li>",
+        empty: '<p id="empty">not filled</p>'
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, [], []);
+
+    var pipStr = app.getAll();
+    assert.deepEqual(R.keys(pipStr), ['#main', '#main>li', 'router', 'navTree']);
+    assert.deepEqual(R.keys(pipStr['#main']), ['__pip', 'sub']);
+
+    assert.equal(app.get('#main.sub').get(), false);
+    assert.equal($('#main>p').html(), 'not filled', 'empty default text');
+
+    app.get('#main.sub').react({action: 'delete'});
+    assert.equal(app.get('#main.sub').get(), false);
+    assert.equal($('#main>p').html(), 'not filled', 'empty default text');
+});
+
+QUnit.test('sub with empty model connected,  which is then filled', function(assert) {
+    var domStr = "<div id='main'></div>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'sub',
+        selector: '#main',
+        tpl: "<div></div>",
+        empty: '<p id="empty">not filled</p>'
+    }];
+
+    var pips = [{
+        type: 'model',
+        name: 'storage',
+        server: false,
+        silent: false
+    }];
+
+    var links =[{
+        pub: 'models.storage',
+        sub: '#main.sub'
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+
+    var pipStr = app.getAll();
+    assert.deepEqual(R.keys(pipStr), ['#main', '#main>div', 'models', 'router', 'navTree']);
+    assert.deepEqual(R.keys(pipStr['#main']), ['__pip', 'sub']);
+
+    assert.equal(app.get('#main.sub').get(), false);
+    assert.equal($('#main>p').html(), 'not filled', 'empty default text');
+
+    app.get('models.storage').react({action: 'create', value: {val: 3}});
+    assert.equal(app.get('#main.sub').get(), true);
+    assert.equal($('#main').html(), '<div></div>', 'template text');
+
+});
+
+QUnit.test('sub with model connected, which is then emptied', function(assert) {
+    var domStr = "<div id='main'></div>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'sub',
+        selector: '#main',
+        tpl: "<li></li>",
+        empty: '<p id="empty">not filled</p>'
+    }];
+
+    var pips = [{
+        type: 'model',
+        name: 'storage',
+        model: {error: 'Nothing wrong'},
+        server: false,
+        silent: false
+    }];
+
+    var links =[{
+        pub: 'models.storage',
+        sub: '#main.sub'
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+
+    var pipStr = app.getAll();
+    assert.deepEqual(R.keys(pipStr), ['#main', '#main>li', 'models', 'router', 'navTree']);
+    assert.deepEqual(R.keys(pipStr['#main']), ['__pip', 'sub']);
+
+    assert.equal(app.get('#main.sub').get(), true);
+    assert.equal($('#main').html(), '<li></li>', 'template text');
+
+    app.get('models.storage').react({action: 'delete'});
+    assert.equal(app.get('#main.sub').get(), false);
+    assert.equal($('#main>p').html(), 'not filled', 'empty default text');
+
+});
+
+QUnit.test('list in empty case', function(assert) {
+    var domStr = "<div id='main'></div>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'list',
+        selector: '#main',
+        tpl: ""
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, [], []);
+
+    var pipStr = app.getAll();
+    assert.deepEqual(R.keys(pipStr), ['#main', 'router', 'navTree']);
+    assert.deepEqual(R.keys(pipStr['#main']), ['__pip', 'list']);
+
+    assert.deepEqual(app.get('#main.list').get(), []);
+});
+
+QUnit.test('list with empty collection, which is then filled, and emptied', function(assert) {
+    var domStr = "<div id='main'></div>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'list',
+        selector: '#main',
+        tpl: '<div></div>',
+        idKey: 'val',
+        empty: "<p></p>"
+        // it: 'div'
+    }];
+
+    var pips = [{
+        type: 'collection',
+        name: 'storage',
+        server: false,
+        silent: false
+    }];
+
+    var links = [{
+        pub: 'models.storage',
+        sub: '#main.list'
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+
+    var pipStr = app.getAll();
+    assert.deepEqual(R.keys(pipStr), ['#main', '#main>div', 'models', 'router', 'navTree']);
+    assert.deepEqual(R.keys(pipStr['#main']), ['__pip', 'list']);
+
+    assert.deepEqual(app.get('#main.list').get(), []);
+    assert.deepEqual(app.get('#main>div').get(), null);
+    assert.equal($('#main').html(), '<p></p>', 'empty-tags');
+
+    app.get('models.storage').react([{action: 'create', value: {val: 4}}]);
+
+    assert.deepEqualRandomKeys(app.get('models.storage').unsafeGet(), {1: {val:4}}, 'new collection item');
+    assert.deepEqualSplitKeys(app.get('#main.list').get(), ['1%%4'], '%%', 'list contains id reference');
+    //assert.ok(app.get('#main>div').get('1%%4').equals(DOMIO.create('#main>div')), 'same DOM element');
+    assert.equal($('#main').html(), '<div></div>', 'contains one tag pair');
+
+    var id = Object.keys(app.get('models.storage').unsafeGet())[0];
+    app.get('models.storage').react([{action: 'delete', it: id}], 'resets to initial model values');
+
+    assert.deepEqual(app.get('#main.list').get(), []);
+    assert.deepEqual(app.get('#main>div').get(), null);
+    assert.equal($('#main').html(), '<p></p>', 'back to empty case');
+});
+
+QUnit.test('list with pre-filled collection, which is then reset to same value', function(assert) {
+    var domStr = "<div id='main'></div>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'list',
+        selector: '#main',
+        tpl: '<div></div>',
+        idKey: 'val',
+        empty: ""
+        //it: 'div'
+    }];
+
+    var pips = [{
+        type: 'collection',
+        name: 'storage',
+        model: [{val: 5}],
+        server: false,
+        silent: false
+    }];
+
+    var links =[{
+        pub: 'models.storage',
+        sub: '#main.list'
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+
+    var pipStr = app.getAll();
+    assert.deepEqual(R.keys(pipStr), ['#main', '#main>div', 'models', 'router', 'navTree']);
+    assert.deepEqual(R.keys(pipStr['#main']), ['__pip', 'list']);
+
+    assert.deepEqual(app.get('models.storage').unsafeGet(), {1: {val:5}}, 'collection item');
+    assert.deepEqualSplitKeys(app.get('#main.list').get(), ['1%%5'], '%%');
+    //assert.ok(app.get('#main>div').get('1%%5').equals(DOMIO.create('#main>div')));
+    assert.equal($('#main').html(), '<div></div>');
+
+    var obj = app.get('models.storage')[0];
+    app.get('models.storage').react([{action: 'delete', it: '1'}], 'resets to initial model values');
+
+    assert.deepEqual(app.get('models.storage').unsafeGet(), {1: {val:5}}, 'collection item');
+    assert.deepEqual(app.get('#main.list').get(), ['1%%5']);
+});
+
+QUnit.test('todo example: list with pre-filled collection, deeply nested template string', function(assert) {
+    var domStr = "<ul id='todo-list'></ul>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'list',
+        selector: '#todo-list',
+        // idKey: 'title',
+        tpl: "<li class='completed'>" +
+                "<div class='view' >" +
+                   "<input class='toggle' type='checkbox'>" +
+                   "<label></label>" +
+                   "<button class='destroy'></button>" +
+                "</div>" +
+                "<input class='edit'>" +
+             "</li>",
+        empty: '<span></span>'
+    }];
+
+
+    var pips = [{
+        type: 'collection',
+        name: 'todoList',
+        model: [{
+            completed: true,
+            title: 'Create a TodoMVC template'
+        }, {
+            completed: false,
+            title: 'Rule the web'
+        }],
+        // keys: ['completed', 'title'],
+        index: 'id',
+        server: false,
+        silent: false
+    }];
+
+    var links = [{
+        pub: 'models.todoList',
+        sub: '#todo-list.list'
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+
+    var pipStr = app.getAll();
+    assert.deepEqual(R.keys(pipStr), [
+        "#todo-list",
+        "#todo-list>li",
+        "#todo-list>li>div",
+        "#todo-list>li>div>input",
+        "#todo-list>li>div>label",
+        "#todo-list>li>div>button",
+        "#todo-list>li>input",
+        "models",
+        "router",
+        "navTree"
+    ]);
+    assert.deepEqual(R.keys(pipStr['#todo-list']), ['__pip', 'list']);
+});
+QUnit.test('first orphan node', function(assert) {
+
+    assert.throws( function(){
+        var domStr = "<div id='main'></div>";
+        $('#qunit-fixture').append(domStr);
+        var nodes = [{
+            type: 'sub',
+            selector: '#pre',
+            tpl: "<li></li>",
+            empty: '<p id="empty">not filled</p>'
+        },{
+            type: 'sub',
+            selector: '#main',
+            tpl: "<li></li>",
+            empty: '<p id="empty">not filled</p>'
+        }];
+        var app = new LinkingPips.App(domStr, nodes, [], []);
+    }, /Selector #pre does not exist/, 'error message when orphanLoop =true');
+
+});
+QUnit.test('second orphan node', function(assert) {
+
+    assert.throws( function(){
+        var domStr = "<div id='main'></div>";
+        $('#qunit-fixture').append(domStr);
+        var nodes = [{
+            type: 'sub',
+            selector: '#main',
+            tpl: "<li></li>",
+            empty: '<p id="empty">not filled</p>'
+        },{
+            type: 'sub',
+            selector: '#pre',
+            tpl: "<li></li>",
+            empty: '<p id="empty">not filled</p>'
+        }];
+        var app = new LinkingPips.App(domStr, nodes, [], []);
+    }, /Selector #pre does not exist/, 'error message when orphanLoop =true');
+
+});
+QUnit.test('only orphan node', function(assert) {
+    assert.throws( function(){
+        var domStr = "<div id='main'></div>";
+        $('#qunit-fixture').append(domStr);
+        var nodes = [{
+            type: 'sub',
+            selector: '#pre',
+            tpl: "<li></li>",
+            empty: '<p id="empty">not filled</p>'
+        }];
+        var app = new LinkingPips.App(domStr, nodes, [], []);
+    }, /Selector #pre does not exist/, 'error message when orphanLoop =true');
+
+});
+
+QUnit.test('nested node', function(assert) {
+
+    //TODO netsNode werkt nog niet
+    assert.equal(true, true,'nested node werkt nog niet');
+    // assert.throws( function(){
+    //     var domStr = "<div id='main'></div>";
+    //     $('#qunit-fixture').append(domStr);
+    //     var nodes = [{
+    //         type: 'sub',
+    //         selector: '#inside',
+    //         root:'#main',
+    //         tpl: "<span></span>",
+    //         empty: '<p>niet gelukt</p>'
+    //     },{
+    //         type: 'sub',
+    //         selector: '#main',
+    //         tpl: "<div id = 'inside'></div>",
+    //         empty: '<p id="empty">not filled</p>'
+    //     }];
+    //     var app = new LinkingPips.App(domStr, nodes, [], []);
+    // }, /node options have no match within html orlinkoptions have no match with defined pips, within element options/, 'error message when orphanLoop =true');
+
+});
+
+QUnit.test('several orphans', function(assert) {
+    assert.throws( function(){
+        var domStr = "<div id='main'></div><div id='pre'></div>";
+        $('#qunit-fixture').append(domStr);
+        var nodes = [{
+            type: 'sub',
+            selector: '#orphan',
+            tpl: "<span></span>",
+            empty: '<p>niet gelukt</p>'
+        },{
+            type: 'sub',
+            selector: '#wees',
+            tpl: "<div id = 'kind'></div>",
+            empty: '<p id="empty">not filled</p>'
+        },{
+            type: 'sub',
+            selector: '#pre',
+            tpl: "<span></span>",
+            empty: '<p>niet gelukt</p>'
+        },{
+            type: 'sub',
+            selector: '#child',
+            tpl: "<span></span>",
+            empty: '<p>niet gelukt</p>'
+        },{
+            type: 'sub',
+            selector: '#main',
+            tpl: "<div id = 'inside'></div>",
+            empty: '<p id="empty">not filled</p>'
+        }];
+        var app = new LinkingPips.App(domStr, nodes, [], []);
+    }, /Selector #orphan does not exist./, 'error message when orphanLoop =true');
+
+});

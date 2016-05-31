@@ -1,0 +1,29 @@
+import scrapy
+import re
+
+class Persoonlijkheden(scrapy.Spider):
+
+    def __init__(self, category=None, *args, **kwargs):
+        super(Persoonlijkheden, self).__init__(*args, **kwargs)
+        self.name = "persoonlijkheden"
+        self.allowed_domains = ["resources.huygens.knaw.nl"]
+        self.start = 0
+        self.end = 1
+        self.f = open('persoonlijkheden.txt', 'w')
+        for page in range(self.start, self.end):
+            self.scrape(page)
+
+    def scrape(page):
+        yield scrapy.http.Request(
+            "http://resources.huygens.knaw.nl/retroboeken/persoonlijkheden/#page=%s&accessor=search_in_text&accessor_href=http%3A%2F%2Fresources.huygens.knaw.nl%2Fretroboeken%2Fpersoonlijkheden%2Fsearch_in_text%2Findex_html%3Fpage%3D0%26source%3D1%26id%3Dsearch_in_text&source=1" % page,
+            callback=self.parse,
+            meta={'page':page}
+        )
+
+    def parse(self, response):
+        page = response.meta['page']
+        content = response.xpath("//div[@id='htmlPane_page_%s_container']/text()").extract()
+        self.f.write(content)
+
+    def closed():
+        self.f.close()

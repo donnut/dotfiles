@@ -1,0 +1,47 @@
+Number of training examples : 200
+Number of valid (projective) examples : 200
+
+List below shows results of trying different features and
+their effect on LAS and UAS
+
+Original features
+LAS: 0.264150943396
+UAS: 0.176100628931
+
+Adding Lemma feature to stack 0 and buffer 0
+LAS: 0.339622641509
+UAS: 0.276729559748
+
+distance between head and word (skipped)
+LAS: 0.342767295597
+UAS: 0.279874213836
+
+buffer1 word
+LAS: 0.468553459119
+UAS: 0.345911949686
+
+lemmatizer (skipped)
+LAS: 0.459119496855
+UAS: 0.314465408805
+
+stemming (skipped)
+LAS: 0.468553459119
+UAS: 0.327044025157
+
+postag (buf_0)
+LAS: 0.622641509434
+UAS: 0.588050314465
+
+Final choice for all three languages
+postag (buf_1), more buf's reduces number (Eng)
+(Eng)
+LAS: 0.798742138365
+UAS: 0.745283018868
+
+(Swe)
+LAS: 0.789683330014
+UAS: 0.677554272057
+
+(Dan)
+LAS: 0.79121756487
+UAS: 0.713173652695

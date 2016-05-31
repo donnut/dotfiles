@@ -1,0 +1,36 @@
+var mongoose = require('mongoose');
+var R = require('ramda');
+var fs = require('fs');
+
+
+require('../models/tweet');
+var Tweet = mongoose.model('Tweet');
+
+mongoose.connect('mongodb://localhost/spijt_vluchtelingen', {
+    db:{safe: { j: 1, w: 0, wtimeout: 10000 }}
+});
+
+Tweet.find({check_deleted:{$ne:null}}, {"user.id_str": 1},
+    function(err, data) {
+        if (err) throw new Error(err);
+        user_ids = R.map(R.path(['user','id_str']), data);
+        var fd = fs.openSync('redenen.csv', 'w');
+
+        Tweet.
+            find({'user.id_str': {$in: user_ids}}, {'user.name':1, text:1, check_deleted:1}).
+            sort({'user.id_str':1}).
+            exec(function(err, data) {
+                R.forEach(function(item) {
+                    if (item['check_deleted']) {
+                        check = item['check_deleted'];
+                    } else {
+                        check = '';
+                    }
+                    var line = '"' + item['user']['name'] + '","' + item['text'] + '","' + check + '"\n';
+                    console.log(line)
+                    fs.writeSync(fd, line);
+                }, data);
+                mongoose.disconnect();
+            });
+    });
+

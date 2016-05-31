@@ -1,0 +1,633 @@
+QUnit.module('State and StateItem Pips - MopeApp', {
+    beforeEach: function() {
+        DEBUG = true;
+        Globals.idCounter = 0;
+    }
+});
+
+QUnit.test('statePip -- initialize/remove/insert element', function(assert) {
+    var domStr = "<div id='main'>";
+
+    $('#qunit-fixture').append(domStr);
+    var pips = [{
+        selector: '#main',
+        'default':'isHidden',
+        type:'state',
+        states:[{
+            name: 'isHidden',
+            attr: 'class',
+            value: 'red'
+        },
+        {
+            name: 'isShown',
+            attr: 'class',
+            value: 'green'
+        }]
+    }];
+
+    var app = new LinkingPips.App(domStr, [], pips, []);
+
+    var pipStr = app.getAll();
+    assert.deepEqual(R.keys(pipStr), ['#main', 'router', 'navTree']);
+    assert.deepEqual(R.keys(pipStr['#main']), ['__pip', 'states']);
+    assert.equal(app.get('#main.states.isHidden').get(), 'isHidden');
+    assert.equal($('#main').attr('class'), 'red');
+
+    app.get('#main.states.isHidden').react({
+        value: 'isShown',
+        action: 'update'
+    });
+    assert.equal(app.get('#main.states.isHidden').get(), 'isShown');
+    assert.equal($('#main').attr('class'), 'green');
+    app.get('#main.states.isHidden').react({action:'remove'}, 'reset pip to empty case');
+    assert.equal(app.get('#main.states.isHidden').get(), 'isHidden', 'empty case = default');
+    // elem pip is `removed`, so checking it's value is pointless
+
+    app.get('#main.states.isHidden').react({action:'insert', value: DOMIO.create('#main')}, 'recreate element pip');
+    assert.equal(app.get('#main.states.isHidden').get(), 'isHidden', 'empty case = default');
+    assert.equal($('#main').attr('class'), 'red');
+
+});
+
+QUnit.test('stateItemPip connected to empty collection', function(assert) {
+    var domStr = "<ul id='main'></ul>";
+
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'list',
+        selector: '#main',
+        idKey: 'strip',
+        tpl: "<li><span></span></li>",
+        empty: 'no model data yet'
+    }];
+
+    var pips = [{
+        type: 'stateItem',
+        selector: '#main>li',
+        // idType: 'id',
+        'default': 'fail',
+        states: [{
+            name: 'ok',
+            attr: 'class',
+            value: 'green'
+        },{
+            name: 'fail',
+            attr: 'class',
+            value: 'red'
+        }]
+    },{
+        type: 'collection',
+        name: 'colorful',
+        index: 'id',
+        server: false,
+        silent: false
+    }];
+
+    var links = [{
+        pub: 'models.colorful',
+        sub: '#main.list'
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+    assert.deepEqual(app.get('models.colorful').unsafeGet(), {});
+});
+
+// QUnit.test('statePip on sleeping sub view', function(assert) {
+//     var domStr = "<div id='main'></div>";
+
+//     $('#qunit-fixture').append(domStr);
+
+//     var nodes = [{
+//         type: 'sub',
+//         selector: '#main',
+//         tpl: "<div></div>",
+//         empty: '<p id="empty">not filled</p>'
+//     }];
+
+//     var pips = [{
+//         selector: '#empty',
+//         'default' :'isShown',
+//         type:'state',
+//         states:[{
+//             name: 'isHidden',
+//             attr: 'display',
+//             value: 'none'
+//         },
+//         {
+//             name: 'isShown',
+//             attr: 'display',
+//             value: ''
+//         }]
+//     }];
+
+//     var app = new LinkingPips.App(domStr, nodes, pips, []);
+
+//     var pipStr = app.getAll();
+//     assert.deepEqual(R.keys(pipStr), ['#main', '#main>div', '#empty', 'router', 'navTree']);
+//     assert.deepEqual(R.keys(pipStr['#main']), ['__pip', 'sub']);
+//     assert.deepEqual(R.keys(pipStr['#empty']['states']), ['isShown']);
+
+//     assert.equal(app.get('#main.sub').get(), false);
+//     assert.equal(app.get('#empty.states.isShown').get(), 'isShown', 'default state set through options');
+
+//     assert.equal($('#empty').css('display'), 'block');
+//     // update pip
+//     app.get('#empty.states.isShown').react({ value: 'isHidden', action: 'update' });
+//     assert.equal(app.get('#empty.states.isShown').get(), 'isHidden', 'post update register');
+//     // TODO
+//     // this doesn't work yet as the link between sub and empty reg pips is initialized with an empty
+//     // value, because sub is still empty
+//     //assert.equal($('#empty').css('display'), 'none');
+// });
+
+QUnit.test('statePip on activated sub view', function(assert) {
+    var domStr = "<div id='main'>";
+
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'sub',
+        selector: '#main',
+        tpl: "<p id='filled'>filled</p>",
+        empty: '<p id="empty">not filled</p>'
+    }];
+
+    var pips = [{
+        type:'state',
+        // root: '#main',
+        selector: '#filled',
+        'default' :'isShown',
+        states:[{
+            name: 'isHidden',
+            attr: 'display',
+            value: 'none'
+        },
+        {
+            name: 'isShown',
+            attr: 'display',
+            value: ''
+        }]
+    }, {
+        type: 'model',
+        name: 'storage',
+        model: {error: 'Nothing wrong'},
+        server: false,
+        silent: false
+    }];
+
+    var links =[{
+        pub: 'models.storage',
+        sub: '#main.sub',
+        options: {
+            value: ['map', function(i) {
+                return i.value;
+            }],
+            action: ['map', function(i) {
+                return i.action;
+            }],
+            it: ['map', function(i) {
+                return i.it;
+            }]
+        }
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+
+    var pipStr = app.getAll();
+    assert.deepEqual(R.keys(pipStr), ['#main', '#filled', 'models', 'router', 'navTree']);
+    assert.deepEqual(R.keys(pipStr['#main']), ['__pip', 'sub']);
+
+    assert.equal(app.get('#main.sub').get(), true);
+    assert.equal(app.get('#filled.states.isShown').get(), 'isShown', 'default state set through options');
+    assert.equal($('#filled').css('display'), 'block');
+
+    // update pip
+    app.get('#filled.states.isShown').react({ value: 'isHidden', action: 'update' });
+    assert.equal(app.get('#filled.states.isShown').get(), 'isHidden', 'post update register');
+    // TODO
+    // this doesn't work yet as the link between sub and empty reg pips is initialized with an empty
+    // value, because sub is still empty
+    // assert.equal($('#filled').css('display'), 'none');
+});
+
+QUnit.test('stateItemPip with static list', function(assert) {
+    var domStr = "<ul id='main'>" +
+        "<li id='i1'><span></span></li>" +
+        "<li id='i2'><span></span></li>" +
+        "<li id='i3'><span></span></li>" +
+        "<li id='i4'><span></span></li>" +
+        "</ul>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        selector: "#main>li",
+        type: "listItem",
+        idType: "id"
+    }];
+
+    var pips = [{
+        type: 'stateItem',
+        selector: '#main>li',
+        idType: 'id',
+        states: [{
+            name: 'ok',
+            attr: 'class',
+            value: 'green'
+        },{
+            name: 'fail',
+            attr: 'class',
+            value: 'red'
+        }]
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, []);
+
+    assert.ok($('#i1').hasClass('green'));
+    assert.ok($('#i2').hasClass('green'));
+    assert.ok($('#i3').hasClass('green'));
+    assert.ok($('#i4').hasClass('green'));
+
+    var pipStr = app.getAll();
+    assert.deepEqual(R.keys(pipStr), ['#main', '#main>li', '#main>li>span', 'router', 'navTree']);
+    assert.deepEqual(app.get('#main>li.states.ok').get(), {
+        i1: 'ok',
+        i2: 'ok',
+        i3: 'ok',
+        i4: 'ok'
+    }, 'default states set through options');
+
+});
+
+QUnit.test('stateItemPip with static list + listElement', function(assert) {
+    var domStr = "<ul id='main'>" +
+        "<li id='i1'><span></span></li>" +
+        "<li id='i2'><span></span></li>" +
+        "<li id='i3'><span></span></li>" +
+        "<li id='i4'><span></span></li>" +
+        "</ul>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        selector: "#main>li",
+        type: "listItem",
+        idType: "id"
+    }];
+
+    var pips = [{
+        type: 'stateItem',
+        selector: '#main>li>span',
+        idType: 'id',
+        default: 'fail',
+        states: [{
+            name: 'ok',
+            attr: 'class',
+            value: 'green'
+        },{
+            name: 'fail',
+            attr: 'class',
+            value: 'red'
+        }]
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, []);
+
+    assert.ok($('#i1>span').hasClass('red'));
+    assert.ok($('#i2>span').hasClass('red'));
+    assert.ok($('#i3>span').hasClass('red'));
+    assert.ok($('#i4>span').hasClass('red'));
+
+    var pipStr = app.getAll();
+    assert.deepEqual(R.keys(pipStr), ['#main','#main>li','#main>li>span', 'router', 'navTree']);
+    assert.deepEqual(app.get('#main>li>span.states.fail').get(), {
+        i1: 'fail',
+        i2: 'fail',
+        i3: 'fail',
+        i4: 'fail'
+    }, 'default states set through options');
+});
+
+QUnit.test('stateItemPip on dynamic list view', function(assert) {
+    var domStr = "<ul id='main'></ul>";
+
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'list',
+        selector: '#main',
+        idKey: 'strip',
+        tpl: "<li><span></span></li>",
+        empty: 'no model data yet'
+    }];
+
+    var pips = [{
+        type: 'stateItem',
+        selector: '#main>li',
+        // idType: 'id',
+        default: 'fail',
+        states: [{
+            name: 'ok',
+            attr: 'class',
+            value: 'green'
+        },{
+            name: 'fail',
+            attr: 'class',
+            value: 'red'
+        }]
+    },{
+        type: 'collection',
+        name: 'colorful',
+        model: [{
+            strip: 'one'
+        }, {
+            strip: 'two'
+        }, {
+            strip: 'three'
+        }, {
+            strip: 'four'
+        }],
+        index: 'id',
+        server: false,
+        silent: false
+    }];
+
+    var links = [{
+        pub: 'models.colorful',
+        sub: '#main.list',
+        options: {
+            value: ['map', function(i) {
+                return i.value;
+            }],
+            action: ['map', function(i) {
+                return i.action;
+            }],
+            it: ['map', function(i) {
+                return i.it;
+            }]
+        }
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+
+    var pipStr = app.getAll();
+    assert.deepEqual(R.keys(pipStr), ['#main', '#main>li', '#main>li>span', 'models', 'router', 'navTree']);
+    assert.deepEqual(R.keys(pipStr['#main']), ['__pip', 'list']);
+    assert.deepEqual(R.keys(pipStr['#main>li']), ['__pip', 'states']);
+
+    assert.deepEqualSplitKeys(app.get('#main>li.states.fail').get(), {
+        '1%%one': 'fail',
+        '2%%two': 'fail',
+        '3%%three': 'fail',
+        '4%%four': 'fail'
+    }, 'event enabled');
+
+    // create model in collection
+    app.get('models.colorful').react([{
+        action: 'create',
+        value: {strip: 'five'},
+    }]);
+    assert.deepEqualSplitKeys(app.get('#main>li.states.fail').get(), {
+        "1%%one": "fail",
+        "2%%two": "fail",
+        "3%%three": "fail",
+        "4%%four": "fail",
+        "5%%five": "fail"
+    }, '%%', 'post insert stateItem register');
+    assert.equal($('#main>li').length, 5, 'post insert DOM');
+
+    // update state
+    var id1 = Object.keys(app.get('#main>li.states.fail').get())[0];
+    app.get('#main>li.states.fail').react([{action: 'update', it: id1, value: 'ok'}]);
+
+    // delete model from collection
+    var id2 = app.get('models.colorful').get()[0].__it;
+    app.get('models.colorful').react([{
+        action: 'delete',
+        it: id2
+    }]);
+    assert.deepEqualSplitKeys(app.get('#main.list').get(), [
+        "2%%two", "3%%three", "4%%four", "5%%five",
+    ], '%%', 'post delete list register');
+    assert.deepEqualSplitKeys(R.keys(app.get('#main>li').get()), [
+        "2%%two", "3%%three", "4%%four", "5%%five",
+    ], '%%', 'post delete listItem register');
+    assert.deepEqualSplitKeys(app.get('#main>li.states.fail').get(), {
+        "2%%two": "fail",
+        "3%%three": "fail",
+        "4%%four": "fail",
+        "5%%five": "fail",
+    }, '%%', 'post delete template register');
+    assert.equal($('#main>li').length, 4, 'post delete DOM');
+    assert.equal($('#main>li').eq(0).attr('class'), 'red', 'post delete DOM');
+});
+
+QUnit.test('stateItemPip on dynamic list view + listElement', function(assert) {
+    var domStr = "<ul id='main'></ul>";
+
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'list',
+        selector: '#main',
+        idKey: 'strip',
+        it: 'li',
+        tpl: "<li><span></span></li>",
+        empty: 'no model data yet'
+    }];
+
+    var pips = [{
+        type: 'stateItem',
+        selector: '#main>li>span',
+        states: [{
+            name: 'ok',
+            attr: 'class',
+            value: 'green'
+        },{
+            name: 'fail',
+            attr: 'class',
+            value: 'red'
+        }]
+    },{
+        type: 'collection',
+        name: 'colorful',
+        model: [{
+            strip: 'one'
+        }, {
+            strip: 'two'
+        }, {
+            strip: 'three'
+        }, {
+            strip: 'four'
+        }],
+        index: 'id',
+        server: false,
+        silent: false
+    }];
+
+    var links = [{
+        pub: 'models.colorful',
+        sub: '#main.list',
+        options: {
+            value: ['map', function(i) {
+                return i.value;
+            }],
+            action: ['map', function(i) {
+                return i.action;
+            }],
+            it: ['map', function(i) {
+                return i.it;
+            }]
+        }
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+
+    var pipStr = app.getAll();
+    assert.deepEqual(R.keys(pipStr), ['#main', '#main>li', '#main>li>span', 'models', 'router', 'navTree']);
+    assert.deepEqual(R.keys(pipStr['#main']), ['__pip', 'list']);
+    assert.deepEqual(R.keys(pipStr['#main>li']), ['__pip']);
+    assert.deepEqual(R.keys(pipStr['#main>li>span']), ['__pip', 'states']);
+
+    assert.deepEqualSplitKeys(app.get('#main>li>span.states.ok').get(), {
+        '1%%one': 'ok',
+        '2%%two': 'ok',
+        '3%%three': 'ok',
+        '4%%four': 'ok'
+    }, '%%', 'event enabled');
+    //
+    // create model in collection
+    app.get('models.colorful').react([{
+        action: 'create',
+        value: {strip: 'five'},
+    }]);
+    assert.deepEqualSplitKeys(app.get('#main>li>span.states.ok').get(), {
+        "1%%one": "ok",
+        "2%%two": "ok",
+        "3%%three": "ok",
+        "4%%four": "ok",
+        "5%%five": "ok"
+    }, '%%', 'post insert stateItem register');
+    assert.equal($('#main>li').length, 5, 'post insert DOM');
+
+    // update state
+    var id1 = Object.keys(app.get('#main>li>span.states.ok').get())[0];
+    app.get('#main>li>span.states.ok').react([{action: 'update', it: id1, value: 'fail'}]);
+
+    // delete model from collection
+    var id2 = app.get('models.colorful').get()[0].__it;
+    app.get('models.colorful').react([{
+        action: 'delete',
+        it: id2
+    }]);
+    assert.deepEqualSplitKeys(app.get('#main.list').get(), [
+        "2%%two", "3%%three", "4%%four", "5%%five",
+    ], '%%', 'post delete list register');
+    assert.deepEqualSplitKeys(R.keys(app.get('#main>li').get()), [
+        "2%%two", "3%%three", "4%%four", "5%%five",
+    ], '%%', 'post delete listItem register');
+    assert.deepEqualSplitKeys(app.get('#main>li>span.states.ok').get(), {
+        "2%%two": "ok",
+        "3%%three": "ok",
+        "4%%four": "ok",
+        "5%%five": "ok",
+    }, '%%', 'post delete template register');
+    assert.equal($('#main span').length, 4, 'post delete DOM');
+    assert.equal($('#main span').eq(0).attr('class'), 'green', 'post delete DOM');
+});
+
+QUnit.test('stateItemPip on dynamic list view deleting collection', function(assert) {
+    var domStr = "<ul id='main'></ul>";
+
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'list',
+        selector: '#main',
+        idKey: 'strip',
+        it: 'li',
+        tpl: "<li><span></span></li>",
+        empty: '<span>no model data yet</span>'
+    }];
+
+    var pips = [{
+        type: 'stateItem',
+        selector: '#main>li>span',
+        states: [{
+            name: 'ok',
+            attr: 'class',
+            value: 'green'
+        },{
+            name: 'fail',
+            attr: 'class',
+            value: 'red'
+        }]
+    },{
+        type: 'collection',
+        name: 'colorful',
+        model: [{
+            strip: 'one'
+        }, {
+            strip: 'two'
+        }, {
+            strip: 'three'
+        }, {
+            strip: 'four'
+        }],
+        index: 'id',
+        server: false,
+        silent: false
+    }];
+
+    var links = [{
+        pub: 'models.colorful',
+        sub: '#main.list',
+        options: {
+            value: ['map', function(i) {
+                return i.value;
+            }],
+            action: ['map', function(i) {
+                return i.action;
+            }],
+            it: ['map', function(i) {
+                return i.it;
+            }]
+        }
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+
+    var pipStr = app.getAll();
+    assert.deepEqual(R.keys(pipStr), ['#main','#main>li', '#main>li>span', 'models', 'router', 'navTree']);
+    assert.deepEqual(R.keys(pipStr['#main']), ['__pip', 'list']);
+    assert.deepEqual(R.keys(pipStr['#main>li']), ['__pip']);
+    assert.deepEqual(R.keys(pipStr['#main>li>span']), ['__pip', 'states']);
+
+    assert.deepEqualSplitKeys(app.get('#main>li>span.states.ok').get(), {
+        '1%%one': 'ok',
+        '2%%two': 'ok',
+        '3%%three': 'ok',
+        '4%%four': 'ok'
+    }, '%%', 'stateItem set');
+
+    app.get('models.colorful').react({action: 'delete'});
+
+    assert.deepEqual(app.get('models.colorful').get(), [], 'empty collection');
+    assert.deepEqual(app.get('#main.list').get(), [], 'empty list');
+    assert.deepEqual(app.get('#main>li').get(), {}, 'empty listItems');
+    assert.deepEqual(app.get('#main>li>span').get(), {}, 'empty listElements');
+    assert.deepEqual(app.get('#main>li>span.states.ok').get(), {}, 'empty stateItems');
+    assert.equal($('#main span').html(), 'no model data yet', 'empty DOM');
+
+    app.get('models.colorful').react([{action: 'create', value: {strip: 'nine'}}]);
+
+    var items = app.get('models.colorful').get();
+    var id1 = R.last(items).__it;
+    assert.deepEqual(app.get('models.colorful').get(), [ {__it: id1, strip: 'nine'}], 'new collection');
+    assert.deepEqualSplitKeys(app.get('#main.list').get(), ['5%%nine'], '%%', 'new list');
+    assert.ok(R.values(app.get('#main>li').get())[0].equals(DOMIO.create('#main>li')), 'new listItem');
+    assert.ok(R.values(app.get('#main>li>span').get())[0].equals(DOMIO.create('#main>li>span')), 'new listItem');
+    //assert.ok(app.get('#main>li>span').get('5%%nine').equals(DOMIO.create('#main>li>span')), 'new listElement');
+    assert.deepEqualSplitKeys(app.get('#main>li>span.states.ok').get(), {'5%%nine': 'ok'}, '%%', 'new stateItems');
+    assert.equal($('#main>li>span').attr('class'), 'green', 'state is ok (=green)');
+
+});

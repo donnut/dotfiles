@@ -1,0 +1,24 @@
+function curry2<T1, T2, R>(fn: (a:T1, b:T2) => R);
+function curry2<T1, T2, R>(fn: (a:T1, b:T2) => (b:T2) => R);
+function curry2(fn) {
+    return function(a, b) {
+        switch (arguments.length) {
+            case 0:
+                new TypeError('Function called with no arguments');
+            case 1:
+                return function(b) {
+                    return fn(a, b);
+                };
+            default:
+                return fn(a, b);
+        }
+    };
+}
+
+
+const add = (x: number, y: number) => x + y;
+
+const curriedAdd = curry2(add);
+
+const res1 = curriedAdd(1);
+

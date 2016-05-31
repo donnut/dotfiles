@@ -1,0 +1,224 @@
+QUnit.module('serverIO - socket', {
+    beforeEach: function() {
+        this.server = sinon.fakeServer.create();
+        Globals.serverAddress = '/fake';
+        DEBUG = true;
+        Globals.pips = Store.Storage(); // reset 'global' space
+        Globals.idCounter = 0;
+    },
+    afterEach: function() {
+        this.server.restore();
+    }
+});
+
+
+QUnit.test("test should fetch comments from server", function (assert) {
+    this.server.respondWith("GET", "some/article/comments.json",
+            [200, { "Content-Type": "application/json" },
+             '[{ "id": 12, "comment": "Hey there" }]']);
+
+    var callback = sinon.spy();
+    $.ajax({url: "some/article/comments.json"}).done(callback);
+    this.server.respond();
+
+    assert.ok(callback.calledWith([{ id: 12, comment: "Hey there" }]));
+    // sinon.assert.calledWith(callback, [{ id: 12, comment: "Hey there" }]);
+});
+
+QUnit.test('send data to server and receive it back with _id', function(assert) {
+    var done = assert.async();
+    this.server.respondWith("GET", "/fake/namelist/update",
+        [
+            200,
+            { "Content-Type": "application/json" },
+            '{"_id": 99, "name": "erwin"}'
+        ]);
+    var serverIO = new ServerIO.Server('namelist');
+    var future = serverIO.sync('update', {name: 'erwin'});
+    future.fork(
+        function(err) {
+            console.log(err);
+            assert.ok(false);
+            done();
+        },
+        function(result) {
+            assert.equal(result.name, 'erwin');
+            assert.equal(result._id, 99);
+            done();
+        }
+    );
+    this.server.respond();
+});
+
+
+QUnit.test('test collection api call to server', function(assert) {
+
+    var done = assert.async();
+    var domStr = "<div id='main'>";
+    $('#qunit-fixture').append(domStr);
+
+    this.server.respondWith("GET", "/fake/colorful/fetch",
+        [
+            200,
+            { "Content-Type": "application/json" },
+            '{"value": [{"_id":"1231", "strip": "one"}, {"_id":"1232", "strip": "two"}, {"_id":"1233", "strip": "three"}, {"_id":"1234", "strip": "four"}]}'
+        ]);
+
+    var pips = [{
+        type: 'collection',
+        name: 'colorful',
+        index: 'id',
+        server: true,
+        silent: false
+    }];
+
+    spyAjax.reset();
+    new LinkingPips.App(domStr, [], pips, []);
+
+    this.server.respond();
+    assert.equal(spyAjax.callCount, 1);
+    assert.ok(spyAjax.calledWith("/fake/colorful/fetch"));
+    assert.deepEqual(Globals.pips.get("models.colorful").unsafeGet(), {
+        "1": {
+            "_id": "1231",
+            "strip": "one"
+        },
+        "2": {
+            "_id": "1232",
+            "strip": "two"
+        },
+        "3": {
+            "_id": "1233",
+            "strip": "three"
+        },
+        "4": {
+            "_id": "1234",
+            "strip": "four"
+        }
+    });
+    done();
+});
+
+QUnit.test('collection updates data to server', function(assert) {
+    var done = assert.async();
+    var domStr = "<div id='main'>";
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        type: 'collection',
+        name: 'colorful',
+        index: 'id',
+        server: true,
+        emit: true
+    }];
+    new LinkingPips.App(domStr, [], pips, []);
+
+    var init  = [
+        {action: "create", id: "1", value: {"_id":"1231", "strip": "one"}},
+        {action: "create", id: "2", value: {"_id":"1232", "strip": "two"}},
+        {action: "create", id: "3", value: {"_id":"1233", "strip": "three"}},
+        {action: "create", id: "4", value: {"_id":"1234", "strip": "four"}}];
+    Globals.pips.get('models.colorful').react(init);
+
+    spyAjax.reset();
+
+    Globals.pips.get('models.colorful').react([{action: 'update', it: "1", value: {strip: 'new'}}]);
+
+    assert.equal(spyAjax.callCount, 1);
+    assert.ok(spyAjax.calledWith("/fake/colorful/update"));
+    done();
+});
+
+QUnit.test('collection deletes data from server', function(assert) {
+    var done = assert.async();
+    var domStr = "<div id='main'>";
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        type: 'collection',
+        name: 'colorful',
+        index: 'id',
+        server: true,
+        silent: false
+    }];
+    new LinkingPips.App(domStr, [], pips, []);
+
+    var init  = [
+        {action: "create", id: "1", value: {"_id":"1231", "strip": "one"}},
+        {action: "create", id: "2", value: {"_id":"1232", "strip": "two"}},
+        {action: "create", id: "3", value: {"_id":"1233", "strip": "three"}},
+        {action: "create", id: "4", value: {"_id":"1234", "strip": "four"}}];
+    Globals.pips.get('models.colorful').react(init);
+
+    spyAjax.reset();
+
+    Globals.pips.get('models.colorful').react([{action: 'delete', it: "1"}]);
+
+    assert.equal(spyAjax.callCount, 1);
+    assert.ok(spyAjax.calledWith("/fake/colorful/delete"));
+    done();
+});
+
+QUnit.test('collection removes all its data from server', function(assert) {
+    var done = assert.async();
+    var domStr = "<div id='main'>";
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        type: 'collection',
+        name: 'colorful',
+        index: 'id',
+        server: true,
+        silent: false
+    }];
+    new LinkingPips.App(domStr, [], pips, []);
+
+    var init  = [
+        {action: "create", id: "1", value: {"_id": "1231", "strip": "one"}},
+        {action: "create", id: "2", value: {"_id": "1232", "strip": "two"}},
+        {action: "create", id: "3", value: {"_id": "1233", "strip": "three"}},
+        {action: "create", id: "4", value: {"_id": "1234", "strip": "four"}}];
+    Globals.pips.get('models.colorful').react(init);
+
+    spyAjax.reset();
+
+    Globals.pips.get('models.colorful').react({action: 'delete'});
+
+    assert.equal(spyAjax.callCount, 4);
+    assert.ok(spyAjax.calledWith("/fake/colorful/delete"));
+    done();
+});
+
+QUnit.test('test model api call to server', function(assert) {
+
+    var done = assert.async();
+    var domStr = "<div id='main'>";
+    $('#qunit-fixture').append(domStr);
+
+    this.server.respondWith("GET", "/fake/colorful/fetch",
+        [
+            200,
+            { "Content-Type": "application/json" },
+            '{"value": [{"_id":"1231", "strip": "one"}]}'
+        ]);
+
+    var pips = [{
+        type: 'model',
+        name: 'colorful',
+        index: 'id',
+        server: true,
+        silent: false
+    }];
+
+    spyAjax.reset();
+    new LinkingPips.App(domStr, [], pips, []);
+
+    this.server.respond();
+    assert.equal(spyAjax.callCount, 1);
+    assert.ok(spyAjax.calledWith("/fake/colorful/fetch"));
+    assert.deepEqual(Globals.pips.get("models.colorful").get(), {
+        "_id": "1231",
+        "strip": "one"
+    });
+    done();
+});

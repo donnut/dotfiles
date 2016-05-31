@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Basic Machine</title>
+    <link href="css/index.css" rel="stylesheet" type="text/css"/>
+</head>
+<body>
+<div class="settings">Settings</div>
+<div class="close">Close</div>
+<div id="main" class="container-fluid">
+    Container
+</div>
+
+<!--<script src="js/index.js"></script>-->
+</body>
+</html>

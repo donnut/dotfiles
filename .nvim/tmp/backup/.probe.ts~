@@ -1,0 +1,15 @@
+/// <reference path="ramda.d.ts" />
+//
+export const _ = Symbol("gap");
+
+interface CurriedFunction2<T1, T2, R> {
+    (t1: T1, t2?: T2): (t2: T2) => R;
+    (t1: T1, t2?: T2): R;
+}
+
+//export type hasKey = R.CurriedFunction2<string, {}, boolean>;
+export const hasKey = R.curry(<T>(key: string, someObject: T): boolean => {
+    return R.contains(key, R.keys(someObject));
+})
+
+const getKey = <T>(key: string, someObject: T) => R.contains(key, R.keys(someObject));

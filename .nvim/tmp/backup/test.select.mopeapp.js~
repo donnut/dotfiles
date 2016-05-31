@@ -1,0 +1,211 @@
+QUnit.module('Select', {
+    beforeEach: function() {
+        DEBUG = true;
+        Globals.idCounter = 0;
+    }
+});
+
+QUnit.test('set default state (ok) on listElements using select', function(assert) {
+    var domStr = "<ul id='list'>" +
+        "<li id='i1'><span></span></li>" +
+        "<li id='i2'><span></span></li>" +
+        "<li id='i3'><span></span></li>" +
+        "<li id='i4'><span></span></li>" +
+        "</ul>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        selector: "#list>li",
+        type: "listItem",
+        idType: "id"
+    }];
+
+    var pips = [{
+        type: 'select',
+        selector: '#list',
+        name: 'menu',
+        required: true,
+        one: true,
+        it: 'span',
+        states: [{
+            name: 'IS_UNSELECTED',
+            attr: 'class',
+            value: 'red'
+        },{
+            name: 'IS_SELECTED',
+            attr: 'class',
+            value: 'green'
+        }]
+    }];
+
+    // var links = [{
+    //     pub: '#list.select.menu',
+    //     sub: '#list>li>span.states.IS_SELECTED',
+    //     value: function(i) {
+    //         if (R.is(Boolean, i.value)) {
+    //             return i.value
+    //                 ? 'IS_SELECTED'
+    //                 : 'IS_UNSELECTED';
+    //         } else {
+    //             return i.value === 'IS_SELECTED'
+    //                 ? true
+    //                 : false;
+    //         }
+    //     }
+    // }];
+    var app = new LinkingPips.App(domStr, nodes, pips, []);
+    assert.deepEqual(app.get('#list.select.menu').get(), ['i1']);
+    assert.deepEqual(app.get('#list>li>span.states.IS_UNSELECTED').get(), {i1: 'IS_SELECTED', i2: 'IS_UNSELECTED', i3: 'IS_UNSELECTED', i4: 'IS_UNSELECTED'});
+
+    app.get('#list.select.menu').react([{action: 'update', it: 'i2', value: true}]);
+    assert.deepEqual(app.get('#list.select.menu').get(), ['i2']);
+    assert.deepEqual(app.get('#list>li>span.states.IS_UNSELECTED').get(), {i1: 'IS_UNSELECTED', i2: 'IS_SELECTED', i3: 'IS_UNSELECTED', i4: 'IS_UNSELECTED'});
+});
+
+QUnit.test('set default state (fail) on listElements using select', function(assert) {
+    var domStr = "<ul id='list'>" +
+        "<li id='i1'><span></span></li>" +
+        "<li id='i2'><span></span></li>" +
+        "<li id='i3'><span></span></li>" +
+        "<li id='i4'><span></span></li>" +
+        "</ul>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        selector: "#list>li",
+        type: "listItem",
+        idType: "id"
+    }];
+
+    var pips = [{
+        type: 'select',
+        selector: '#list',
+        name: 'menu',
+        required: true,
+        one: true,
+        it: 'span',
+        'default': 'IS_UNSELECTED',
+        states: [{
+            name: 'IS_SELECTED',
+            attr: 'class',
+            value: 'green'
+        },{
+            name: 'IS_UNSELECTED',
+            attr: 'class',
+            value: 'red'
+        }]
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, []);
+    assert.deepEqual(app.get('#list.select.menu').get(), ['i1']);
+    assert.deepEqual(app.get('#list>li>span.states.IS_UNSELECTED').get(), {i1: 'IS_SELECTED', i2: 'IS_UNSELECTED', i3: 'IS_UNSELECTED', i4: 'IS_UNSELECTED'});
+
+    app.get('#list.select.menu').react([{action: 'update', it: 'i2', value: true}]);
+    assert.deepEqual(app.get('#list.select.menu').get(), ['i2']);
+    assert.deepEqual(app.get('#list>li>span.states.IS_UNSELECTED').get(), {i1: 'IS_UNSELECTED', i2: 'IS_SELECTED', i3: 'IS_UNSELECTED', i4: 'IS_UNSELECTED'});
+});
+
+QUnit.test('set default state (fail) on listElements (no required)', function(assert) {
+    var domStr = "<ul id='list'>" +
+        "<li id='i1'><span></span></li>" +
+        "<li id='i2'><span></span></li>" +
+        "<li id='i3'><span></span></li>" +
+        "<li id='i4'><span></span></li>" +
+        "</ul>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        selector: "#list>li",
+        type: "listItem",
+        idType: "id"
+    }];
+
+    var pips = [{
+        type: 'select',
+        selector: '#list',
+        name: 'menu',
+        required: false,
+        one: true,
+        it: 'span',
+        'default': 'IS_UNSELECTED',
+        states: [{
+            name: 'IS_SELECTED',
+            attr: 'class',
+            value: 'green'
+        },{
+            name: 'IS_UNSELECTED',
+            attr: 'class',
+            value: 'red'
+        }]
+    }];
+
+    var links = [];
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+    assert.deepEqual(app.get('#list.select.menu').get(), []);
+    assert.deepEqual(app.get('#list>li>span.states.IS_UNSELECTED').get(), {i1: 'IS_UNSELECTED', i2: 'IS_UNSELECTED', i3: 'IS_UNSELECTED', i4: 'IS_UNSELECTED'});
+});
+
+QUnit.test('stateItemPip on dynamic list view', function(assert) {
+    var domStr = "<ul id='main'></ul>";
+
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'list',
+        selector: '#main',
+        idKey: 'strip',
+        it: 'li',
+        tpl: "<li><span></span></li>",
+        empty: '<span>no model data yet</span>'
+    }];
+
+    var pips = [ {
+        type: 'select',
+        selector: '#main',
+        name: 'menu',
+        required: true,
+        one: true,
+        'default': 'IS_UNSELECTED',
+        states: [{
+            name: 'IS_SELECTED',
+            attr: 'class',
+            value: 'green'
+        },{
+            name: 'IS_UNSELECTED',
+            attr: 'class',
+            value: 'red'
+        }]
+    },{
+        type: 'collection',
+        name: 'colorful',
+        model: [{
+            strip: 'one'
+        }, {
+            strip: 'two'
+        }, {
+            strip: 'three'
+        }, {
+            strip: 'four'
+        }],
+        index: 'id',
+        server: false,
+        silent: false
+    }];
+
+    var links = [{
+        pub: 'models.colorful',
+        sub: '#main.list',
+        value: function(i) {
+            return i.value;
+        }
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+    assert.deepEqual(app.get('#main.select.menu').get(), ['1%%one']);
+    assert.deepEqualSplitKeys(app.get('#main>li.states.IS_UNSELECTED').get(), {
+        '1%%one': 'IS_SELECTED',
+        '2%%two': 'IS_UNSELECTED',
+        '3%%three': 'IS_UNSELECTED',
+        '4%%four': 'IS_UNSELECTED',
+    });
+});

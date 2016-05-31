@@ -1,0 +1,817 @@
+module Pip.Effect {
+    import G = Globals;
+    import ACT = G.Action;
+    import MK = G.MessageKey;
+    import ELM = G.Element;
+    import PT = G.PipType;
+    import ON = G.OptionName;
+    import OV = G.OptionValue;
+    import AK = G.AddressKey;
+    import AT = G.ApplyType;
+    import CT = G.conversionTable;
+
+    import IResult = G.IResult;
+    import IMessage = G.IMessage;
+    import IRegister = G.IRegister;
+    import IStorage = Store.IStorage;
+
+    function hasEffect(result: IResult): boolean {
+        return result.effectData !== void 0;
+    }
+
+    function mapResultEffect(result: IResult|IResult[], singleEffect, register?: IRegister<string[]>){
+        if (result instanceof Array) {
+                return R.map((res) => {
+                    return singleEffect(res, register, result);
+                }, result);
+            } else {
+                // list receives a result object with insert/remove/delete. TODO, can call to `insertOnPosition`
+                // be excluded? In that case the awkward thrid argument that needs to be casted to an array, can be
+                // omitted
+                return singleEffect(<IResult>result, register, [<IResult>result]);
+            }
+    }
+
+    /*
+     * Switch functions use the results from interpret to select which function in the effect must be executed, and
+     * then run the effect.
+     * Options are 'update', 'delete', 'create', etc.
+     * Signature is (IResult -> IMessage) or IResult[] -> IMessage[]
+     */
+    export function DOMSwitchFn() {
+        function single(res: IResult): IMessage {
+            if (!hasEffect(res)) return void 0;
+            const effectData = res.effectData,
+                effect = effectData.effect,
+                DOMInstances = effectData.DOMInstances,
+                $anc = DOMInstances.$anc;
+
+            if ($anc){
+                res[ELM[ELM.anc]] = $anc;
+                return effect(res);
+            }
+        }
+
+        return function(result: IResult|IResult[]): IMessage|IMessage[] {
+            return mapResultEffect(result, single);
+        }
+    }
+
+    export function routerSwitchFn() {
+        function filter(res: IResult): boolean {
+            if (!hasEffect(res)) return void 0;
+            const effectData = res.effectData,
+                diff = effectData.diff,
+                pipOut = res.pipOut,
+                nowActive = pipOut.value && pipOut.value.active
+                    ? pipOut.value.active
+                    : false,
+                formerActive = res.oldRegister && res.oldRegister[effectData.it]
+                    ? res.oldRegister[effectData.it].active
+                    : false;
+
+            var hasEffectOnUrlChange: boolean;
+
+            switch(effectData.action) {
+                case ACT[ACT.remove]:
+                    hasEffectOnUrlChange = formerActive;
+                    break;
+                case ACT[ACT.insert]:
+                    hasEffectOnUrlChange = nowActive ;
+                    break;
+                default: //update
+                    hasEffectOnUrlChange = diff &&
+                    ( (formerActive !== undefined && nowActive !== formerActive) ||
+                      (formerActive === undefined  && nowActive)
+                    );
+                    //diff is snelle eerste check maar toevoegen van anc leidt oo ktot diff
+            }
+            return hasEffectOnUrlChange;
+        }
+
+        return function(result: IResult|IResult[], register: G.IRegister<any>): IMessage|IMessage[] {
+            if (result instanceof Array) {
+                var filtered = R.filter(filter, result);
+                if(filtered.length >0 ){
+                    var effect = filtered[0].effectData.effect;
+                    let fnKey = (filtered[0].effectData.empty)
+                        ? 'E'
+                        : 'U';
+                    return effect[fnKey](result, register);
+                }
+            } //else {//moet lege initialisatie zijn!
+                //niets
+            //}
+        }
+    }
+
+    export function subSwitchFn(address) {
+        return function(res: IResult): IMessage {
+            if (!hasEffect(res)) return void 0;
+            const effectData = res.effectData,
+                effect = effectData.effect,
+                DOMInstances = effectData.DOMInstances,
+                diff = effectData.diff,
+                empty = effectData.diff,
+                $anc = DOMInstances.$anc;
+            let fnKey;
+            if ($anc) {//immers nodig tbv pipFn!
+                switch(effectData.action) {
+                    case ACT[ACT.create]:
+                        fnKey = 'C';
+                        break;
+                    case ACT[ACT.delete]:
+                        if (diff && empty) {//$anc &&
+                            fnKey = 'E';
+                        }
+                        break;
+                        // case ACT[ACT.update]: bestaat niet voor sub?, voor list kan het nog sorteren of filteren betekenen
+                    case ACT[ACT.insert]: //hier onderscheid tov DOMswithFn
+                        if (diff  && empty) {
+                            fnKey = 'E';
+                        }  else {
+                            // replace old content with new
+                            fnKey = (res.oldRegister.value === false)
+                                ? 'E'
+                                : 'C';
+                        }
+                        break;
+                    default: // ACT[ACT.remove]:
+                        //NIETS remove betekent nl immers dat $anc er niet is!,
+                }
+            }
+            if (fnKey && effect[fnKey]) { // skip remove action
+                res[ELM[ELM.root]] = $anc;
+                return effect[fnKey](res);
+            } else if (fnKey) {//te restricted??
+                throw new Error ('unexpected case in subSwitchFn for ' + effectData.action);
+            }
+            // return res.pipOut;
+        }
+    }
+
+    export function listSwitchFn(address){
+        function single(res: IResult, register: IRegister<string[]>, result: IResult[]): IMessage {
+            if (!hasEffect(res)) return void 0;
+            const effectData = res.effectData,
+                effect: {(res: IResult): IMessage} = effectData.effect,
+                DOMInstances = effectData.DOMInstances,
+                diff = effectData.diff,
+                empty = effectData.empty,
+                $anc = DOMInstances.$anc;
+            let fnKey;
+
+            if ($anc) {//nodig tbv pipFn!
+                switch(effectData.action) {
+                    case ACT[ACT.create]:
+                        //if (DOMInstances.$el) {//mag je niet eisen hier
+                        fnKey = 'C';
+                        //}
+                        break;
+                    case ACT[ACT.delete]:
+                        if(empty && diff){ //LETOP VOLGENS MIJ GEEN $EL NODIG??? MAG OOK ALLEEN
+                            fnKey = 'E'; // delete all listItems to make list empty
+                        } else if (DOMInstances.$el) {
+                            fnKey ='D';
+                            res[ELM[ELM.el]]= DOMInstances.$el;// delete a single listItem
+                        }
+                        break;
+
+                    case ACT[ACT.update]://nog niet actief: zou sorteren moeten worden of filteren
+                        if(DOMInstances.$el){
+                            res[ELM[ELM.el]] = DOMInstances.$el;
+                            fnKey = 'U';
+                        }
+                        break;
+
+                    case ACT[ACT.insert]: //hier onderscheid tov DOMswithFn
+                        if (empty || res.oldRegister.value.length === 0) {
+                            fnKey = 'E';
+                        } else {//if ($el) //mag je niet eisen hier
+                            fnKey = 'C';
+                        }
+                        //else if (diff && empty) {//&& $anc KA NIET, PIPFN KAN NIKS DOEN
+                        //  domEl[ELM[ELM.root]] = $anc;
+                        //  fnKey = 'E';
+                        //}
+                        break;
+                    default:
+                        break;// ACT[ACT.remove]:
+                        //NIETS remove betekent nl immers dat $anc er niet is!,
+                }
+            }
+            if (fnKey && effect[fnKey]) { // skip remove action
+                return effect[fnKey](R.assoc(ELM[ELM.root], $anc, res), register, result);
+            } else if (fnKey) {//te restricted??
+                throw new Error ('unexpected case in listSwitchFn for ' + effectData.action);
+            }
+        }
+        return function(result: IResult|IResult[], register: IRegister<string[]>): IMessage|IMessage[] {
+            return mapResultEffect(result, single, register);
+        }
+    }
+
+    export function eventSwitchFn(pipType, delegation?: boolean) {
+        function single(res: IResult): IMessage {
+            if (!hasEffect(res)) return void 0;
+            const effectData = res.effectData,
+                effect = effectData.effect,
+                DOMInstances = effectData.DOMInstances,
+                diff = effectData.diff,
+                empty = effectData.diff,
+                action = effectData.action,
+                $anc = DOMInstances.$anc;
+            let fn;
+
+            if (pipType === PT[PT.eventItem]|| action === ACT[ACT.insert] || action === ACT[ACT.remove] || action === ACT[ACT.update]) {
+                // !action === ACT[ACT.delete], action === ACT[ACT.create]
+                if (delegation) {
+                    if (DOMInstances.$root) {
+                        res[ELM[ELM.root]] = DOMInstances.$root;
+                        fn = effect;
+                    }
+                } else if (DOMInstances.$anc) {
+                    res[ELM[ELM.anc]] = DOMInstances.$anc;
+                    fn = effect;
+                }
+            }
+            if (fn) {
+                return fn(res);
+            } else {
+                return void 0;
+            }
+        }
+        return function(result: IResult|IResult[]): IMessage|IMessage[] {
+            return mapResultEffect(result, single);
+        }
+    }
+
+    export function modelSwitchFn() {
+        // return the item including the required action, create, update or delete
+        // if emit is false, nothing is returned
+        function single(res: IResult) {
+            if (!hasEffect(res)) return void 0;
+
+            const effectData = res.effectData,
+                diff = effectData.diff,
+                empty = effectData.empty,
+                emit = res.emit;
+
+            let action;
+
+            switch (effectData.action) {
+                case ACT[ACT.create]:
+                    action = 'create';
+                    break;
+                case ACT[ACT.delete]:
+                    if (diff && empty) {
+                        action = 'empty';
+                    } else{
+                        action = 'delete';
+                    }
+                    break;
+                case ACT[ACT.update]:
+                    action = 'update';
+                    break;
+                default: //insert, remove
+                    throw new Error ( 'action insert or remove not allowed in modelSwitchFn');
+            }
+            return [action, res.pipOut];
+        }
+        return function(result: IResult|IResult[]): G.IServerAction {
+            // collect items to send to server
+            if (result instanceof Array) {
+                if (result.length > 0) {
+                    let effect = result[0].effectData.effect;
+                    return effect(R.map(res => {
+                        return single(res);
+                    }, result));
+                }
+            } else {
+                let effect = (<IResult>result).effectData.effect;
+                return effect([single(<IResult>result)]);
+            }
+        }
+    }
+
+    export function treeSwitchFn() {
+
+        return function(result: IResult) {
+
+            const effectData = result.effectData,
+                diff = effectData.diff,
+                empty = effectData.empty,
+                emit = result.emit;
+
+            let action;
+
+            switch (effectData.action) {
+                case ACT[ACT.update]:
+                    action = 'update';
+                    break;
+                case ACT[ACT.remove]:
+                    action = 'empty';
+                    break;
+            }
+            let effect = result.effectData.effect;
+            return effect[action](result);
+        }
+    }
+
+    /*
+     * Effects are functions that transform the interpret result - IResult - to an IMessage (single or array). They are
+     * stored in an object with single letter keys corresponding to an action.
+     * Effect always return a (corrected) pipOut
+     */
+    export function routerFn(options, storage: IStorage) {
+        return {
+            U: function(evaluated: G.IResult[], register: G.IRegister<any>): G.IMessage[] {
+                let navTree = storage.get('navTree').get();
+
+                if (R.keys(navTree).length > 0) {
+                    //changeUrl(options); //error valt hieronder
+                    var reg = new Parser.Register.RouterRegister(register.value);
+                    var parser = new Parser.Register.Parser(reg);
+                    var ast = parser.read(navTree);
+                    ast.createUrl();
+                }
+                return R.pluck('pipOut', evaluated);
+            },
+            E: function(evaluated: G.IResult[]): G.IMessage[] {
+                console.log('empty');
+                // showEmptyUrl(options);
+                return R.pluck('pipOut', evaluated);
+            }
+        }
+    }
+
+    export function nodeDOMFunctions(options: G.ISubPipOptions|G.IListPipOptions, storage: IStorage, address?: G.IAddresses, itType?: boolean) {
+        //address en ittype alleen nodig voor list voor sub is itTyp = false
+        //function fns($anc: DOMIO.Instance,  method: OV,chunk: string, $item?:  DOMIO.Instance): DOMIO.Instance {
+        function fns($anc: DOMIO.Instance, chunk: string | DOMIO.Instance, method: OV): DOMIO.Instance {
+            let $chunk:DOMIO.Instance = typeof chunk === 'string'
+                ? DOMIO.create(chunk)
+                : chunk;
+            DOMIO.manipulate($anc, method, $chunk);
+            return itType ? $chunk : $anc;
+        }
+
+        function insertOnPosition(index: number, item: string|DOMIO.Instance, register: G.IRegister<string[]>, result: G.IResult[]) {
+            let $item = typeof item === 'string'
+                ? DOMIO.create(item)
+                : item;
+            let $referenceItem: DOMIO.Instance;
+
+            let referenceItemIndex = (index === 0) ? 0 : index - 1,
+            itemIdOfReferenceItem = register.value[referenceItemIndex],
+                method = (index === 0) ? OV.insertBefore : OV.insertAfter;
+
+            let listItemRegister = storage.get(address[AK[AK.el]]).get();
+
+            if (R.keys(listItemRegister).length > 0) {
+                $referenceItem = listItemRegister.get(itemIdOfReferenceItem)
+            }
+
+            if (!$referenceItem) {
+                $referenceItem = <DOMIO.Instance>R.path(['pipOut',MK[MK.value] ], R.find((item) => R.path(['pipOut', MK[MK.it] ], item) === itemIdOfReferenceItem, result))
+            }
+
+            fns($referenceItem, $item, method);
+            return $item;
+        }
+
+        const isRegisterEmpty = function(options: G.ISubPipOptions|G.IListPipOptions) {
+            return (options[ON[ON.type]] === PT[PT.sub] )
+                ? (register: IRegister<boolean>): boolean => register.value === false
+                : (register: IRegister<string[]>): boolean => register.value.length === 0; /* list */
+        }(options);
+
+        return {
+            C: <(evaluated: G.IResult) => G.IMessage>(function(options: G.ISubPipOptions|G.IListPipOptions): Function {
+                return function(evaluated: IResult, register: IRegister<boolean|string[]>, result: IResult[]): G.IMessage {
+                    const oldRegister = evaluated.oldRegister;
+                    const registerIsEmpty: boolean = isRegisterEmpty(oldRegister);
+                    if (registerIsEmpty) {
+                        // is the register of list is empty, the list dom contains the empty string/tags that
+                        // must be removed before the new item is inserted
+                        fns(evaluated[ELM[ELM.root]], options[ON[ON.empty]], OV.remove);
+                    }
+                    if (typeof evaluated.pipOut.value === 'number' && !(registerIsEmpty && evaluated.pipOut.value === 0)) {
+                        //nieuw listItem moet op specifieke positie komen
+                        evaluated.pipOut.value = insertOnPosition(evaluated.pipOut.value, options[ON[ON.tpl]], <G.IRegister<string[]>>register, result);
+                    } else {
+                        evaluated.pipOut.value = fns(evaluated[ELM[ELM.root]], options[ON[ON.tpl]], OV.append);
+                        // create betekent aanmaken van een nieuw element, dus overschijven pipOut.value
+                    }
+                    return evaluated.pipOut;//verzoorzaakt emit incl pipOut.el
+                };
+            }(options)),
+            U: (function(options: G.ISubPipOptions|G.IListPipOptions) {
+                if (options[ON[ON.type]] === PT[PT.list]) {
+                    function findIndex(itemId: string, register: G.IRegister<string[]>) {
+                        var
+                            temp = itemId.split(G.MERGETOKEN),
+                            id = temp[0];
+                        //TODO kan?  id = pipProps.getItemdId(itemId)
+                        return R.indexOf(id, R.map((val) => val.split(G.MERGETOKEN)[0], register.value));
+                    };
+
+                    return function(evaluated: G.IResult, register: G.IRegister<string[]>, result: G.IResult[]): G.IMessage { //alleen als itType : anders leidt case tot DOM.empty!
+                        //TODO zeker zijn dat evaluated[ELM[ELM.el]]) is defined!!
+                        //dat is zeker zo, anders zou action create geworden zijn bij correctList
+                        if (typeof evaluated.pipOut.value === 'number'){
+                            var regPosition = findIndex(evaluated.effectData.it, register);
+                            if(evaluated.pipOut.value !== regPosition){
+                                var $item = evaluated[ELM[ELM.el]].map(DOMIO.detachElement).runIO(); //detach DOESNT remove event handlers!!
+                                evaluated.pipOut.value = insertOnPosition(evaluated.pipOut.value, $item, register, result);
+                            }
+                        }
+                        return evaluated.pipOut;
+                    };
+                }
+            }(options)),
+            D: function(evaluated: G.IResult): G.IMessage { //alleen als itType : anders leidt case tot DOM.empty!
+                //removes event handlers on nodes and that is needed
+                //event is at triggering bij crud = D  only register that reacts on removal
+                evaluated[ELM[ELM.el]].map(DOMIO.remove).runIO();
+                //and not
+                //$item.detach();function itemSetReg(register, desiredValue, itemId) { if (itemId) { register.value[itemId] = desiredValue; } else { register.value = desiredValue; } }
+                //doesnt remove event handlers:
+                return evaluated.pipOut;
+            },
+            E: (function(options: G.ISubPipOptions|G.IListPipOptions) {
+                return function(evaluated: G.IResult): G.IMessage {
+                    //first removes event handlers on nodesand that is needed
+                    //TODO problem when append or prepend
+                    //event is at triggering bij crud = D  only register that reacts on removal
+                    let $root = evaluated[ELM[ELM.root]];
+                    R.map(DOMIO.empty, $root).runIO();
+                    // no overwrite $root = pipOut.el
+                    if (options[ON[ON.empty]]) {
+                        // insert empty string only when available
+                        fns($root, options[ON[ON.empty]], OV.append);
+                    }
+                    // liever niks uitzende als empty!! evaluated.pipOut;
+                    return evaluated.pipOut;
+                };
+            }(options))
+        };
+    }
+
+    export function serverFn(options: G.IServerOptions, serverIO: ServerIO.Server, address: G.IAddresses, storage) {
+        var index: string = options[ON[ON.index]] || G.serverIndexAttr;
+
+        return function(res: G.IServerAction[]): G.IMessage[] {
+            let [action, pipOut] = res[0];
+            // grap emit from one item, which counts for all
+            let emit = pipOut.emit;
+
+            if (emit) {
+                // if (!pipOut[MK[MK.index]]) {
+                //     pipOut[MK[MK.index]] = ObjectId.create();
+                // }
+                var future = serverIO.sync(res);
+                future.fork(
+                    function(err) { throw new Error(err); },
+                    function(pipout) {
+                        const pip = storage.get(address[AK[AK.pip]]);
+                        let bindings = <G.ILink[]>pip.getBindings();
+
+                        R.forEach(function(binding) {
+                            var bindingOut = binding.fn(pipOut);
+                            if (bindingOut) {
+                                if (!R.is(Array, bindingOut) || bindingOut.length !== 0) {
+                                    var subPip: G.IPublicFn = binding.subPip;
+                                    return subPip.react(bindingOut);
+                                }
+                            }
+                        }, bindings);
+                        // binding to handle success/failure notices;
+                    }
+                );
+            }
+
+            // return pipout with emit forced to false
+            return R.map(out => {
+                let [action, pipOut] = out;
+                pipOut.emit = false;
+                return pipOut;
+            }, res);
+        }
+    }
+
+    export function eventDOMFunctions(options: G.IEventPipOptions|G.IEventItemPipOptions,
+            address: G.IAddresses, storage: IStorage) {
+
+        var fns = (function() {
+            var delegation: boolean = options[ON[ON.delegation]] // al in createApp eenduidig afgehandeld == null ? true : options[ON[ON.delegation]];
+            var itemType: boolean = options.type === PT[PT.eventItem];
+
+            // omdat anc = root bij delegation hier naar el kijken, is altijd ok met wat we hier bedoelen element waar pip aan op is gehangen en niet de root
+            var ancestorType = storage.get(itemType ? address[AK[AK.root]] : address[AK[AK.anc]]).getType();//listItem of itemElement //of element, laatste minder relevant
+
+            var itType: boolean = itemType && !delegation;//namelijk: is register enkelvoudig of meervoudig
+
+            var preventDefault: boolean = options[ON[ON.preventDefault]] == null ? true : options[ON[ON.preventDefault]];
+            var eventNames: string = options[ON[ON.events]] || G.defaultEvents;
+
+            function loopBindings(eventObject?: G.IEventObject): void {//de linkfunctie produceert immers ook weer een IMessage
+                if (eventObject) {
+                    var eventMessage: any = itemType
+                        ? [eventObject]
+                        : eventObject;
+
+                    R.forEach(function(binding: G.ILink) {
+
+                            var bindingOut = binding.fn(eventMessage);
+                            if (bindingOut) {
+                                if (!R.is(Array, bindingOut) || bindingOut.length !== 0) {
+                                    var subPip: G.IPublicFn = binding.subPip;
+                                    subPip.react(bindingOut);
+                                }
+                            }
+                    }, storage.get(address[AK[AK.pip]]).getBindings());
+                }
+            }
+
+            function composeInterpretEvent(): (evt: DOMIO.Event) => G.IEventObject{
+
+                //TODO jquery afhankelijkheid als currentTarget uit event moet worden gebruikt
+                if (itemType) {
+                    if (ancestorType === PT[PT.itemElement]) {/* event is attached to itemElement */
+                        if (!delegation){//selector  is already known
+                            return function(evt: DOMIO.Event): G.IEventObject {
+                                var eObject: any = {
+                                    evt: evt,
+                                    root: evt.data[1],
+                                    el: evt.data[0],//||evt.currentTarget,
+                                    it: storage.get(address[AK[AK.el]]).getItemId(evt.data[0])
+                                };
+                                eObject.item = //(ancestorType === PT[PT.listItem])
+                                    //?storage.get(address[AK[AK.el]]).get(eObject[MK[MK.it]]);
+                                    storage.get(address[AK[AK.item]]).get(eObject[MK[MK.it]]);
+                                return eObject;
+                            }
+                        } else {
+                            return function(evt: DOMIO.Event): G.IEventObject {
+                                var $el = DOMIO.create($(evt.currentTarget));
+                                var eObject: any = {
+                                    evt:  evt,
+                                    root: evt.data[1],
+                                    el:   $el,//mogelijk is $el !== evt itemElement? (el!== item),
+                                        //<a><span></span></a>
+                                        //event op a,
+                                        //click op span bubbelt omhoog,
+                                        //en hier heb je dan : span of a als $el?
+                                    it:   storage.get(address[AK[AK.el]]).getItemId($el)
+                                };
+                                eObject.item = storage.get(address[AK[AK.item]]).get(eObject[MK[MK.it]]);
+
+                                return eObject;
+                            }
+                        }
+                    } else {/* event is attached to item `it` *///ancestorType === PT[PT.listItem]
+                        if (!delegation){ //item is already known
+                            return function(evt: DOMIO.Event): G.IEventObject {
+                                return {
+                                    evt:  evt,
+                                    root: evt.data[1],
+                                    item: evt.data[0],//evt.currentTarget,
+                                    it:   storage.get(address[AK[AK.el]]).getItemId(evt.data[0])
+                                        // it:   storage.get(address[AK[AK.item]]).getItemId(evt.data[0])
+                                };
+                            }
+                        } else {
+                            return function(evt: DOMIO.Event): G.IEventObject {
+                                var $item = DOMIO.create($(evt.currentTarget));
+                                return {
+                                    evt:  evt,
+                                    root: evt.data[1],
+                                    item: $item,
+                                        // it:   storage.get(address[AK[AK.item]]).getItemId($item)
+                                    it:   storage.get(address[AK[AK.el]]).getItemId($item)
+                                };
+                            };
+                        }
+                    }
+                } else if (delegation) {
+                    /* event is attached to selector */
+                    return function(evt: DOMIO.Event): G.IEventObject {
+                        var $el = DOMIO.create($(evt.currentTarget));
+                        return {
+                            evt:  evt,
+                            root: evt.data[1],//
+                            el:   $el
+                        };
+                    };
+                } else {
+                    /* event is attached to selector and is already known */
+                    return function(evt: DOMIO.Event): G.IEventObject {
+                        return {
+                            evt: evt,
+                            el: evt.data[0]//|| evt.currentTarget,
+                        };
+                    };
+                }
+            }
+
+            function composeEventFunction(interpretEvent: (evt: DOMIO.Event) => G.IEventObject): (evt: DOMIO.Event) => void {
+                if (options[ON[ON.bindFn]] || preventDefault) {
+                    if (options[ON[ON.bindFn]] && preventDefault) {
+                        return function(evt: DOMIO.Event): void {
+                            DOMIO.preventDefault(evt);
+                            let eventObject= interpretEvent(evt);
+                            if(eventObject){
+                                let bindObject = options[ON[ON.bindFn]](eventObject);
+                                loopBindings(bindObject);
+                            }
+                        };
+                    } else if (preventDefault) {//&& !options[ON[ON.bindFn]]
+                        return function(evt: DOMIO.Event): void {
+                            DOMIO.preventDefault(evt);
+                            let eventObject= interpretEvent(evt);
+                            loopBindings(eventObject);
+                        };
+                    } else {//options[ON[ON.bindFn]] && !preventDefault
+                        return function(evt: DOMIO.Event): void {
+                            let eventObject = interpretEvent(evt);
+                            if(eventObject){
+                                let bindObject = options[ON[ON.bindFn]](eventObject);
+                                loopBindings(bindObject);
+                            }
+                        };
+                    }
+                } else {//!options[ON[ON.bindFn]] && !preventDefault
+                    return function(evt: DOMIO.Event): void {
+                        let eventObject = interpretEvent(evt);
+                        loopBindings(eventObject);
+                    };
+                }
+            }
+
+            function composeDelegateEvents(eventFunction: (evt: DOMIO.Event) => void): Function[] {
+                var evtNames = eventNames.split(/\s+/ );
+                return R.map((evtName) => {
+                    evtName += '.' + address[AK[AK.pip]];//address[AK[AK.pip]] ipv this.cid in gulliver: is binnen pips eenduidig
+                    if (delegation) {
+                        return function($el: DOMIO.Instance, $root: DOMIO.Instance) {
+                            // TODO  ipv options[ON[ON.selector]]??
+                            // hier is $el op moment van aanleg wss onbekend!
+                            return $root.map(DOMIO.addEvent(evtName, address[AK[AK.sel]], [$el, $root], eventFunction));
+                        };
+                    } else {
+                        return function($el: DOMIO.Instance, $root: DOMIO.Instance, itemId: string) {//TODO ook ok als itType && !delegation??
+                            var eventName = itemId? evtName + itemId:evtName;//!delegation &&
+                            // $root graag ook bekend bij NOdelegation van eventItem, meetsal zal $root undefined zijn
+                            return $el.map(DOMIO.addEvent(eventName, [$el, $root], eventFunction));
+                        };
+                    }
+                }, evtNames);
+            }
+
+            function composeUnDelegateEvents(): Function[] {
+                var evtNames = eventNames.split(/\s+/);
+                return R.map((evtName) => {
+                    evtName += '.' + address[AK[AK.pip]];
+                    if (delegation) {
+                        return function($el: DOMIO.Instance, $root: DOMIO.Instance) {
+                            //TODO address[AK[AK.sel]] ipv options[ON[ON.selector]]??
+                            return $root.map(DOMIO.removeEvent(evtName, address[AK[AK.sel]]));
+                        };
+                    } else { //umbind
+                        return function($el: DOMIO.Instance, $root: DOMIO.Instance, itemId: string) {
+                            var eventName = itemId ? evtName + itemId : evtName;
+                            return $el.map(DOMIO.removeEvent(eventName));
+                        };
+                    }
+                }, evtNames);
+            }
+
+            var interpretEvent = composeInterpretEvent();
+            var eventFunction = composeEventFunction(interpretEvent);
+            var delegations = composeDelegateEvents(eventFunction);
+            var unDelegations = composeUnDelegateEvents();
+
+            return {
+                'true': function(evaluated: G.IResult): void {
+                    var $el: DOMIO.Instance = evaluated[ELM[ELM.anc]];
+                    var $root: DOMIO.Instance = evaluated[ELM[ELM.root]];
+                    var itemId:string = evaluated.effectData[MK[MK.it]];
+                    R.forEach((delegate) => {
+                        delegate($el, $root, itemId).runIO()
+                    }, delegations);
+                },
+                'false': function(evaluated: G.IResult): void {
+                    var $el: DOMIO.Instance = evaluated[ELM[ELM.anc]];
+                    var $root: DOMIO.Instance = evaluated[ELM[ELM.root]];
+                    var itemId: string = evaluated.effectData[MK[MK.it]];
+                    R.forEach((unDelegate) => {
+                        unDelegate($el, $root, itemId).runIO()
+                    }, unDelegations);
+                }
+            };
+        }());
+
+        return function(evaluated: G.IResult): IMessage {
+            fns[evaluated.pipOut[MK[MK.value]]](evaluated);
+            return evaluated.pipOut; //verzoorzaakt wel emit: klopt immers ook als link ipv binding aan event; //null
+        };
+    }
+
+    export function stateDOMFn(options: G.IStatePipOptions|G.IStateItemPipOptions) {
+
+        // TODO mapObj returns nothing, instead fns is returned. More wax on, wax off needed
+        function createStateFunctions(stateFuncs) {
+            var fns: any = {}
+
+            R.mapObjIndexed(function(mainFns, mainKey, all) {
+                var fn: (x: any) => any;
+                    R.mapObjIndexed(function(itemFns, itemKey, itemAll) {
+                        if (itemKey === mainKey) {
+                            fn = fn
+                                ? R.compose(R.map(itemFns['activate']), fn)
+                                : R.map(itemFns['activate'])
+                        } else if (itemFns['deactivate']) {
+                            fn = fn
+                                ? R.compose(fn, R.map(itemFns['deactivate']))
+                                : R.map(itemFns['deactivate'])
+                        }
+                    }, stateFuncs)
+                fns[mainKey] = <(eff: DOMIO.Instance) => DOMIO.Instance>fn
+            }, stateFuncs)
+            return fns
+        }
+
+        function stateApplyObjectFactory(states: G.IState[]) {
+            return R.zipObj(
+                    R.pluck(ON[ON.name], states),
+                    R.map(stateSetters, states))
+        }
+
+        function stateSetters(state: G.IState) {
+            switch (getApplyType(state[ON[ON.attr]])) {
+                case AT[AT.cl]:
+                    return {
+                        activate: DOMIO.addClass(state[ON[ON.value]]),
+                        deactivate: DOMIO.removeClass(state[ON[ON.value]])
+                    };
+                case AT[AT.css]:
+                    return {
+                        activate: DOMIO.addCss(R.pick([ON[ON.attr], ON[ON.value]], state)),
+                    };
+                case AT[AT.attr]:
+                    return {
+                        activate: DOMIO.addAttr(R.pick([ON[ON.attr], ON[ON.value]], state)),
+                        // deactivate: DOMIO.removeAttr(R.pick([ON[ON.attr], ON[ON.value]], state))
+                    };
+                case AT[AT.prop]:
+                    if (state[ON[ON.value]] === true) {
+                        return {
+                            activate: DOMIO.addProp(state[ON[ON.attr]]),
+                        };
+                    } else {
+                        return {
+                            activate: DOMIO.removeProp(state[ON[ON.attr]])
+                        };
+                    }
+            }
+        }
+
+        function getApplyType(attr: string) {
+            return CT[attr];
+        }
+
+        var fns = createStateFunctions(stateApplyObjectFactory(options[ON[ON.states]]));
+        return function(evaluated: IResult): IMessage {
+            fns[evaluated.pipOut[MK[MK.value]]](evaluated[ELM[ELM.anc]]).runIO();
+            return evaluated.pipOut;//veroorzaakt wel emit
+        };
+    }
+
+    export function templateDOMFn(options: G.ITemplatePipOptions|G.ITemplateItemPipOptions) {
+        var attributeName = options[ON[ON.attr]] || OV[OV.html];
+        var fns = function(tpl: string, $el: DOMIO.Instance): void {
+            if ($el === void 0) return void 0;
+            if (attributeName === OV[OV.html]){
+                var method = options[ON[ON.method]] || OV[OV.html];
+
+                switch(method){
+                    case OV[OV.prepend]: $el.map(DOMIO.prependString(tpl)).runIO(); break;
+                    case OV[OV.append]:  $el.map(DOMIO.appendString(tpl)).runIO();  break;
+                    default:       $el.map(DOMIO.html(tpl)).runIO();
+                }
+            } else if (attributeName === 'value') {
+                // template sets input DOM element through its value attribute
+                $el.map(DOMIO.setVal(tpl)).runIO();
+            } else {
+                var attr = {};
+                attr[attributeName] = tpl;
+                $el.map(DOMIO.addAttr(attr)).runIO();
+            }
+        };
+        return function(evaluated: IResult): IMessage {
+            fns(evaluated.pipOut[MK[MK.value]], evaluated[ELM[ELM.anc]]);
+            return evaluated.pipOut;// liever null, dat veroorzaakt: geen emit pipOut;
+        };
+    }
+}

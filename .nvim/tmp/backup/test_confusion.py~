@@ -1,0 +1,17 @@
+import pytest
+
+from ocr.confusion import Confusion
+
+@pytest.mark.skip()
+def test_create_matrix_text():
+    confusion = Confusion()
+    confusion.create('./ocr/test/fixtures/total_diffs.txt')
+    confusion.dump('./ocr/test/fixtures/confusion.txt')
+    assert True
+
+@pytest.mark.skip()
+def test_create_matrix_pickle():
+    confusion = Confusion()
+    confusion.create('./ocr/test/fixtures/total_diffs.txt')
+    confusion.dump('./ocr/test/fixtures/confusion.p', 'pickle')
+    assert True

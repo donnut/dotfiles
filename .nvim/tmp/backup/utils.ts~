@@ -1,0 +1,92 @@
+module Utils {
+
+    export function trim(str: string): string {
+        return str.replace(/^\s+|\s+$/g, '');
+    }
+
+    export function caseUp(str: string): string {
+        return str.charAt(0).toUpperCase() + str.substring(1);
+    }
+
+    export function caseDown(str: string): string {
+        return str.charAt(0).toLowerCase() + str.substring(1);
+    }
+
+    export function mergeTermsCamelCase(terms: string): string {
+        return caseDown(
+                R.join('',
+                    R.map(caseUp,
+                        R.sort((a, b) =>  a < b ? -1 : a === b ? 0 : 1,
+                            R.filter((a) => a !== '',
+                                terms.split(' '))))));
+    }
+
+    /**
+     * Quicksorts an array `items`. Mutates the input.
+     */
+    export function quicksort(items: string[], left?: number, right?: number) {
+
+        function swap(items: string[], firstIndex: number, secondIndex: number){
+            var temp = items[firstIndex];
+            items[firstIndex] = items[secondIndex];
+            items[secondIndex] = temp;
+        }
+
+        function partition(items: string[], left: number, right: number) {
+            var pivot = items[Math.floor((right + left) / 2)],
+            i = left,
+            j = right;
+
+            while (i <= j) {
+                while (items[i] < pivot) {
+                    i++;
+                }
+
+                while (items[j] > pivot) {
+                    j--;
+                }
+
+                if (i <= j) {
+                    swap(items, i, j);
+                    i++;
+                    j--;
+                }
+            }
+            return i;
+        }
+
+        var index;
+        if (items.length > 1) {
+            index = partition(items, left, right);
+            if (left < index - 1) {
+                this.quicksort(items, left, index - 1);
+            }
+
+            if (index < right) {
+                this.quicksort(items, index, right);
+            }
+        }
+        return items;
+    }
+
+    export function insert(idx: number, value: any, store: any[]): void {
+        store.splice(idx, 0, value);
+    }
+
+    export function remove(idx: number, len: number, store: any[]): void {
+        store.splice(idx, len);
+    }
+
+    /**
+     * Merges seed into target, thereby mutating target
+     */
+    export function merge(target: any, seed: any): void {
+        let props = R.keys(seed);
+        let idx = -1, len = props.length;
+        while(++idx < len) {
+            target[props[idx]] = seed[props[idx]];
+        }
+    }
+
+    
+}

@@ -1,0 +1,13 @@
+/// <reference path="ramda.d.ts" />
+//
+
+const a = R.pipe(
+  R.split(''),
+  R.map(letter => ([ letter ]))
+)
+const b = R.pipe(
+  R.split('')
+)
+
+const c = R.map<string, string>(letter => [ letter ])
+const d = c(['d','a'])

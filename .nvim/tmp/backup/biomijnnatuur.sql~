@@ -1,0 +1,1362 @@
+
+SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;
+SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
+SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='TRADITIONAL,ALLOW_INVALID_DATES';
+
+insert into `subcategory` set `id`=1, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=1, `name`='De Zonnekouter', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='09 380 47 51', `email`='dezonnekouter@skynet.be', `website`='http://www.dezonnekouter.be', `facebook`='http://www.facebook.com/DeZonnekouter', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='9870', `city`='Machelen-Zulte', `address_number`=' ', `address_string`='Vossenholstraat', `latitude`='50.9458279', `longitude`='3.4873097', `subcategory_id`=1
+
+            insert into `opening` set
+            `id`=1, `weekday`='6', `opening_time`='9', `closing_time`='12', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=1
+
+            insert into `subcategory` set `id`=2, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=2, `name`='Pol Hanssens', `owner_name`='BioMijnNatuur', `opening_description`='Op bestelling', `phone`='056 41 04 35', `email`='pol-hanssens@telenet.be', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8560', `city`='Wevelgem', `address_number`=' ', `address_string`='Gaverstraat', `latitude`='50.8244766', `longitude`='3.1894732', `subcategory_id`=2
+
+            insert into `opening` set
+            `id`=2, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=2
+
+            insert into `subcategory` set `id`=3, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=3, `name`='Puur Natuur', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='03 775 60 16', `email`='puurnatuurmelsele@hotmail.com', `website`='http://www.puurnatuurmelsele.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='9120', `city`='Melsele', `address_number`=' ', `address_string`='Kalishoekstraat', `latitude`='51.2236393', `longitude`='4.2861768', `subcategory_id`=3
+
+            insert into `opening` set
+            `id`=3, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=3
+
+            insert into `subcategory` set `id`=4, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=4, `name`='Patcha Mama', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='02/356 77 09', `email`='veerlesamyn@gmail.com', `website`='http://www.patchamama.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='1654', `city`='Huizingen', `address_number`='3', `address_string`='Sollenberg ', `latitude`='50.7534122', `longitude`='4.2757229', `subcategory_id`=4
+
+            insert into `opening` set
+            `id`=4, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=4
+
+            insert into `subcategory` set `id`=5, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=5, `name`='Druivenserren Soniën', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='02 657 92 45', `email`='filip.luppens@telenet.be', `website`='http://www.sonien.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3090', `city`='Overijse', `address_number`='538', `address_string`='Brusselsesteenweg ', `latitude`='50.7904271', `longitude`='4.4898186', `subcategory_id`=5
+
+            insert into `opening` set
+            `id`=5, `weekday`='6', `opening_time`='8', `closing_time`='17', `pause_start`='12', `pause_end`='13', `season_start`='', `season_end`='', `food_point_id`=5
+
+            insert into `subcategory` set `id`=6, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=6, `name`='KTA-Horteco', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='02 254 31 39', `email`='vandepollt@gmail.com', `website`='http://www.kta-horteco.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='1800', `city`='Vilvoorde', `address_number`='116', `address_string`='De Bavaylei ', `latitude`='50.9355168', `longitude`='4.4406718', `subcategory_id`=6
+
+            insert into `opening` set
+            `id`=6, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=6
+
+            insert into `subcategory` set `id`=7, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=7, `name`='Gallinero', `owner_name`='BioMijnNatuur', `opening_description`='en na afspraak', `phone`='0497 43 08 96', `email`='info@gallinero.be', `website`='http://www.gallinero.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3832', `city`='Ulbeek (Wellen)', `address_number`='32', `address_string`='Kleinaartstraat ', `latitude`='50.8410318', `longitude`='5.3002254', `subcategory_id`=7
+
+            insert into `opening` set
+            `id`=7, `weekday`='6, 7', `opening_time`='12,3', `closing_time`='18,3', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=7
+
+            insert into `subcategory` set `id`=8, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=8, `name`='Van Laere Geert', `owner_name`='BioMijnNatuur', `opening_description`='24u/24u verse melk', `phone`='0486 518 510', `email`='geert.van.laere@telenet.be', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='9200', `city`='Dendermonde', `address_number`='10', `address_string`='Zandvoortstraat ', `latitude`='51.0620453', `longitude`='4.1148843', `subcategory_id`=8
+
+            insert into `opening` set
+            `id`=8, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=8
+
+            insert into `subcategory` set `id`=9, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=9, `name`='De Wieltjeshoeve', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='014 72 31 32', `email`='wieltjeshoeve@pandora.be', `website`='http://www.wieltjeshoeve.be', `facebook`='http://www.facebook.com/DeWieltjeshoeve', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='2300', `city`='Turnhout', `address_number`='65b', `address_string`='Steenweg op Merksplas ', `latitude`='51.336484', `longitude`='4.907176', `subcategory_id`=9
+
+            insert into `opening` set
+            `id`=9, `weekday`='6', `opening_time`='9', `closing_time`='17', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=9
+
+            insert into `subcategory` set `id`=10, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=10, `name`='De Molentuin', `owner_name`='BioMijnNatuur', `opening_description`='zelfbediening, altijd open', `phone`='016 44 69 79', `email`='wernerdieltjens@hotmail.com', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3110', `city`='Rotselaar', `address_number`='2 bus 3', `address_string`='Molenstraat ', `latitude`='50.9458885', `longitude`='4.7036303', `subcategory_id`=10
+
+            insert into `opening` set
+            `id`=10, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=10
+
+            insert into `subcategory` set `id`=11, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=11, `name`='Jomi', `owner_name`='BioMijnNatuur', `opening_description`='openingsuren zie website (aan de serre, nr. 180)', `phone`='03/780 35 35', `email`='info@jomi-vzw.be', `website`='http://www.jomi-vzw.be', `facebook`='https://www.facebook.com/jobs.en.milieu.vzw', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='9100', `city`='Sint-Niklaas', `address_number`='184', `address_string`='Driegaaienstraat ', `latitude`='51.1519174', `longitude`='4.1331985', `subcategory_id`=11
+
+            insert into `opening` set
+            `id`=11, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=11
+
+            insert into `subcategory` set `id`=12, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=12, `name`='De Bekwame Boon', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='09 383 09 38', `email`='debekwameboon@skynet.be', `website`='http://www.vzwapart.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='9031', `city`='Drongen', `address_number`='40', `address_string`='Beekstraat ', `latitude`='51.0702219', `longitude`='3.6549856', `subcategory_id`=12
+
+            insert into `opening` set
+            `id`=12, `weekday`='6', `opening_time`='11', `closing_time`='13', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=12
+
+            insert into `subcategory` set `id`=13, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=13, `name`='PPK Pamel - Proeftuin Roosdaal', `owner_name`='BioMijnNatuur', `opening_description`='proeftuin vrij te bezoeken op ma vm en na afspraak', `phone`='054 32 08 46', `email`='proefcentrum.pamel@vlaamsbrabant.be', `website`='http://www.vlaamsbrabant.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='1760', `city`='Roosdaal', `address_number`='26', `address_string`='Molenstraat ', `latitude`='50.8401858', `longitude`='4.0764132', `subcategory_id`=13
+
+            insert into `opening` set
+            `id`=13, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=13
+
+            insert into `subcategory` set `id`=14, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=14, `name`='Netelvuur', `owner_name`='BioMijnNatuur', `opening_description`='Of op afspraak.', `phone`='09 259 98 91;069896650', `email`='info@netelvuur.be', `website`='http://www.netelvuur.be', `facebook`='http://www.facebook.com/pages/Netelvuur/368416069896650', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='9931', `city`='Zomergem-Oostwinkel', `address_number`='33', `address_string`='Veldhoek ', `latitude`='51.1471345', `longitude`='3.5163674', `subcategory_id`=14
+
+            insert into `opening` set
+            `id`=14, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=14
+
+            insert into `subcategory` set `id`=15, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=15, `name`='Het Vaarthof', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='03 658 10 86', `email`='', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='2900', `city`='Schoten', `address_number`='41', `address_string`='Wijnegembaan ', `latitude`='51.2422107', `longitude`='4.5018164', `subcategory_id`=15
+
+            insert into `opening` set
+            `id`=15, `weekday`='1,2,3,4,5,6,7', `opening_time`='16', `closing_time`='19', `pause_start`='', `pause_end`='', `season_start`='5', `season_end`='6', `food_point_id`=15
+
+            insert into `subcategory` set `id`=16, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=16, `name`='Bio-Garant', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='052 37 48 89', `email`='biogarant@skynet.be', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='1840', `city`='Steenhuffel', `address_number`='128', `address_string`='Heerbaan ', `latitude`='50.9839028', `longitude`='4.2562361', `subcategory_id`=16
+
+            insert into `opening` set
+            `id`=16, `weekday`='6', `opening_time`='9', `closing_time`='17', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=16
+
+            insert into `subcategory` set `id`=17, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=17, `name`='Wonen & Werken De Wikke', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='016 47 48 01', `email`='info@wonen-en-werken.be', `website`='http://www.wonen-en-werken.be', `facebook`='https://www.facebook.com/pages/Wonen-en-Werken/178546118827979', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3020', `city`='Herent', `address_number`='11', `address_string`='Sint-Benedictusstraat ', `latitude`='50.9125911', `longitude`='4.651441', `subcategory_id`=17
+
+            insert into `opening` set
+            `id`=17, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=17
+
+            insert into `subcategory` set `id`=18, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=18, `name`='De Zaaier', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0473 986 588', `email`='dezaaier@belgacom.net', `website`='http://www.zaaier.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8020', `city`='Ruddervoorde', `address_number`='2', `address_string`='Korte Akkerstraat ', `latitude`='51.1067277', `longitude`='3.2340368', `subcategory_id`=18
+
+            insert into `opening` set
+            `id`=18, `weekday`='6', `opening_time`='9', `closing_time`='13', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=18
+
+            insert into `subcategory` set `id`=19, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=19, `name`='De Alverberg', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='011 24 38 80', `email`='de.alverberg@telenet.be', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3720', `city`='Kortessem', `address_number`='128', `address_string`='Opeindestraat ', `latitude`='50.8496934', `longitude`='5.3746803', `subcategory_id`=19
+
+            insert into `opening` set
+            `id`=19, `weekday`='1,2,3,4,5,6', `opening_time`='9', `closing_time`='17', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=19
+
+            insert into `subcategory` set `id`=20, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=20, `name`='PurFruit', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='09 388 37 74', `email`='bart@purfruit.com', `website`='http://www.purfruit.com', `facebook`='https://www.facebook.com/purfruit', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8720', `city`='Oeselgem', `address_number`='7', `address_string`='Neerhoek ', `latitude`='50.9328443', `longitude`='3.4488326', `subcategory_id`=20
+
+            insert into `opening` set
+            `id`=20, `weekday`='1,3,5,6', `opening_time`='9', `closing_time`='19', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=20
+
+            insert into `subcategory` set `id`=21, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=21, `name`='Chateau Ferme de Ny', `owner_name`='BioMijnNatuur', `opening_description`='Op bestelling.', `phone`='084 46 76 22', `email`='ny@nyx.be', `website`='http://www.kinderkampen.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='6990', `city`='Ny (Hotton)', `address_number`='3-4', `address_string`='Rue de Longchamp ', `latitude`='50.2789878', `longitude`='5.4746609', `subcategory_id`=21
+
+            insert into `opening` set
+            `id`=21, `weekday`='6', `opening_time`='10', `closing_time`='13', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=21
+
+            insert into `subcategory` set `id`=22, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=22, `name`='Yggdrasil', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='016 82 45 37', `email`='yggdra@pandora.be', `website`='http://www.yggdra.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3300', `city`='Tienen', `address_number`='381', `address_string`='Vissenakenstraat ', `latitude`='50.8349019', `longitude`='4.9284409', `subcategory_id`=22
+
+            insert into `opening` set
+            `id`=22, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=22
+
+            insert into `subcategory` set `id`=23, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=23, `name`='Het Open Veld', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0477/30 09 65', `email`='hetopenveld@gmail.com', `website`='http://www.hetopenveld.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3001', `city`='Heverlee', `address_number`='t', `address_string`='Abdijstraa', `latitude`='50.8613926', `longitude`='4.7204962', `subcategory_id`=23
+
+            insert into `opening` set
+            `id`=23, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=23
+
+            insert into `subcategory` set `id`=24, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=24, `name`='Van der Velpen Jan & Patrick', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='016 46 59 86', `email`='jan.vandervelpen@skynet.be', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3360', `city`='Bierbeek', `address_number`='45', `address_string`='Opvelpsestraat ', `latitude`='50.8176566', `longitude`='4.7768051', `subcategory_id`=24
+
+            insert into `opening` set
+            `id`=24, `weekday`='1,2,3,5,6', `opening_time`='9', `closing_time`='19', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=24
+
+            insert into `subcategory` set `id`=25, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=25, `name`='Gastvrije Aarde', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='055 49 87 91;07720731', `email`='info@gastvrijeaarde.be', `website`='http://www.gastvrijeaarde.be', `facebook`='http://www.facebook.com/pages/Gastvrije-Aarde/189663207720731', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='9667', `city`='Horebeke', `address_number`='17', `address_string`='Koekoekstraat ', `latitude`='50.8323968', `longitude`='3.6895761', `subcategory_id`=25
+
+            insert into `opening` set
+            `id`=25, `weekday`='1,2,3,4,5,6', `opening_time`='10', `closing_time`='18,3', `pause_start`='13', `pause_end`='14', `season_start`='', `season_end`='', `food_point_id`=25
+
+            insert into `subcategory` set `id`=26, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=26, `name`='De Krekel en de Mier - Aardevol', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='012 21 02 56', `email`='bert.vandergeynst@telenet.be', `website`='', `facebook`='https://www.facebook.com/Aardevolcvba', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3700', `city`='Mal (Tongeren)', `address_number`='2', `address_string`='Heldenstraat ', `latitude`='50.7683566', `longitude`='5.5204208', `subcategory_id`=26
+
+            insert into `opening` set
+            `id`=26, `weekday`='3', `opening_time`='8', `closing_time`='20', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=26
+
+            insert into `subcategory` set `id`=27, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=27, `name`='‘t Goed ter Heule', `owner_name`='BioMijnNatuur', `opening_description`='Zelfpluk', `phone`='0486 70 80 56;0396815664878', `email`='hubert.dewitte@tgoedterheule.be', `website`='http://www.tgoedterheule.be', `facebook`='http://www.facebook.com/pages/t-Goed-ter-Heule-Bio-boerderij/110396815664878', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8930', `city`='Lauwe', `address_number`='665', `address_string`='Dronckaertstraat ', `latitude`='50.7964437', `longitude`='3.2104004', `subcategory_id`=27
+
+            insert into `opening` set
+            `id`=27, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=27
+
+            insert into `subcategory` set `id`=28, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=28, `name`='De Belgaard', `owner_name`='BioMijnNatuur', `opening_description`='en na afspraak', `phone`='013 44 38 50', `email`='mathysbart@telenet.be', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3545', `city`='Halen', `address_number`='18', `address_string`='Bosstraat ', `latitude`='50.9260698', `longitude`='5.119736', `subcategory_id`=28
+
+            insert into `opening` set
+            `id`=28, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=28
+
+            insert into `subcategory` set `id`=29, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=29, `name`='‘t Bioplekske', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='03 489 08 77', `email`='jeroenbockx@hotmail.com', `website`='http://www.bioplekske.be/nl/', `facebook`='https://www.facebook.com/Bioplekske', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='2520', `city`='Emblem', `address_number`='67', `address_string`='Oostmalsesteenweg ', `latitude`='51.1699553', `longitude`='4.6194532', `subcategory_id`=29
+
+            insert into `opening` set
+            `id`=29, `weekday`='6', `opening_time`='9', `closing_time`='12,3', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=29
+
+            insert into `subcategory` set `id`=30, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=30, `name`='De Steenovens', `owner_name`='BioMijnNatuur', `opening_description`='één dag in de maand op bestelling.', `phone`='014 58 53 07', `email`='rafdesmedt@hotmail.com', `website`='http://www.desteenovens.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='', `city`='', `address_number`='', `address_string`='', `latitude`='51.1497622', `longitude`='4.9584657', `subcategory_id`=30
+
+            insert into `opening` set
+            `id`=30, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=30
+
+            insert into `subcategory` set `id`=31, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=31, `name`='De Levensbron', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='016 57 21 73', `email`='maarten.van.gool@telenet.be', `website`='http://www.bioboerderijdelevensbron.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3384', `city`='Attenrode', `address_number`='41', `address_string`='Langstraat ', `latitude`='50.8698506', `longitude`='4.9148475', `subcategory_id`=31
+
+            insert into `opening` set
+            `id`=31, `weekday`='5', `opening_time`='13,3', `closing_time`='18,3', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=31
+
+            insert into `subcategory` set `id`=32, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=32, `name`='De Bio-Hoeve', `owner_name`='BioMijnNatuur', `opening_description`='Maandag op bestelling 20-22u', `phone`='014 26 59 65', `email`='debio-hoeve@hotmail.com', `website`='http://debio-hoeve.jouwweb.be', `facebook`='http://www.facebook.com/DeBioHoeve', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='2260', `city`='Voortkapel (Westerlo)', `address_number`='18', `address_string`='Pasbrug ', `latitude`='51.1087234', `longitude`='4.8508396', `subcategory_id`=32
+
+            insert into `opening` set
+            `id`=32, `weekday`='1', `opening_time`='20', `closing_time`='22', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=32
+
+            insert into `subcategory` set `id`=33, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=33, `name`='IonaHoeve', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0491/34 28 34', `email`='erik.krosenbrink@iona-vzw.be', `website`='http://www.iona-vzw.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='2560', `city`='Nijlen (Kessel)', `address_number`='66', `address_string`='Nieuwe Bevelsesteenweg ', `latitude`='51.1391166', `longitude`='4.6597172', `subcategory_id`=33
+
+            insert into `opening` set
+            `id`=33, `weekday`='1,3,5', `opening_time`='14', `closing_time`='17,3', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=33
+
+            insert into `subcategory` set `id`=34, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=34, `name`='Akelei', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='015 23 45 00', `email`='akelei.jd@skynet.be', `website`='http://www.akelei-schriek.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='2223', `city`='Schriek', `address_number`='2', `address_string`='Haachtsebaan ', `latitude`='51.0379086', `longitude`='4.6721758', `subcategory_id`=34
+
+            insert into `opening` set
+            `id`=34, `weekday`='6', `opening_time`='9', `closing_time`='12', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=34
+
+            insert into `subcategory` set `id`=35, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=35, `name`='Bioboer/Winkel Busschots', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='03 464 26 47', `email`='b.b.bio@skynet.be', `website`='http://www.bioboer.net', `facebook`='https://www.facebook.com/biobusschots', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='2500', `city`='Koningshooikt', `address_number`='133', `address_string`='Mechelbaan ', `latitude`='51.0849245', `longitude`='4.605254', `subcategory_id`=35
+
+            insert into `opening` set
+            `id`=35, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=35
+
+            insert into `subcategory` set `id`=36, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=36, `name`='Natuurboerderij het Bolhuis', `owner_name`='BioMijnNatuur', `opening_description`='1 x per maand op za: 16-18u', `phone`='013 33 85 12 ;0101088626', `email`='info@bolhuis.be', `website`='http://www.bolhuis.be', `facebook`='http://www.facebook.com/pages/Natuurboerderij-het-Bolhuis/322680101088626', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3294', `city`='Molenstede', `address_number`='49', `address_string`='Asdonkstraat ', `latitude`='51.0134056', `longitude`='5.0437957', `subcategory_id`=36
+
+            insert into `opening` set
+            `id`=36, `weekday`='6', `opening_time`='16', `closing_time`='18', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=36
+
+            insert into `subcategory` set `id`=37, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=37, `name`='Het Ganzenhof', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='056/75 64 11', `email`='ganzenhof@groepubuntu.org', `website`='http://www.groepubuntu.org', `facebook`='https://www.facebook.com/groepubuntu', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8580', `city`='Avelgem', `address_number`='2', `address_string`='Bosstraat ', `latitude`='50.783834', `longitude`='3.4475002', `subcategory_id`=37
+
+            insert into `opening` set
+            `id`=37, `weekday`='4', `opening_time`='13', `closing_time`='17', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=37
+
+            insert into `subcategory` set `id`=38, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=38, `name`='Den Bovenhoek', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='03 711 26 97', `email`='denbovenhoek@telenet.be', `website`='http://www.denbovenhoek.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='9140', `city`='Elversele (Temse)', `address_number`='6', `address_string`='Bergstraat ', `latitude`='51.1239316', `longitude`='4.1550492', `subcategory_id`=38
+
+            insert into `opening` set
+            `id`=38, `weekday`='6', `opening_time`='8,3', `closing_time`='16,3', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=38
+
+            insert into `subcategory` set `id`=39, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=39, `name`='Nieuw Vriesehof', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='051 70 94 16', `email`='stdevisscher@hotmail.com', `website`='http://www.nieuwvriesehof.be', `facebook`='http://www.facebook.com/nieuwvriesehof', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8610', `city`='Handzame', `address_number`='13D', `address_string`='Groenestraat ', `latitude`='51.0153112', `longitude`='3.0064458', `subcategory_id`=39
+
+            insert into `opening` set
+            `id`=39, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=39
+
+            insert into `subcategory` set `id`=40, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=40, `name`='De Leener Jean-Pierre', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0476/98 42 25', `email`='jean-pierre.de.leener@pandora.be', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='1600', `city`='Sint-Pieters-Leeuw', `address_number`='260', `address_string`='Bezemstraat ', `latitude`='50.8031886', `longitude`='4.265437', `subcategory_id`=40
+
+            insert into `opening` set
+            `id`=40, `weekday`='6', `opening_time`='8,3', `closing_time`='12', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=40
+
+            insert into `subcategory` set `id`=41, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=41, `name`=''t Calcoentje', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='055 42 25 17', `email`='calcoentje@skynet.be', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='9661', `city`='Parike', `address_number`='19', `address_string`='Steenweg ', `latitude`='50.7858644', `longitude`='3.7941947', `subcategory_id`=41
+
+            insert into `opening` set
+            `id`=41, `weekday`='6', `opening_time`='9', `closing_time`='12', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=41
+
+            insert into `subcategory` set `id`=42, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=42, `name`='Augustijnenhof', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='', `email`='augustijnenhof@telenet.be', `website`='http://www.augustijnenhof.be', `facebook`='https://www.facebook.com/augustijnenhof', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8210', `city`='Loppem', `address_number`='32', `address_string`='Rolleweg ', `latitude`='51.1605511', `longitude`='3.1701492', `subcategory_id`=42
+
+            insert into `opening` set
+            `id`=42, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=42
+
+            insert into `subcategory` set `id`=43, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=43, `name`='Biohoeve ‘t Rusthof', `owner_name`='BioMijnNatuur', `opening_description`='op afspraak', `phone`='057 48 95 31', `email`='walter.cambie@gmail.com', `website`='', `facebook`='https://www.facebook.com/biohoevetrusthof', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8920', `city`='Langemark-Poelkapelle', `address_number`='2', `address_string`='Kattestraat ', `latitude`='50.9258633', `longitude`='2.9755583', `subcategory_id`=43
+
+            insert into `opening` set
+            `id`=43, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=43
+
+            insert into `subcategory` set `id`=44, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=44, `name`='‘t Gebroek', `owner_name`='BioMijnNatuur', `opening_description`='dagelijks', `phone`='089 61 17 62', `email`='info@tgebroek.be', `website`='http://www.tgebroek.be', `facebook`='http://www.facebook.com/gebroek', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3690', `city`='Zutendaal', `address_number`='11', `address_string`='Zuurbroekstraat ', `latitude`='50.9210407', `longitude`='5.5756162', `subcategory_id`=44
+
+            insert into `opening` set
+            `id`=44, `weekday`='1,2,3,4,5,6,7', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=44
+
+            insert into `subcategory` set `id`=45, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=45, `name`='Hof Seghers', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='054 58 07 06', `email`='hofseghers@belgacom.net', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='1547', `city`='Bever', `address_number`='7', `address_string`='Commijn ', `latitude`='50.6961645', `longitude`='3.9283093', `subcategory_id`=45
+
+            insert into `opening` set
+            `id`=45, `weekday`='5', `opening_time`='17', `closing_time`='19', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=45
+
+            insert into `subcategory` set `id`=46, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=46, `name`='Appelfabriek', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='016 47 27 81', `email`='frisque_michel@skynet.be', `website`='http://www.appelfabriek.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3040', `city`='Neerijse', `address_number`='130', `address_string`='Wolfshaegen ', `latitude`='50.8003865', `longitude`='4.6293847', `subcategory_id`=46
+
+            insert into `opening` set
+            `id`=46, `weekday`='6', `opening_time`='9', `closing_time`='18', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=46
+
+            insert into `subcategory` set `id`=47, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=47, `name`='Wriemeling', `owner_name`='BioMijnNatuur', `opening_description`='en na  afspraak', `phone`='016 60 64 54', `email`='wriemeling@gmail.com', `website`='http://www.wriemeling.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3020', `city`='Veltem-Beisem', `address_number`='6 bus 1', `address_string`='Drogenbosstraat ', `latitude`='50.9265547', `longitude`='4.6191704', `subcategory_id`=47
+
+            insert into `opening` set
+            `id`=47, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=47
+
+            insert into `subcategory` set `id`=48, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=48, `name`='‘t Groentehof', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='02 267 42 12', `email`='', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='1800', `city`='Vilvoorde', `address_number`='208', `address_string`='Strombeeksesteenweg ', `latitude`='50.906972', `longitude`='4.3698835', `subcategory_id`=48
+
+            insert into `opening` set
+            `id`=48, `weekday`='6', `opening_time`='9', `closing_time`='12', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=48
+
+            insert into `subcategory` set `id`=49, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=49, `name`='Bioboerderij Vandersmissen', `owner_name`='BioMijnNatuur', `opening_description`='automaat 7/7 ; 24/24', `phone`='02 356 81 76', `email`='decremmon@hotmail.com', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='1500', `city`='Halle', `address_number`='36', `address_string`='St-Pietersleeuwsesteenweg ', `latitude`='50.73757', `longitude`='4.23251', `subcategory_id`=49
+
+            insert into `opening` set
+            `id`=49, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=49
+
+            insert into `subcategory` set `id`=50, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=50, `name`='Ter Loft', `owner_name`='BioMijnNatuur', `opening_description`='op afspraak', `phone`='0497/61 33 76', `email`='bio@terloft.be', `website`='http://www.terloft.be', `facebook`='http://www.facebook.com/terloft', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='1740', `city`='Ternat', `address_number`='2B', `address_string`='Kruisstraat ', `latitude`='50.8952146', `longitude`='4.0672708', `subcategory_id`=50
+
+            insert into `opening` set
+            `id`=50, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=50
+
+            insert into `subcategory` set `id`=51, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=51, `name`='De Wei', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='089 71 24 10', `email`='de.wei@live.be', `website`='http://www.dewei.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3620', `city`='Lanaken', `address_number`='129', `address_string`='Koning Albertlaan ', `latitude`='50.8931838', `longitude`='5.6604362', `subcategory_id`=51
+
+            insert into `opening` set
+            `id`=51, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=51
+
+            insert into `subcategory` set `id`=52, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=52, `name`='De Fruittuin', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0479 404 855', `email`='stas.claes@skynet.be', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3390', `city`='Houwaart', `address_number`='227', `address_string`='Halderstraat ', `latitude`='50.9462921', `longitude`='4.8870191', `subcategory_id`=52
+
+            insert into `opening` set
+            `id`=52, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=52
+
+            insert into `subcategory` set `id`=53, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=53, `name`='Jut en Aer - Het Werkend trekpaard', `owner_name`='BioMijnNatuur', `opening_description`='na afspraak', `phone`='03 669 85 20', `email`='werkendtrekpaard@telenet.be', `website`='http://www.werkendtrekpaard.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='2990', `city`='Wuustwezel', `address_number`='33', `address_string`='Berkendreef ', `latitude`='51.4237085', `longitude`='4.6050617', `subcategory_id`=53
+
+            insert into `opening` set
+            `id`=53, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=53
+
+            insert into `subcategory` set `id`=54, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=54, `name`='Natlandhoeve', `owner_name`='BioMijnNatuur', `opening_description`='op bestelling/1 dag per maand en op afspraak', `phone`='0494 07 19 39', `email`='jos@natlandhoeve.be', `website`='http://www.natlandhoeve.be', `facebook`='http://www.facebook.com/NatLandHoeve', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3800', `city`='Sint-Truiden', `address_number`='2', `address_string`='Stokstraat ', `latitude`='50.8374252', `longitude`='5.2400791', `subcategory_id`=54
+
+            insert into `opening` set
+            `id`=54, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=54
+
+            insert into `subcategory` set `id`=55, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=55, `name`='‘t Livinushof', `owner_name`='BioMijnNatuur', `opening_description`='dagelijks, liefst op wo- en za-middag', `phone`='09 379 81 21', `email`='sonia.sucaet@fulladsl.be', `website`='http://www.livinushof.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='9981', `city`='Sint-Magriete', `address_number`='3', `address_string`='Molenkreekstraat ', `latitude`='51.2799997', `longitude`='3.5541375', `subcategory_id`=55
+
+            insert into `opening` set
+            `id`=55, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=55
+
+            insert into `subcategory` set `id`=56, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=56, `name`='De Zwaluw', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0472 826 597', `email`='naomi@biodezwaluw.be', `website`='http://www.biodezwaluw.be', `facebook`='https://www.facebook.com/biodezwaluw', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='9920', `city`='Lovendegem', `address_number`='66', `address_string`='Verbindingsweg ', `latitude`='51.1099901', `longitude`='3.6253442', `subcategory_id`=56
+
+            insert into `opening` set
+            `id`=56, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=56
+
+            insert into `subcategory` set `id`=57, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=57, `name`='Edith Boënne', `owner_name`='BioMijnNatuur', `opening_description`='en na afspraak', `phone`='012 45 33 57', `email`='edith.boenne@telenet.be', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3770', `city`='Val-Riemst', `address_number`='28', `address_string`='Mielestraat ', `latitude`='50.777882', `longitude`='5.5870906', `subcategory_id`=57
+
+            insert into `opening` set
+            `id`=57, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=57
+
+            insert into `subcategory` set `id`=58, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=58, `name`='Biovan', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='013 44 13 54', `email`='biovanbvba@hotmail.com', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3545', `city`='Zelem', `address_number`='34', `address_string`='Tuinwijkstraat ', `latitude`='50.982405', `longitude`='5.1224805', `subcategory_id`=58
+
+            insert into `opening` set
+            `id`=58, `weekday`='6', `opening_time`='9', `closing_time`='12', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=58
+
+            insert into `subcategory` set `id`=59, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=59, `name`='Het Eikelenhof', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='089 86 46 06', `email`='johan_hons13@hotmail.com', `website`='http://www.het-eikelenhof.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3670', `city`='Neerglabbeek', `address_number`='104', `address_string`='Weg naar Opitter ', `latitude`='51.1028654', `longitude`='5.6252567', `subcategory_id`=59
+
+            insert into `opening` set
+            `id`=59, `weekday`='6', `opening_time`='9', `closing_time`='12', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=59
+
+            insert into `subcategory` set `id`=60, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=60, `name`='De Wroeter', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='011 37 52 92', `email`='arbeidscentrum@dewroeter.be', `website`='http://www.dewroeter.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3720', `city`='Kortessem', `address_number`='8', `address_string`='Sint-Rochusstraat ', `latitude`='50.8786823', `longitude`='5.3650949', `subcategory_id`=60
+
+            insert into `opening` set
+            `id`=60, `weekday`='6', `opening_time`='10', `closing_time`='14', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=60
+
+            insert into `subcategory` set `id`=61, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=61, `name`='Ter Doorn', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0497/42 89 41', `email`='rik@terdoorn.be', `website`='', `facebook`='https://www.facebook.com/terdoorn', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8340', `city`='Sijsele', `address_number`='20a', `address_string`='Doornstraat ', `latitude`='51.2158532', `longitude`='3.3504575', `subcategory_id`=61
+
+            insert into `opening` set
+            `id`=61, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=61
+
+            insert into `subcategory` set `id`=62, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=62, `name`='Vermeulen Philip', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='050 27 69 97', `email`='info@biobedrijfvermeulen.be', `website`='http://www.biobedrijfvermeulen.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8020', `city`='Ruddervoorde', `address_number`='2A', `address_string`='Tuinbouwstraat ', `latitude`='51.0892793', `longitude`='3.1711324', `subcategory_id`=62
+
+            insert into `opening` set
+            `id`=62, `weekday`='6', `opening_time`='10', `closing_time`='12', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=62
+
+            insert into `subcategory` set `id`=63, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=63, `name`='Fruitbedrijf Van Eykeren', `owner_name`='BioMijnNatuur', `opening_description`='op afspraak', `phone`='09 379 84 91', `email`='ykeren@telenet.be', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='9988', `city`='Watervliet', `address_number`='1A', `address_string`='Oudemansdijk ', `latitude`='51.2857389', `longitude`='3.6164605', `subcategory_id`=63
+
+            insert into `opening` set
+            `id`=63, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=63
+
+            insert into `subcategory` set `id`=64, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=64, `name`='Biofruitbedrijf Vogelsanck', `owner_name`='BioMijnNatuur', `opening_description`='na  afspraak', `phone`='016 63 57 99', `email`='jos.swillen@gmail.com', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3461', `city`='Bekkevoort', `address_number`='56', `address_string`='Driesstraat ', `latitude`='50.9267503', `longitude`='4.949572', `subcategory_id`=64
+
+            insert into `opening` set
+            `id`=64, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=64
+
+            insert into `subcategory` set `id`=65, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=65, `name`='De teerling / Emiliani', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='09 348 62 28', `email`='de.teerling@emiliani.be', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='9160', `city`='Daknam (Lokeren)', `address_number`='89B', `address_string`='Daknamdorp ', `latitude`='51.1277407', `longitude`='3.9873977', `subcategory_id`=65
+
+            insert into `opening` set
+            `id`=65, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=65
+
+            insert into `subcategory` set `id`=66, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=66, `name`='De Averegten', `owner_name`='BioMijnNatuur', `opening_description`='na telefonische afspraak', `phone`='015 75 89 35', `email`='frederik.nijman@fulladsl.be', `website`='', `facebook`='http://www.facebook.com/DeAveregten', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='2220', `city`='Heist-Op-Den-Berg', `address_number`='17', `address_string`='Langendijk ', `latitude`='51.0946407', `longitude`='4.7239379', `subcategory_id`=66
+
+            insert into `opening` set
+            `id`=66, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=66
+
+            insert into `subcategory` set `id`=67, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=67, `name`='Van Leemputten', `owner_name`='BioMijnNatuur', `opening_description`='op afspraak', `phone`='03 480 49 82', `email`='seger.vanleemputten@skynet.be', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='', `city`='', `address_number`='', `address_string`='', `latitude`='51.1641422', `longitude`='4.5474125', `subcategory_id`=67
+
+            insert into `opening` set
+            `id`=67, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=67
+
+            insert into `subcategory` set `id`=68, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=68, `name`='De Blauwe Spie', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='051 54 52 77', `email`='deblauwespie@euphonynet.be', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8647', `city`='Noordschote (Lo-Reninge)', `address_number`='10', `address_string`='Noordweststraat ', `latitude`='50.9431285', `longitude`='2.8108889', `subcategory_id`=68
+
+            insert into `opening` set
+            `id`=68, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=68
+
+            insert into `subcategory` set `id`=69, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=69, `name`='De Jaargetijden', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='050 50 08 71', `email`='pieter.lutin@skynet.be', `website`='http://www.dejaargetijden.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8340', `city`='Moerkerke-Damme', `address_number`='2A', `address_string`='Waterhoek ', `latitude`='51.2430573', `longitude`='3.340071', `subcategory_id`=69
+
+            insert into `opening` set
+            `id`=69, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=69
+
+            insert into `subcategory` set `id`=70, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=70, `name`='De Wassende Maan', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='09 386 82 14;04081828', `email`='info@dewassendemaan.be', `website`='http://www.dewassendemaan.be', `facebook`='http://www.facebook.com/pages/De-Wassende-Maan/159541904081828', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='9800', `city`='Astene (Deinze)', `address_number`='35', `address_string`='Beekstraat ', `latitude`='50.9808718', `longitude`='3.5781623', `subcategory_id`=70
+
+            insert into `opening` set
+            `id`=70, `weekday`='6', `opening_time`='9', `closing_time`='13', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=70
+
+            insert into `subcategory` set `id`=71, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=71, `name`='De Vrolijke Bloem', `owner_name`='BioMijnNatuur', `opening_description`='dagelijks, bij voorkeur na afspraak of bestelling via website', `phone`='0470/54 93 13', `email`='info@devrolijkebloem.be', `website`='http://www.devrolijkebloem.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8700', `city`='Tielt', `address_number`='87', `address_string`='Felix D`Hoopstraat ', `latitude`='50.9982136', `longitude`='3.3372797', `subcategory_id`=71
+
+            insert into `opening` set
+            `id`=71, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=71
+
+            insert into `subcategory` set `id`=72, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=72, `name`='Hilde Nechelput', `owner_name`='BioMijnNatuur', `opening_description`='Op afspraak', `phone`='0475 73 74 42', `email`='sepywolf@hotmail.com', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='1755', `city`='Gooik', `address_number`='5', `address_string`='Zwartschaapstraat ', `latitude`='50.7854329', `longitude`='4.0975539', `subcategory_id`=72
+
+            insert into `opening` set
+            `id`=72, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=72
+
+            insert into `subcategory` set `id`=73, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=73, `name`='De Hogen Akker', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='050 78 93 00', `email`='info@dehogenakker.be', `website`='http://www.dehogenakker.be', `facebook`='http://www.facebook.com/pages/Bio-Tuinbouwbedrijf-De-Hogen-Akker/148199538580045', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8730', `city`='Oedelem', `address_number`='2', `address_string`='Hogenakkerweg ', `latitude`='51.1598249', `longitude`='3.35086', `subcategory_id`=73
+
+            insert into `opening` set
+            `id`=73, `weekday`='5', `opening_time`='14', `closing_time`='19', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=73
+
+            insert into `subcategory` set `id`=74, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=74, `name`='AGRICO', `owner_name`='BioMijnNatuur', `opening_description`='Groentenautomaat', `phone`='03/889 85 54', `email`='frank.schelfhout@telenet.be', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='2880', `city`='Bornem', `address_number`='50', `address_string`='Platte Heegtestraat ', `latitude`='51.0775414', `longitude`='4.2454412', `subcategory_id`=74
+
+            insert into `opening` set
+            `id`=74, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=74
+
+            insert into `subcategory` set `id`=75, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=75, `name`='De Kollebloem', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='054 34 36 82', `email`='info@kollebloem.be', `website`='http://www.kollebloem.be', `facebook`='http://www.facebook.com/kollebloem', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='9550', `city`='Sint-Lievens-Esse', `address_number`='30', `address_string`='Doornstraat ', `latitude`='50.8605379', `longitude`='3.903041', `subcategory_id`=75
+
+            insert into `opening` set
+            `id`=75, `weekday`='6', `opening_time`='9', `closing_time`='14', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=75
+
+            insert into `subcategory` set `id`=76, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=76, `name`='Blauw Kasteel', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0488/36 17 95', `email`='info@blauwkasteel.be', `website`='http://www.blauwkasteel.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='9860', `city`='Scheldewindeke', `address_number`='42039', `address_string`='Schaperstraat ', `latitude`='50.9255785', `longitude`='3.7532976', `subcategory_id`=76
+
+            insert into `opening` set
+            `id`=76, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=76
+
+            insert into `subcategory` set `id`=77, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=77, `name`=''t Uilenbos', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0491 042 195', `email`='info@uilenbos.be', `website`='http://www.uilenbos.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='9180', `city`='Moerbeke-Waas', `address_number`='42', `address_string`='Eksaardsedam ', `latitude`='51.1515653', `longitude`='3.9486409', `subcategory_id`=77
+
+            insert into `opening` set
+            `id`=77, `weekday`='6', `opening_time`='10', `closing_time`='12', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=77
+
+            insert into `subcategory` set `id`=78, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=78, `name`='De Kijfelaar', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0484/ 29 59 59;0885525527', `email`='info@dekijfelaar.be', `website`='http://www.dekijfelaar.be', `facebook`='http://www.facebook.com/pages/Bioboerderij-De-Kijfelaar/211820885525527', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='2200', `city`='Noorderwijk', `address_number`='4', `address_string`='Schravenhage ', `latitude`='51.1399953', `longitude`='4.8247643', `subcategory_id`=78
+
+            insert into `opening` set
+            `id`=78, `weekday`='6', `opening_time`='9', `closing_time`='12', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=78
+
+            insert into `subcategory` set `id`=79, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=79, `name`='Wijngaardhof', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='03 312 46 31', `email`='wijngaardhof@skynet.be', `website`='http://www.wijngaardhof-biogroenten.be', `facebook`='http://www.facebook.com/wijngaardhof', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='2390', `city`='Westmalle', `address_number`='22', `address_string`='Heidsiebaan ', `latitude`='51.3092913', `longitude`='4.6696769', `subcategory_id`=79
+
+            insert into `opening` set
+            `id`=79, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=79
+
+            insert into `subcategory` set `id`=80, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=80, `name`='De Levende Aarde', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='050 27 95 99', `email`='symorganic@gmail.com', `website`='http://www.delevendeaarde.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8020', `city`='Hertsberge', `address_number`='22', `address_string`='Breeweg ', `latitude`='51.1107431', `longitude`='3.2602632', `subcategory_id`=80
+
+            insert into `opening` set
+            `id`=80, `weekday`='3', `opening_time`='8', `closing_time`='19', `pause_start`='12', `pause_end`='16', `season_start`='', `season_end`='', `food_point_id`=80
+
+            insert into `subcategory` set `id`=81, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=81, `name`='Trommelhoeve', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='03 482 04 31', `email`='trommelhoeve@gmail.com', `website`='http://www.trommelhoeve.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='2530', `city`='Boechout', `address_number`='14', `address_string`='Trommelbaan ', `latitude`='51.1303309', `longitude`='4.5289471', `subcategory_id`=81
+
+            insert into `opening` set
+            `id`=81, `weekday`='1,2,3,4,5,6,7', `opening_time`='13', `closing_time`='18', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=81
+
+            insert into `subcategory` set `id`=82, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=82, `name`='Geitenboerderij De Volle Maan', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='09 362 31 55', `email`='info@devollemaan.be', `website`='http://www.devollemaan.be', `facebook`='http://www.facebook.com/geitenboerderijdevollemaan', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='9520', `city`='Sint-Lievens-Houtem', `address_number`='70', `address_string`='IJshoutestraat ', `latitude`='50.9291948', `longitude`='3.8302289', `subcategory_id`=82
+
+            insert into `opening` set
+            `id`=82, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=82
+
+            insert into `subcategory` set `id`=83, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=83, `name`='Widar', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='014 63 92 71', `email`='info@widar.be', `website`='http://www.widar.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='2330', `city`='Merksplas', `address_number`='43', `address_string`='Lipseinde ', `latitude`='51.3964015', `longitude`='4.8931482', `subcategory_id`=83
+
+            insert into `opening` set
+            `id`=83, `weekday`='2,3,4,5', `opening_time`='9', `closing_time`='17,3', `pause_start`='12', `pause_end`='14', `season_start`='', `season_end`='', `food_point_id`=83
+
+            insert into `subcategory` set `id`=84, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=84, `name`='Molenhof', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='050 21 10 43', `email`='', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8820', `city`='Torhout', `address_number`='19', `address_string`='Processieweg ', `latitude`='51.1012965', `longitude`='3.0670546', `subcategory_id`=84
+
+            insert into `opening` set
+            `id`=84, `weekday`='2,5', `opening_time`='9,3', `closing_time`='19,3', `pause_start`='11,3', `pause_end`='16', `season_start`='', `season_end`='', `food_point_id`=84
+
+            insert into `subcategory` set `id`=85, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=85, `name`='vzw Groenwerk - De Winning', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='016 77 14 80', `email`='info@dewinning.be', `website`='http://www.dewinning.be', `facebook`='http://www.facebook.com/boerderij.de.brabander', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3472', `city`='Kersbeek-Miskom', `address_number`='6', `address_string`='Leedse Vroente ', `latitude`='50.8858124', `longitude`='4.9958008', `subcategory_id`=85
+
+            insert into `opening` set
+            `id`=85, `weekday`='1,2,3,4,5', `opening_time`='8,3', `closing_time`='16,3', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=85
+
+            insert into `subcategory` set `id`=86, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=86, `name`='‘t Bioschuurke', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='054 33 29 13', `email`='info@bio-billens.be', `website`='http://www.bio-billens.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='1755', `city`='Oetingen', `address_number`='26', `address_string`='Warandestraat ', `latitude`='50.7744641', `longitude`='4.0764415', `subcategory_id`=86
+
+            insert into `opening` set
+            `id`=86, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=86
+
+            insert into `subcategory` set `id`=87, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=87, `name`='Den Diepen Boomgaard', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='02 270 00 35', `email`='info@diepenboomgaard.be', `website`='http://www.diepenboomgaard.be', `facebook`='http://www.facebook.com/dendiepenboomgaard', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='1850', `city`='Grimbergen', `address_number`='80', `address_string`='Rijkenhoekstraat ', `latitude`='50.9379542', `longitude`='4.3736776', `subcategory_id`=87
+
+            insert into `opening` set
+            `id`=87, `weekday`='6', `opening_time`='9', `closing_time`='16,45', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=87
+
+            insert into `subcategory` set `id`=88, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=88, `name`='‘t Reigershof', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='059 23 63 81', `email`='info@reigershof.be', `website`='http://www.reigershof.be', `facebook`='http://www.facebook.com/reigershof', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8420', `city`='De Haan', `address_number`='4', `address_string`='Polderstraat ', `latitude`='51.2370955', `longitude`='3.0477325', `subcategory_id`=88
+
+            insert into `opening` set
+            `id`=88, `weekday`='3,5,6', `opening_time`='9', `closing_time`='18', `pause_start`='12', `pause_end`='14', `season_start`='', `season_end`='', `food_point_id`=88
+
+            insert into `subcategory` set `id`=89, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=89, `name`='De Biopoort', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='054/33 04 61;0495/19 06 86', `email`='andreevenepoel@skynet.be', `website`='http://www.debiopoort.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='1760', `city`='Roosdaal', `address_number`='7', `address_string`='Ramerstraat ', `latitude`='50.8369447', `longitude`='4.113228', `subcategory_id`=89
+
+            insert into `opening` set
+            `id`=89, `weekday`='3,4,5,6', `opening_time`='9', `closing_time`='18', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=89
+
+            insert into `subcategory` set `id`=90, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=90, `name`='Pajottenlander', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='02 360 35 55', `email`='info@pajottenlander.be', `website`='http://www.pajottenlander.be', `facebook`='https://www.facebook.com/pajottenlander.be', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='1670', `city`='Pepingen', `address_number`='14', `address_string`='Kerkstraat ', `latitude`='50.7579838', `longitude`='4.1600031', `subcategory_id`=90
+
+            insert into `opening` set
+            `id`=90, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=90
+
+            insert into `subcategory` set `id`=91, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=91, `name`='Het Gulden Gehucht', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='016/65 15 60', `email`='', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3220', `city`='Kortrijk-Dutsel', `address_number`='', `address_string`='', `latitude`='50.9266825', `longitude`='4.8055097', `subcategory_id`=91
+
+            insert into `opening` set
+            `id`=91, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=91
+
+            insert into `subcategory` set `id`=92, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=92, `name`='Stichting Ommersteyn', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='089 61 59 63', `email`='info@stichting-ommersteyn.be', `website`='http://www.stichting-ommersteyn.be', `facebook`='http://www.facebook.com/StichtingOmmersteyn', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3650', `city`='Dilsen Stokkem', `address_number`='5', `address_string`='de Schiervellaan ', `latitude`='51.0469887', `longitude`='5.741302', `subcategory_id`=92
+
+            insert into `opening` set
+            `id`=92, `weekday`='5', `opening_time`='9', `closing_time`='17', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=92
+
+            insert into `subcategory` set `id`=93, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=93, `name`='De Speiboerderij', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='054 50 04 64', `email`='boerwim@pandora.be', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='9550', `city`='Herzele', `address_number`='13', `address_string`='Speistraat ', `latitude`='50.8630857', `longitude`='3.8877453', `subcategory_id`=93
+
+            insert into `opening` set
+            `id`=93, `weekday`='5', `opening_time`='16,3', `closing_time`='19', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=93
+
+            insert into `subcategory` set `id`=94, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=94, `name`='O'Bio Bezegaard', `owner_name`='BioMijnNatuur', `opening_description`='Van eind juni tot begin september (zie website)', `phone`='056 61 61 61', `email`='info@o-bio.be', `website`='http://www.o-bio.be', `facebook`='https://www.facebook.com/OBioZelfpluktuin', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8710', `city`='Wielsbeke', `address_number`='36A', `address_string`='Driekoningenstraat ', `latitude`='50.94776', `longitude`='3.382329', `subcategory_id`=94
+
+            insert into `opening` set
+            `id`=94, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='6', `season_end`='9', `food_point_id`=94
+
+            insert into `subcategory` set `id`=95, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=95, `name`='De Lochting', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='051 20 28 85;02216092954', `email`='info@lochting.be', `website`='http://www.biobello.be/', `facebook`='https://www.facebook.com/pages/Biobello-de-biologische-groenten-en-fruitpakketten/139502216092954', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8800', `city`='Roeselare', `address_number`='15', `address_string`='Oude Stadenstraat ', `latitude`='50.9564289', `longitude`='3.1039116', `subcategory_id`=95
+
+            insert into `opening` set
+            `id`=95, `weekday`='1,2,3,4,5,6', `opening_time`='9', `closing_time`='18', `pause_start`='12', `pause_end`='14', `season_start`='', `season_end`='', `food_point_id`=95
+
+            insert into `subcategory` set `id`=96, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=96, `name`='Tuinsappen Lombarts Calville', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='057 36 30 20;03326829770581', `email`='lombartscalville@tuinsappen.be', `website`='http://www.tuinsappen.be', `facebook`='http://www.facebook.com/pages/Tuinsappen-Lombarts-Calville/303326829770581', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8902', `city`='Voormezele', `address_number`='1', `address_string`='Slijpstraat ', `latitude`='50.8100429', `longitude`='2.8633714', `subcategory_id`=96
+
+            insert into `opening` set
+            `id`=96, `weekday`='4', `opening_time`='16', `closing_time`='20', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=96
+
+            insert into `subcategory` set `id`=97, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=97, `name`='Boerderij De Loods', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='053 77 65 72 ;09790395708930', `email`='boerderij@deloodsvzw.be', `website`='http://www.deloodsvzw.be', `facebook`='http://www.facebook.com/pages/Boerderij-De-Loods/209790395708930', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='9300', `city`='Aalst', `address_number`='145', `address_string`='Kerrebroekstraat ', `latitude`='50.9450977', `longitude`='4.0341501', `subcategory_id`=97
+
+            insert into `opening` set
+            `id`=97, `weekday`='2,4', `opening_time`='8,3', `closing_time`='19', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=97
+
+            insert into `subcategory` set `id`=98, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=98, `name`='Cressana', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='055 49 73 00', `email`='info@cressana.com', `website`='http://www.cressana.com', `facebook`='http://www.facebook.com/cressanainfo/info', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='9630', `city`='Zwalm', `address_number`='66', `address_string`='Borstekouterstraat ', `latitude`='50.866584', `longitude`='3.7538361', `subcategory_id`=98
+
+            insert into `opening` set
+            `id`=98, `weekday`='6', `opening_time`='9', `closing_time`='12,3', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=98
+
+            insert into `subcategory` set `id`=99, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=99, `name`='De Drie Wilgen', `owner_name`='BioMijnNatuur', `opening_description`='na afspraak', `phone`='0497 44 71 05   ;0495 44 83 52', `email`='de3wilgen@gmail.com', `website`='http://www.dedriewilgen.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='2560', `city`='Nijlen', `address_number`='1', `address_string`='Bist ', `latitude`='51.1717916', `longitude`='4.6622582', `subcategory_id`=99
+
+            insert into `opening` set
+            `id`=99, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=99
+
+            insert into `subcategory` set `id`=100, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=100, `name`='‘t Wanthof', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0499/316935', `email`='lesley_willems@wanthof.com', `website`='http://www.wanthof.com', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3740', `city`='Grote-Spouwen', `address_number`='20', `address_string`='Papestraat ', `latitude`='50.8339815', `longitude`='5.5569355', `subcategory_id`=100
+
+            insert into `opening` set
+            `id`=100, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=100
+
+            insert into `subcategory` set `id`=101, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=101, `name`='Kempengoud', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='03 677 22 76', `email`='jules.dhooghe@telenet.be', `website`='', `facebook`='https://www.facebook.com/kempengoud', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='2910', `city`='Essen', `address_number`='15', `address_string`='Spurrieveld ', `latitude`='51.4332942', `longitude`='4.4919517', `subcategory_id`=101
+
+            insert into `opening` set
+            `id`=101, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=101
+
+            insert into `subcategory` set `id`=102, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=102, `name`='Wijveld', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0498/19 79 58', `email`='info@wijveld.be', `website`='http://www.wijveld.be', `facebook`='https://www.facebook.com/Wijveld', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='9070', `city`='Destelbergen', `address_number`='t', `address_string`='Kwadenplasstraa', `latitude`='51.063935', `longitude`='3.786425', `subcategory_id`=102
+
+            insert into `opening` set
+            `id`=102, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=102
+
+            insert into `subcategory` set `id`=103, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=103, `name`='‘t Meulenhuys', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0499 346 102', `email`='info@meulenhuys.net', `website`='http://www.meulenhuys.net', `facebook`='http://www.facebook.com/Meulenhuys', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='2288', `city`='Bouwel', `address_number`='36', `address_string`='Molenstraat ', `latitude`='51.160817', `longitude`='4.7419237', `subcategory_id`=103
+
+            insert into `opening` set
+            `id`=103, `weekday`='6', `opening_time`='9', `closing_time`='12', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=103
+
+            insert into `subcategory` set `id`=104, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=104, `name`='Ourobouros', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='055 49 58 55', `email`='info@ourobouros.be', `website`='http://www.ourobouros.be', `facebook`='http://www.facebook.com/pages/Ourobouros/284241963326', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='9630', `city`='Munkzwalm', `address_number`='6', `address_string`='Temmerstraat ', `latitude`='50.8802153', `longitude`='3.7339466', `subcategory_id`=104
+
+            insert into `opening` set
+            `id`=104, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=104
+
+            insert into `subcategory` set `id`=105, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=105, `name`='Bio Baarlaars', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='051 68 60 65', `email`='', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='9880', `city`='Lotenhulle', `address_number`='5', `address_string`='Baarlaars ', `latitude`='51.0560993', `longitude`='3.4340482', `subcategory_id`=105
+
+            insert into `opening` set
+            `id`=105, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=105
+
+            insert into `subcategory` set `id`=106, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=106, `name`='Hageling', `owner_name`='BioMijnNatuur', `opening_description`='na  afspraak', `phone`='016 81 58 87', `email`='hageling@skynet.be', `website`='http://www.hageling-bio.be', `facebook`='http://www.facebook.com/pages/Hageling-Wijnbouw/215833418550848', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3300', `city`='Tienen', `address_number`='23', `address_string`='Vianderdal ', `latitude`='50.81692', `longitude`='4.9493263', `subcategory_id`=106
+
+            insert into `opening` set
+            `id`=106, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=106
+
+            insert into `subcategory` set `id`=107, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=107, `name`='Nationale Boomgaardenstichting', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='012 39 11 88', `email`='info@boomgaardenstichting.be', `website`='http://www.boomgaardenstichting.be', `facebook`='http://www.facebook.com/Nat.Boomgaardenstichting', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3724', `city`='Vliermaal', `address_number`='8', `address_string`='Leopold III-straat ', `latitude`='50.8402244', `longitude`='5.4297032', `subcategory_id`=107
+
+            insert into `opening` set
+            `id`=107, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=107
+
+            insert into `subcategory` set `id`=108, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=108, `name`='Klavertjeshof', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='09 357 40 16', `email`='klavertjeshof@skynet.be', `website`='http://www.klavertjeshof.be', `facebook`='https://www.facebook.com/HoeveslagerijKlavertjeshof%0A', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='9920', `city`='Lovendegem', `address_number`='4', `address_string`='Eeksken ', `latitude`='51.1280306', `longitude`='3.6462195', `subcategory_id`=108
+
+            insert into `opening` set
+            `id`=108, `weekday`='6', `opening_time`='10', `closing_time`='18', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=108
+
+            insert into `subcategory` set `id`=109, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=109, `name`=''t Kakelend Kippenmuseum', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='051/50 25 90', `email`='info@kakelendkippenmuseum.be', `website`='http://www.kakelendkippenmuseum.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8600', `city`='Keiem', `address_number`='25', `address_string`='Wittepoortstraat ', `latitude`='51.0823425', `longitude`='2.8906058', `subcategory_id`=109
+
+            insert into `opening` set
+            `id`=109, `weekday`='3,6,7', `opening_time`='13,3', `closing_time`='18,3', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=109
+
+            insert into `subcategory` set `id`=110, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=110, `name`='Houben Jan', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0495 937 031', `email`='janappel@hotmail.com', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3650', `city`='Dilsen-Stokkem', `address_number`='18', `address_string`='Zandstraat ', `latitude`='51.0683548', `longitude`='5.7589005', `subcategory_id`=110
+
+            insert into `opening` set
+            `id`=110, `weekday`='6', `opening_time`='9', `closing_time`='12', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=110
+
+            insert into `subcategory` set `id`=111, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=111, `name`='Tievishoeve', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='089 85 41 76', `email`='tievishoeve@skynet.be', `website`='http://www.tievishoeve.be', `facebook`='http://www.facebook.com/tievishoeve.boerderijwinkel', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3660', `city`='Opglabbeek', `address_number`='11', `address_string`='Groenstraat ', `latitude`='51.040379', `longitude`='5.5746915', `subcategory_id`=111
+
+            insert into `opening` set
+            `id`=111, `weekday`='4,5,6,7', `opening_time`='11', `closing_time`='21', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=111
+
+            insert into `subcategory` set `id`=112, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=112, `name`='Dewaele Ronny', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0496 550 400;00152293', `email`='dewaeleronny@hotmail.com', `website`='', `facebook`='http://www.facebook.com/pages/Fraises-de-Guillaume/465267600152293', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8340', `city`='Damme', `address_number`='20', `address_string`='Scheewege ', `latitude`='51.2355706', `longitude`='3.3608279', `subcategory_id`=112
+
+            insert into `opening` set
+            `id`=112, `weekday`='1,2,3,4,5,6,7', `opening_time`='8,3', `closing_time`='18', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=112
+
+            insert into `subcategory` set `id`=113, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=113, `name`='Het Vrije Veld', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0499/62 06 51', `email`='info@hetvrijeveld.be', `website`='http://www.hetvrijeveld.be', `facebook`='http://www.facebook.com/pages/Het-Vrije-Veld/225162227516686', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3690', `city`='Zutendaal', `address_number`='', `address_string`='Kennepstraat  (naast nr 22)', `latitude`='50.932735', `longitude`='5.577468', `subcategory_id`=113
+
+            insert into `opening` set
+            `id`=113, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=113
+
+            insert into `subcategory` set `id`=114, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=114, `name`='Kolibella', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='09 253 03 75', `email`='chris.claes@hotmail.com', `website`='http://www.eeties.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='9940', `city`='Evergem', `address_number`='7', `address_string`='Kromvelde ', `latitude`='51.1065285', `longitude`='3.6695853', `subcategory_id`=114
+
+            insert into `opening` set
+            `id`=114, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=114
+
+            insert into `subcategory` set `id`=115, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=115, `name`='Den Oogst', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0484 77 56 32', `email`='info@denoogst.be', `website`='http://www.denoogst.be', `facebook`='http://www.facebook.com/DenOogst', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='2900', `city`='Schoten', `address_number`='200', `address_string`='Peerdsbosbaan ', `latitude`='51.2497532', `longitude`='4.4977063', `subcategory_id`=115
+
+            insert into `opening` set
+            `id`=115, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=115
+
+            insert into `subcategory` set `id`=116, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=116, `name`='Frambiosa Y Besos', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0496/10 70 96', `email`='info@frambiosaybesos.com', `website`='http://www.frambiosaybesos.com', `facebook`='http://www.facebook.com/pages/Frambiosa-y-Besos/116685418369828', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8630', `city`='Beauvoorde', `address_number`='7B', `address_string`='Goudenhoofdstraat ', `latitude`='51.0227487', `longitude`='2.6758946', `subcategory_id`=116
+
+            insert into `opening` set
+            `id`=116, `weekday`='7', `opening_time`='9', `closing_time`='12', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=116
+
+            insert into `subcategory` set `id`=117, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=117, `name`='Mobiele Fruitpers Zevergem', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0475 26 24 80', `email`='info@mobielefruitpers.com', `website`='http://www.mobielefruitpers.com', `facebook`='http://www.facebook.com/mobielefruitpers.zevergem', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='9840', `city`='De Pinte', `address_number`='4 A', `address_string`='Boeregemstraat ', `latitude`='50.9874176', `longitude`='3.6877734', `subcategory_id`=117
+
+            insert into `opening` set
+            `id`=117, `weekday`='6', `opening_time`='8', `closing_time`='12', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=117
+
+            insert into `subcategory` set `id`=118, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=118, `name`='Plukhof', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='', `email`='info@plukhof.be', `website`='http://www.plukhof.be', `facebook`='https://www.facebook.com/Plukhof', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='2222', `city`='Wiekevorst', `address_number`='50/52', `address_string`='Heerweg tss ', `latitude`='51.10914', `longitude`='4.7944915', `subcategory_id`=118
+
+            insert into `opening` set
+            `id`=118, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=118
+
+            insert into `subcategory` set `id`=119, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=119, `name`='Plukboerderij Van Schelle', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='', `email`='kristien@plukboerderij.be', `website`='http://www.plukboerderij.be', `facebook`='https://www.facebook.com/groups/112335725494843/', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='2627', `city`='Schelle', `address_number`='499', `address_string`='Steenwinkelstraat ', `latitude`='51.1220332', `longitude`='4.3658457', `subcategory_id`=119
+
+            insert into `opening` set
+            `id`=119, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=119
+
+            insert into `subcategory` set `id`=120, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=120, `name`='Hof ten Muizenhole', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='054/41 85 29;0475/32 69 36', `email`='info@hoftemuizenhole.be', `website`='http://www.hoftemuizenhole.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='9570', `city`='Deftinge', `address_number`='20', `address_string`='Muizenholstraat ', `latitude`='50.776084', `longitude`='3.8388949', `subcategory_id`=120
+
+            insert into `opening` set
+            `id`=120, `weekday`='6', `opening_time`='9', `closing_time`='12', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=120
+
+            insert into `subcategory` set `id`=121, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=121, `name`='Milagrow', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0499701 868', `email`='info@milagrow.org', `website`='http://www.milagrow.org', `facebook`='http://www.facebook.com/milagroworg', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='2630', `city`='Aartselaar', `address_number`='56', `address_string`='Groenenhoek ', `latitude`='51.1447921', `longitude`='4.3635122', `subcategory_id`=121
+
+            insert into `opening` set
+            `id`=121, `weekday`='1,2,3,5,6', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=121
+
+            insert into `subcategory` set `id`=122, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=122, `name`='Vanysacker - Pleurico', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='051 20 18 73', `email`='lieven.vanysacker@telenet.be', `website`='http://www.pleurico.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8800', `city`='Rumbeke', `address_number`='18', `address_string`='Knokuilstraat ', `latitude`='50.9179872', `longitude`='3.1094581', `subcategory_id`=122
+
+            insert into `opening` set
+            `id`=122, `weekday`='', `opening_time`='14', `closing_time`='18', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=122
+
+            insert into `subcategory` set `id`=123, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=123, `name`='Grondsmaak', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='', `email`='grondsmaak@gmail.com', `website`='http://www.grondsmaak.be', `facebook`='http://www.facebook.com/Grondsmaak', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='2550', `city`='Kontich', `address_number`='t', `address_string`='Pauwhoevestraa', `latitude`='', `longitude`='', `subcategory_id`=123
+
+            insert into `opening` set
+            `id`=123, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=123
+
+            insert into `subcategory` set `id`=124, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=124, `name`='Herkenrodeboer  & Goerenhof', `owner_name`='BioMijnNatuur', `opening_description`='of op bestelling.', `phone`='1089180', `email`='vanroyekoen@yahoo.com', `website`='http://www.herkenrodeboer.be', `facebook`='https://www.facebook.com/pages/Boer-van-Herkenrode/157223601089180', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3511', `city`='Stokrooie', `address_number`='12', `address_string`='Olmenbosstraat ', `latitude`='', `longitude`='', `subcategory_id`=124
+
+            insert into `opening` set
+            `id`=124, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=124
+
+            insert into `subcategory` set `id`=125, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=125, `name`='De Jong David', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0473/68 92 36', `email`='dejong_david@hotmail.com', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='9630', `city`='Zwalm', `address_number`='', `address_string`='', `latitude`='50.8799184', `longitude`='3.7288705', `subcategory_id`=125
+
+            insert into `opening` set
+            `id`=125, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=125
+
+            insert into `subcategory` set `id`=126, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=126, `name`='Heerlijkheid van Heule', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='056 35 71 00', `email`='info@hofvanheule.be', `website`='http://www.hofvanheule.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8501', `city`='Heule', `address_number`='53', `address_string`='Zeger van Heulestraat ', `latitude`='50.8451534', `longitude`='3.2385781', `subcategory_id`=126
+
+            insert into `opening` set
+            `id`=126, `weekday`='2,4', `opening_time`='10', `closing_time`='18', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=126
+
+            insert into `subcategory` set `id`=127, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=127, `name`='De Hakboer', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0486 16 36 84', `email`='klaas.ysebaert@gmail.com', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8580', `city`='Avelgem', `address_number`='86', `address_string`='Bosstraat ', `latitude`='50.7893649', `longitude`='3.4429704', `subcategory_id`=127
+
+            insert into `opening` set
+            `id`=127, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=127
+
+            insert into `subcategory` set `id`=128, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=128, `name`='Samenland', `owner_name`='BioMijnNatuur', `opening_description`='zelfbediening', `phone`='0493/07 66 45 ;020233890', `email`='info@samenland.be', `website`='http://www.samenland.be', `facebook`='https://www.facebook.com/pages/Samenland/132723020233890', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3800', `city`='Sint-Truiden', `address_number`='57', `address_string`='Engelbamp ', `latitude`='50.853137', `longitude`='5.2066399', `subcategory_id`=128
+
+            insert into `opening` set
+            `id`=128, `weekday`='3', `opening_time`='10', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=128
+
+            insert into `subcategory` set `id`=129, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=129, `name`='De Witte Beek CSA', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0479 53 00 66', `email`='jen.nold@telenet.be', `website`='http://www.dewittebeek.be', `facebook`='http://www.facebook.com/dewittebeek', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3360', `city`='Bierbeek', `address_number`='', `address_string`='Hoogstraat (tussen nr 34 en 38)', `latitude`='50.827845', `longitude`='4.7538919', `subcategory_id`=129
+
+            insert into `opening` set
+            `id`=129, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=129
+
+            insert into `subcategory` set `id`=130, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=130, `name`='De Nieuwe Winning', `owner_name`='BioMijnNatuur', `opening_description`='Aardappelautomaat', `phone`='011 72 47 65', `email`='de.nieuwewinning@gmail.com', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3500', `city`='Hasselt', `address_number`='13', `address_string`='Nieuwe Winningstraat ', `latitude`='50.9076777', `longitude`='5.3196622', `subcategory_id`=130
+
+            insert into `opening` set
+            `id`=130, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=130
+
+            insert into `subcategory` set `id`=131, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=131, `name`='Biobuur', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0486 93 17 22', `email`='kris@biobuur.be', `website`='http://www.biobuur.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='2800', `city`='Mechelen', `address_number`='188', `address_string`='Schonenberg ', `latitude`='51.0099361', `longitude`='4.4606927', `subcategory_id`=131
+
+            insert into `opening` set
+            `id`=131, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=131
+
+            insert into `subcategory` set `id`=132, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=132, `name`=''t Ambrozijn', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0486/23 09 89', `email`='info@tambrozijn.be', `website`='http://www.tambrozijn.be', `facebook`='https://www.facebook.com/TAmbrozijn', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8020', `city`='Waardamme', `address_number`='32', `address_string`='Stokhovestraat ', `latitude`='51.209082', `longitude`='3.4486611', `subcategory_id`=132
+
+            insert into `opening` set
+            `id`=132, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=132
+
+            insert into `subcategory` set `id`=133, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=133, `name`='Vandyck Stijn', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='084/21 06 34', `email`='mertens.karen@live.be', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='', `city`='', `address_number`='', `address_string`='', `latitude`='50.1993902', `longitude`='5.7138848', `subcategory_id`=133
+
+            insert into `opening` set
+            `id`=133, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=133
+
+            insert into `subcategory` set `id`=134, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=134, `name`='De Groentelaar', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0488 99 47 32', `email`='info@degroentelaar.be', `website`='http://www.degroentelaar.be', `facebook`='http://www.facebook.com/degroentelaar', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='1755', `city`='Gooik', `address_number`='', `address_string`='Paddenbroekstraat', `latitude`='50.7952811', `longitude`='4.1180489', `subcategory_id`=134
+
+            insert into `opening` set
+            `id`=134, `weekday`='6', `opening_time`='10', `closing_time`='16', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=134
+
+            insert into `subcategory` set `id`=135, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=135, `name`='VZW Werkende Handen, project De Hoev', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='011 60 66 63', `email`='info@dehoev.be', `website`='http://www.dehoev.be', `facebook`='https://www.facebook.com/dehoevzonhoven/timeline', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3520', `city`='Zonhoven', `address_number`='10', `address_string`='Hoeveweg ', `latitude`='50.9971542', `longitude`='5.3610617', `subcategory_id`=135
+
+            insert into `opening` set
+            `id`=135, `weekday`='6', `opening_time`='10', `closing_time`='14', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=135
+
+            insert into `subcategory` set `id`=136, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=136, `name`='Marie's garden', `owner_name`='BioMijnNatuur', `opening_description`='en feestdagen 9u30-18u', `phone`='', `email`='info@mariesgarden.be', `website`='http://www.mariesgarden.be', `facebook`='http://www.facebook.com/mariesgarden', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3090', `city`='Overijse', `address_number`='116', `address_string`='Valkenweg ', `latitude`='50.7859554', `longitude`='4.5305975', `subcategory_id`=136
+
+            insert into `opening` set
+            `id`=136, `weekday`='6,7', `opening_time`='9,3', `closing_time`='18', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=136
+
+            insert into `subcategory` set `id`=137, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=137, `name`='De Ridder Jan', `owner_name`='BioMijnNatuur', `opening_description`='Enkel op afspraak en tijdens seizoen (sept - okt).', `phone`='0494 44 16 68', `email`='', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='1730', `city`='Asse', `address_number`='139', `address_string`='Zittert ', `latitude`='50.8916174', `longitude`='4.2303762', `subcategory_id`=137
+
+            insert into `opening` set
+            `id`=137, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='9', `season_end`='10', `food_point_id`=137
+
+            insert into `subcategory` set `id`=138, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=138, `name`='Donderij', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0479 018 018', `email`='koen@donderij.be', `website`='http://www.donderij.be', `facebook`='https://www.facebook.com/hoeveslagerijdonderij/info', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='9680', `city`='Maarkedal', `address_number`='18', `address_string`='Donderij ', `latitude`='50.7851814', `longitude`='3.6278319', `subcategory_id`=138
+
+            insert into `opening` set
+            `id`=138, `weekday`='7', `opening_time`='8,3', `closing_time`='12,3', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=138
+
+            insert into `subcategory` set `id`=139, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=139, `name`='Antaboga cvba', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0473 94 78 01', `email`='antaboga@hotmail.be', `website`='', `facebook`='https://www.facebook.com/Antaboga.be/page_map', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3980', `city`='Tessenderlo', `address_number`='', `address_string`='', `latitude`='51.0642666', `longitude`='5.0881938', `subcategory_id`=139
+
+            insert into `opening` set
+            `id`=139, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=139
+
+            insert into `subcategory` set `id`=140, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=140, `name`='De Doederij', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0470/54 94 08', `email`='csa.dedoederij@gmail.com', `website`='http://www.doederij.be', `facebook`='https://www.facebook.com/pages/Doederij/115732311791112', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='2860', `city`='St Katelijne Waver', `address_number`='5', `address_string`='Den Rooi ', `latitude`='51.0764811', `longitude`='4.5157027', `subcategory_id`=140
+
+            insert into `opening` set
+            `id`=140, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=140
+
+            insert into `subcategory` set `id`=141, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=141, `name`='Aveschootshoeve', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='09 251 62 41 ; 0485 47 57 94', `email`='info@aveschootshoeve.be', `website`='http://www.aveschootshoeve.be', `facebook`='https://www.facebook.com/Aveschootshoeve', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='9971', `city`='Lembeke', `address_number`='67a', `address_string`='Aveschoot ', `latitude`='51.1892334', `longitude`='3.6288914', `subcategory_id`=141
+
+            insert into `opening` set
+            `id`=141, `weekday`='7', `opening_time`='14', `closing_time`='17', `pause_start`='', `pause_end`='', `season_start`='9', `season_end`='9', `food_point_id`=141
+
+            insert into `subcategory` set `id`=142, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=142, `name`='Chamrova', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0477 572 879', `email`='chamrova@telenet.be', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8770', `city`='Ingelmunster', `address_number`='1', `address_string`='Zuidstraat ', `latitude`='50.9118292', `longitude`='3.2857366', `subcategory_id`=142
+
+            insert into `opening` set
+            `id`=142, `weekday`='1,2,3,4,5,6,7', `opening_time`='7', `closing_time`='12', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=142
+
+            insert into `subcategory` set `id`=143, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=143, `name`='Stadsboerderij Kortrijk', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='056 / 49 05 12', `email`='webwinkel@stadsboerderijkortrijk.be', `website`='http://www.stadsboerderijkortrijk.be', `facebook`='www.facebook.com/stadsboerderijkortrijk', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8500', `city`='Kortrijk', `address_number`='69', `address_string`='Watermolenstraat ', `latitude`='50.838102', `longitude`='3.260922', `subcategory_id`=143
+
+            insert into `opening` set
+            `id`=143, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=143
+
+            insert into `subcategory` set `id`=144, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=144, `name`=''t Legumenhofke', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='', `email`='info@legumenhofke.be', `website`='http://www.legumenhofke.be', `facebook`='https://www.facebook.com/pages/Legumenhofke/366384350147157', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3001', `city`='Heverlee', `address_number`='21', `address_string`='Mezenlaan ', `latitude`='50.8601483', `longitude`='4.6944174', `subcategory_id`=144
+
+            insert into `opening` set
+            `id`=144, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=144
+
+            insert into `subcategory` set `id`=145, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=145, `name`='De groene kapoen', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0486 69 06 31', `email`='', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='2500', `city`='Lier', `address_number`='320', `address_string`='Hagenbroeksesteenweg ', `latitude`='51.157681', `longitude`='4.5451641', `subcategory_id`=145
+
+            insert into `opening` set
+            `id`=145, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=145
+
+            insert into `subcategory` set `id`=146, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=146, `name`='La Finca', `owner_name`='BioMijnNatuur', `opening_description`='eerste zondag van de maand: 10u - 14h', `phone`='', `email`='contact@la-finca.be', `website`='http://www.la-finca.be', `facebook`='http://www.facebook.com/LaFincaSprl', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='1970', `city`='Wezembeek-Oppem', `address_number`='71', `address_string`='Mechelsesteenweg ', `latitude`='50.8454538', `longitude`='4.5004311', `subcategory_id`=146
+
+            insert into `opening` set
+            `id`=146, `weekday`='7', `opening_time`='10', `closing_time`='14', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=146
+
+            insert into `subcategory` set `id`=147, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=147, `name`='De Ferme Framboos', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0494 29 46 57', `email`='info@fermeframboos.be', `website`='http://www.fermeframboos.be', `facebook`='https://www.facebook.com/fermeframboos', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3040', `city`='Sint-Agatha-Rode', `address_number`='50', `address_string`='Veeweidestraat ', `latitude`='50.7643326', `longitude`='4.638845', `subcategory_id`=147
+
+            insert into `opening` set
+            `id`=147, `weekday`='6', `opening_time`='10', `closing_time`='19', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=147
+
+            insert into `subcategory` set `id`=148, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=148, `name`='Ezelboerderij De Hoef', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='', `email`='info@dehoef.com', `website`='http://www.dehoef.com', `facebook`='http://www.facebook.com/Ezelboerderijdehoef', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3272', `city`='Messelbroek', `address_number`='39', `address_string`='Amerstraat ', `latitude`='50.995933', `longitude`='4.9203355', `subcategory_id`=148
+
+            insert into `opening` set
+            `id`=148, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=148
+
+            insert into `subcategory` set `id`=149, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=149, `name`='Rawijs', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='09 355 02 81', `email`='info@rawijs.be', `website`='http://www.rawijs.be', `facebook`='http://www.facebook.com/Rawijs', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='9080', `city`='Lochristi', `address_number`='101', `address_string`='Koning Albertlaan ', `latitude`='51.1036134', `longitude`='3.8266096', `subcategory_id`=149
+
+            insert into `opening` set
+            `id`=149, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=149
+
+            insert into `subcategory` set `id`=150, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=150, `name`='Groenkost', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0472 24 93 46', `email`='info@groenkost.be', `website`='http://www.groenkost.be', `facebook`='https://www.facebook.com/Groenkost', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3294', `city`='Molenstede', `address_number`='49', `address_string`='Asdonkstraat ', `latitude`='51.0134056', `longitude`='5.0437957', `subcategory_id`=150
+
+            insert into `opening` set
+            `id`=150, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=150
+
+            insert into `subcategory` set `id`=151, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=151, `name`='Lincelam', `owner_name`='BioMijnNatuur', `opening_description`='Op afspraak', `phone`='', `email`='info@lincelam.be', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8691', `city`='Leisele', `address_number`='78', `address_string`='Beverenstraat ', `latitude`='50.9808482', `longitude`='2.6290184', `subcategory_id`=151
+
+            insert into `opening` set
+            `id`=151, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=151
+
+            insert into `subcategory` set `id`=152, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=152, `name`='De grenshoeve', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0472 30 60 76', `email`='de.grenshoeve@telenet.be', `website`='http://www.degrenshoeve.jimdo.com', `facebook`='https://www.facebook.com/pages/De-Grenshoeve/611682985516835', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8510', `city`='Bellegem', `address_number`='1', `address_string`='Beerbosstraat ', `latitude`='', `longitude`='', `subcategory_id`=152
+
+            insert into `opening` set
+            `id`=152, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=152
+
+            insert into `subcategory` set `id`=153, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=153, `name`='Baarbeekhoeve', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0499/23 79 35', `email`='biohofke@hotmail.com', `website`='http://www.biohofke.be', `facebook`='http://www.facebook.com/Biohofke', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='2812', `city`='Muizen', `address_number`='24', `address_string`='Baarbeekstraat ', `latitude`='51.0053777', `longitude`='4.5242472', `subcategory_id`=153
+
+            insert into `opening` set
+            `id`=153, `weekday`='6', `opening_time`='10', `closing_time`='16', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=153
+
+            insert into `subcategory` set `id`=154, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=154, `name`='Bio bij bernd', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='', `email`='bernd@biobijbernd.be', `website`='http://www.biobijbernd.be', `facebook`='https://www.facebook.com/biobijbernd', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3540', `city`='Herk-de-Stad', `address_number`='4', `address_string`='Gasterbosstraat ', `latitude`='50.935814', `longitude`='5.1891821', `subcategory_id`=154
+
+            insert into `opening` set
+            `id`=154, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=154
+
+            insert into `subcategory` set `id`=155, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=155, `name`=''t Lof der kruiden', `owner_name`='BioMijnNatuur', `opening_description`='Via webwinkel of op afspraak.', `phone`='050 27 58 19;0479 52 81 06 ;03246823088891', `email`='info@lofderkruiden.be', `website`='http://www.lofderkruiden.be', `facebook`='https://www.facebook.com/pages/BB-t-LOF-der-kruiden/303246823088891', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8210', `city`='Veldegem', `address_number`='64', `address_string`='Kloosterstraat ', `latitude`='51.1091784', `longitude`='3.1647561', `subcategory_id`=155
+
+            insert into `opening` set
+            `id`=155, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=155
+
+            insert into `subcategory` set `id`=156, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=156, `name`='Bloom', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0485/00 55 56', `email`='ruth@biobloom.be', `website`='http://www.biobloom.be/', `facebook`='https://www.facebook.com/bloombloemen', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8020', `city`='Ruddervoorde', `address_number`='2', `address_string`='Korte Akkerstraat ', `latitude`='51.1963492', `longitude`='3.1717449', `subcategory_id`=156
+
+            insert into `opening` set
+            `id`=156, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=156
+
+            insert into `subcategory` set `id`=157, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=157, `name`='Permafungi', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0491/065 999', `email`='info@permafungi.be', `website`='http://www.permafungi.be', `facebook`='https://www.facebook.com/PermaFungi', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='1000', `city`='Brussel', `address_number`='60A', `address_string`='Huidevettersstraat ', `latitude`='50.8399478', `longitude`='4.3466753', `subcategory_id`=157
+
+            insert into `opening` set
+            `id`=157, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=157
+
+            insert into `subcategory` set `id`=158, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=158, `name`='Herdershof', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0497 538 045', `email`='nfo@herdershof.com', `website`='http://www.herdershof.com', `facebook`='https://www.facebook.com/pages/Herdershof/1474927512745009', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='2560', `city`='Bevel', `address_number`='4', `address_string`='Schoolstraat ', `latitude`='51.1372474', `longitude`='4.6841767', `subcategory_id`=158
+
+            insert into `opening` set
+            `id`=158, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=158
+
+            insert into `subcategory` set `id`=159, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=159, `name`='Koolmees', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='', `email`='jens@koolmees.be', `website`='http://www.koolmees.be', `facebook`='https://www.facebook.com/koolmees.be', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8480', `city`='Ichtegem', `address_number`='125', `address_string`='Torhoutbaan ', `latitude`='51.092766', `longitude`='3.0459456', `subcategory_id`=159
+
+            insert into `opening` set
+            `id`=159, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=159
+
+            insert into `subcategory` set `id`=160, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=160, `name`='Lochting Izegem', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='', `email`='', `website`='', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8870', `city`='Izegem', `address_number`='329', `address_string`='Roeselaarsestraat ', `latitude`='50.9226744', `longitude`='3.1964206', `subcategory_id`=160
+
+            insert into `opening` set
+            `id`=160, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=160
+
+            insert into `subcategory` set `id`=161, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=161, `name`=''t Fruitratje', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0474 346 875;05554990', `email`='brimski@hotmail.com', `website`='http://www.fruitratje.wordpress.com', `facebook`='https://www.facebook.com/pages/Fruitratje/1447178305554990', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3360', `city`='Bierbeek', `address_number`='63', `address_string`='Waversesteenweg ', `latitude`='50.8211609', `longitude`='4.8084181', `subcategory_id`=161
+
+            insert into `opening` set
+            `id`=161, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=161
+
+            insert into `subcategory` set `id`=162, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=162, `name`='Ten Hoogen Elslande', `owner_name`='BioMijnNatuur', `opening_description`='CSA-leden:', `phone`='0499/165057', `email`='info@tenhoogenelslande.be', `website`='http://www.tenhoogenelslande.be', `facebook`='https://www.facebook.com/TenHoogenElslande', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8940', `city`='Geluwe', `address_number`='43', `address_string`='Zuidstraat ', `latitude`='50.8056218', `longitude`='3.0763406', `subcategory_id`=162
+
+            insert into `opening` set
+            `id`=162, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=162
+
+            insert into `subcategory` set `id`=163, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=163, `name`='de Biopluktuin', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0486/90 11 02 ;00004135398361', `email`='info@biopluktuin.be', `website`='http://www.biopluktuin.be', `facebook`='https://www.facebook.com/profile.php', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='8400', `city`='Oostende', `address_number`='599', `address_string`='Stuiverstraat ', `latitude`='51.1998083', `longitude`='2.9286928', `subcategory_id`=163
+
+            insert into `opening` set
+            `id`=163, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=163
+
+            insert into `subcategory` set `id`=164, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=164, `name`='De Pluk & Snoeptuin', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='', `email`='info@deplukensnoeptuin.be', `website`='http://www.deplukensnoeptuin.be', `facebook`='https://www.facebook.com/pages/De-Pluk-Snoeptuin/281989348671198', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='2070', `city`='Zwijndrecht', `address_number`='196', `address_string`='Krijgsbaan ', `latitude`='51.2071393', `longitude`='4.3158388', `subcategory_id`=164
+
+            insert into `opening` set
+            `id`=164, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=164
+
+            insert into `subcategory` set `id`=165, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=165, `name`='De Klepper', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='', `email`='dekleppercsa@gmail.com', `website`='http://www.deklepper.wordpress.com', `facebook`='https://www.facebook.com/deklepper.csa', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='1861', `city`='Wolvertem', `address_number`='21', `address_string`='Klepperstraat ', `latitude`='50.9419047', `longitude`='4.3107667', `subcategory_id`=165
+
+            insert into `opening` set
+            `id`=165, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=165
+
+            insert into `subcategory` set `id`=166, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=166, `name`='Boter Schrans Hoeve', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='', `email`='', `website`='http://www.kraakvers.bio', `facebook`='https://www.facebook.com/pages/Kraakversbio/1516967731925411', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='2500', `city`='Koningshooikt', `address_number`='199A', `address_string`='Misstraat ', `latitude`='51.10513', `longitude`='4.6235578', `subcategory_id`=166
+
+            insert into `opening` set
+            `id`=166, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=166
+
+            insert into `subcategory` set `id`=167, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=167, `name`=''t Lekkerland', `owner_name`='BioMijnNatuur', `opening_description`='van zonsopgang tot zonsondergang', `phone`='0484/119716', `email`='tlekkerland@hotmail.com', `website`='http://www.tlekkerland.be', `facebook`='', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='2870', `city`='Puurs', `address_number`='', `address_string`='', `latitude`='', `longitude`='', `subcategory_id`=167
+
+            insert into `opening` set
+            `id`=167, `weekday`='1,2,3,4,5,6,7', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=167
+
+            insert into `subcategory` set `id`=168, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=168, `name`='Tine's Groentemandjes', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='0495 12 44 33', `email`='tine.vanackere@online.be', `website`='http://www.kleibeek.be', `facebook`='https://www.facebook.com/tines.groentenmandjes', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='9170', `city`='Sint-Pauwels', `address_number`='30', `address_string`='Potterstraat ', `latitude`='51.1924455', `longitude`='4.0999819', `subcategory_id`=168
+
+            insert into `opening` set
+            `id`=168, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=168
+
+            insert into `subcategory` set `id`=169, `description`='farm', `category_id`=1
+insert into `food_point` set
+            `id`=169, `name`='De Wakkere Akker', `owner_name`='BioMijnNatuur', `opening_description`='', `phone`='', `email`='dewakkereakker@gmail.com', `website`='http://www.wakkereakker.be/', `facebook`='https://www.facebook.com/DeWakkereAkker', `is_disabled`='FALSE',
+            `nation_id`='BE', `post_code`='3020', `city`='Herent', `address_number`='53', `address_string`='Blakstraat ', `latitude`='50.9295531', `longitude`='4.6692565', `subcategory_id`=169
+
+            insert into `opening` set
+            `id`=169, `weekday`='', `opening_time`='', `closing_time`='', `pause_start`='', `pause_end`='', `season_start`='', `season_end`='', `food_point_id`=169
+
+            
+SET SQL_MODE=@OLD_SQL_MODE;
+SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
+SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
+

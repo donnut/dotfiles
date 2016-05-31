@@ -1,0 +1,172 @@
+QUnit.module('Adding register pips', {
+    beforeEach: function() {
+        DEBUG = true;
+        Globals.idCounter = 0;
+        app = Store.Storage(); // reset 'global' space
+    }
+});
+
+QUnit.test('creates shadow element to attach eventPip (id version)', function(assert) {
+
+    var domStr = '' +
+        '<ul id="list">' +
+        '   <li>' +
+        '       <a></a>' +
+        '   </li>' +
+        '   <li id="one">' +
+        '       <a></a>' +
+        '   </li>' +
+        '   <li>' +
+        '       <a></a>' +
+        '   </li>' +
+        '</ul>';
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        selector: '#list>li(2)',
+        type: 'event',
+        events: 'click'
+    }];
+
+    var app = new LinkingPips.App(domStr, [], pips, []);
+    assert.equal(app.get('#list>li(2)').getType(), 'shadowElement');
+    assert.equal(app.get('#list>li(2).events.click').getType(), 'event');
+});
+
+QUnit.test('creates id-based shadow element to attach eventPip', function(assert) {
+
+    var domStr = '' +
+        '<ul id="list">' +
+        '   <li>' +
+        '       <a></a>' +
+        '   </li>' +
+        '   <li id="one">' +
+        '       <a></a>' +
+        '   </li>' +
+        '   <li>' +
+        '       <a></a>' +
+        '   </li>' +
+        '</ul>';
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        selector: '#one',
+        type: 'event',
+        events: 'click'
+    }];
+
+    var app = new LinkingPips.App(domStr, [], pips, []);
+    assert.equal(app.get('#one').getType(), 'shadowElement');
+    assert.equal(app.get('#one.events.click').getType(), 'event');
+});
+
+QUnit.test('creates shadow element to attach eventPip (abs path version)', function(assert) {
+
+    var domStr = '' +
+        '<ul>' +
+        '   <li>' +
+        '       <a></a>' +
+        '   </li>' +
+        '   <li id="one">' +
+        '       <a></a>' +
+        '   </li>' +
+        '   <li>' +
+        '       <a></a>' +
+        '   </li>' +
+        '</ul>';
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        selector: 'ul>li(2)',
+        type: 'event',
+        events: 'click'
+    }];
+
+    var app = new LinkingPips.App(domStr, [], pips, []);
+    assert.equal(app.get('ul>li(2)').getType(), 'shadowElement');
+    assert.equal(app.get('ul>li(2).events.click').getType(), 'event');
+});
+
+QUnit.test('creates shadow element and element to attach eventPip (abs path version)', function(assert) {
+
+    var domStr = '' +
+        '<ul>' +
+        '   <li>' +
+        '       <a></a>' +
+        '   </li>' +
+        '   <li id="one">' +
+        '       <a></a>' +
+        '   </li>' +
+        '   <li>' +
+        '       <a></a>' +
+        '   </li>' +
+        '</ul>';
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        selector: 'ul>li(2)>a',
+        type: 'event',
+        events: 'click'
+    }];
+
+    var app = new LinkingPips.App(domStr, [], pips, []);
+    assert.equal(app.get('ul>li(2)').getType(), 'shadowElement');
+    assert.equal(app.get('ul>li(2)>a').getType(), 'element');
+    assert.equal(app.get('ul>li(2)>a.events.click').getType(), 'event');
+});
+
+QUnit.test('creates shadow element and creates element to attach eventPip (id version)', function(assert) {
+
+    var domStr = '' +
+        '<ul id="list">' +
+        '   <li>' +
+        '       <a></a>' +
+        '   </li>' +
+        '   <li id="one">' +
+        '       <a></a>' +
+        '   </li>' +
+        '   <li>' +
+        '       <a></a>' +
+        '   </li>' +
+        '</ul>';
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        selector: '#list>li(2)>a',
+        type: 'event',
+        events: 'click'
+    }];
+
+    var app = new LinkingPips.App(domStr, [], pips, []);
+    assert.equal(app.get('#list>li(2)').getType(), 'shadowElement');
+    assert.equal(app.get('#list>li(2)>a').getType(), 'element');
+    assert.equal(app.get('#list>li(2)>a.events.click').getType(), 'event');
+});
+
+QUnit.test('creates id-based shadow element and creates element to attach eventPip (id version)', function(assert) {
+
+    var domStr = '' +
+        '<ul id="list">' +
+        '   <li>' +
+        '       <a></a>' +
+        '   </li>' +
+        '   <li>' +
+        '       <a id="one"></a>' +
+        '   </li>' +
+        '   <li>' +
+        '       <a></a>' +
+        '   </li>' +
+        '</ul>';
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        selector: '#one',
+        type: 'event',
+        events: 'click'
+    }];
+
+    var app = new LinkingPips.App(domStr, [], pips, []);
+    assert.equal(app.get('#list>li(1)').getType(), 'shadowElement');
+    assert.equal(app.get('#one').getType(), 'element');
+    assert.equal(app.get('#one.events.click').getType(), 'event');
+});

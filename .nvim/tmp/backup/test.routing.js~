@@ -1,0 +1,482 @@
+QUnit.module('Routing', {
+    beforeEach: function() {
+        DEBUG = true;
+        Globals.idCounter = 0;
+    }
+});
+
+QUnit.test('navigation select pip', function(assert) {
+  var domStr = "<div>" +
+    "<ul id='container'>" +
+    "<li id='i1'><span></span></li>" +
+    "<li id='i2'><span></span></li>" +
+    "<li id='i3'><span></span></li>" +
+    "<li id='i4'><span></span></li>" +
+    "</ul>" +
+    "<ul id='menu1'>" +
+    "<li><a href='i1'></a></li>" +
+    "<li><a href='i2'></a></li>" +
+    "<li><a href='i3'></a></li>" +
+    "<li><a href='i4'></a></li>" +
+    "</ul>" +
+    "<ul id='menu2'>" +
+    "<li><a href='i1'></a></li>" +
+    "<li><a href='i2'></a></li>" +
+    "<li><a href='i3'></a></li>" +
+    "<li><a href='i4'></a></li>" +
+    "</ul>" +
+    "</div>";
+  $('#qunit-fixture').append(domStr);
+
+  var nodes = [{
+    selector: "#menu1>li",
+    type: "listItem",
+    idType: "href"
+  }, {
+    selector: "#menu2>li",
+    type: "listItem",
+    idType: "href"
+  }];
+
+  var pips = [{
+    type: 'targetItem',
+    selector: '#container',
+    routing: true,
+    required: true,
+    one: true
+  }, {
+    type: 'select',
+    selector: '#menu1',
+    it: 'a',
+    required: true,
+    one: true,
+  }, {
+    type: 'select',
+    selector: '#menu2',
+    it:'a',
+    required: true,
+    one: true
+  }];
+
+  var links = [{
+      pub: '#container.target',
+      sub: '#menu1.select'
+  }, {
+      pub: '#menu1.select',
+      sub: '#container.target'
+  }, {
+      pub: '#container.target',
+      sub: '#menu2.select'
+  }, {
+      pub: '#menu2.select',
+      sub: '#container.target'
+  }];
+
+  var app = new LinkingPips.App(domStr, nodes, pips, links);
+  assert.deepEqual(app.get('#container.target').get(), ['i1']);
+  assert.deepEqual(app.get('#menu1>li>a.states.IS_UNSELECTED').get(), {
+    i1: 'IS_SELECTED',
+    i2: 'IS_UNSELECTED',
+    i3: 'IS_UNSELECTED',
+    i4: 'IS_UNSELECTED'
+  });
+  assert.deepEqual(app.get('#menu2>li>a.states.IS_UNSELECTED').get(), {
+    i1: 'IS_SELECTED',
+    i2: 'IS_UNSELECTED',
+    i3: 'IS_UNSELECTED',
+    i4: 'IS_UNSELECTED'
+  });
+
+  app.get('#menu1>li>a.states.IS_UNSELECTED').react([{
+    action: 'update',
+    it: 'i2',
+    value: 'IS_SELECTED'
+  }]);
+  assert.deepEqual(app.get('#container.target').get(), ['i2']);
+  assert.deepEqual(app.get('#menu1>li>a.states.IS_UNSELECTED').get(), {
+    i1: 'IS_UNSELECTED',
+    i2: 'IS_SELECTED',
+    i3: 'IS_UNSELECTED',
+    i4: 'IS_UNSELECTED'
+  });
+  assert.deepEqual(app.get('#menu2>li>a.states.IS_UNSELECTED').get(), {
+    i1: 'IS_UNSELECTED',
+    i2: 'IS_SELECTED',
+    i3: 'IS_UNSELECTED',
+    i4: 'IS_UNSELECTED'
+  });
+});
+
+QUnit.test('shallow nested static html', function(assert) {
+    var domStr = "<div>" +
+    "<ul id='main'>" +
+    " <li id='i1'><span></span></li>" +
+    " <li id='i2'><span></span></li>" +
+    " <li id='i3'><span></span></li>" +
+    " <li id='i4'><span></span></li>" +
+    "</ul>" +
+    "</div>";
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        type: 'targetItem',
+        selector: '#main',
+        name: 'pages',
+        required: true,
+        one: true,
+        routing: true
+    }];
+
+    var app = new LinkingPips.App(domStr, [], pips, []);
+
+    assert.deepEqual(app.get('navTree').unsafeGet(), {
+        "body": {
+            "children": [
+                "i1",
+                "i2",
+                "i3",
+                "i4"
+            ]
+        },
+        "i1": {
+            "children": []
+        },
+        "i2": {
+            "children": []
+        },
+        "i3": {
+            "children": []
+        },
+        "i4": {
+            "children": []
+        }
+    });
+
+    assert.deepEqual(app.get('router').unsafeGet(), {
+        i1: {anc: '#main', active: true}
+    });
+    assert.deepEqual(app.get('#main.target').unsafeGet(), ['i1']);
+    assert.equal($('#i1').css('display'), 'list-item');
+    assert.equal($('#i2').css('display'), 'none');
+    assert.equal($('#i3').css('display'), 'none');
+    assert.equal($('#i4').css('display'), 'none');
+});
+
+QUnit.test('shallow nested static html, incl menu', function(assert) {
+    var domStr = "<div id='body'>" +
+    "<div id='main'>" +
+    " <div id='i1'></div>" +
+    " <div id='i2'></div>" +
+    " <div id='i3'></div>" +
+    " <div id='i4'></div>" +
+    "</div>" +
+    "<ul id='menu'>" +
+    " <li><a href='i1'></a></li>" +
+    " <li><a href='i2'></a></li>" +
+    " <li><a href='i3'></a></li>" +
+    " <li><a href='i4'></a></li>" +
+    "</ul>" +
+    "</div>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        selector: "#menu>li",
+        type: "listItem",
+        idType: "href"
+    }];
+
+    var pips = [{
+        type: 'targetItem',
+        selector: '#main',
+        required: true,
+        one: true,
+        routing: true
+    },{
+        type: 'select',
+        selector: '#menu',
+        required: true,
+        one: true,
+        states: [{
+            name: 'IS_UNSELECTED',
+            attr: 'class',
+            value: 'nonactive'
+        },{
+            name: 'IS_SELECTED',
+            attr: 'class',
+            value: 'active'
+        }]
+    },{
+        type: 'eventItem',
+        events: 'click',
+        selector: '#menu>li',
+        enable: true,
+        delegation: true
+    }];
+
+    var links = [{
+        pub: '#main.target',
+        sub: '#menu.select'
+    },{
+        pub: '#menu.select',
+        sub: '#main.target'
+    },{
+        pub: '#menu>li.events.click',
+        sub: '#menu.select',
+        binding: true,
+        value: function(evt) {
+            return true;
+        },
+        action: 'update'
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+
+    assert.deepEqual(app.get('router').unsafeGet(), {
+        "i1": {
+            "active": true,
+            "anc": "#main"
+        }
+    });
+    assert.deepEqual(app.get('navTree').unsafeGet(),{
+        "body": {
+            "children": [
+                "i1",
+                "i2",
+                "i3",
+                "i4"
+            ]
+        },
+        "i1": {
+            "children": []
+        },
+        "i2": {
+            "children": []
+        },
+        "i3": {
+            "children": []
+        },
+        "i4": {
+            "children": []
+        }
+    });
+    assert.deepEqual(app.get('#main.target').unsafeGet(), ['i1']);
+
+    $('#menu>li:nth-of-type(2)').click();
+
+    assert.deepEqual(app.get('router').unsafeGet(), {
+        "i1": {
+            "active": false,
+            "anc": "#main"
+        },
+        "i2": {
+            "active": true,
+            "anc": "#main"
+        }
+    });
+    assert.deepEqual(app.get('#menu.select').unsafeGet(), ['i2'], 'menu changed');
+    assert.deepEqual(app.get('#menu>li.states.IS_UNSELECTED').unsafeGet(), {
+        "i1": "IS_UNSELECTED",
+        "i2": "IS_SELECTED",
+        "i3": "IS_UNSELECTED",
+        "i4": "IS_UNSELECTED"
+    }, 'menu state changed');
+    assert.deepEqual(app.get('#main.target').unsafeGet(), ['i2'], 'target changed');
+
+    assert.equal($('#i1').css('display'), 'none');
+    assert.equal($('#i2').css('display'), 'block');
+    assert.equal($('#i3').css('display'), 'none');
+    assert.equal($('#i4').css('display'), 'none');
+});
+
+QUnit.test('shallow nested dynamic html', function(assert) {
+    var domStr = "<ul id='main'></ul>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'list',
+        selector: '#main',
+        idKey: 'strip',
+        tpl: "<li><span></span></li>",
+        empty: '<div>no model data yet</div>'
+    }];
+
+    var pips = [{
+        type: 'targetItem',
+        selector: '#main',
+        name: 'pages',
+        required: true,
+        one: true,
+        routing: true,
+        states: [{
+            name: 'IS_TARGET',
+            attr: 'class',
+            value: 'green'
+        },{
+            name: 'NO_TARGET',
+            attr: 'class',
+            value: 'red'
+        }]
+    },{
+        type: 'collection',
+        name: 'colorful',
+        model: [{
+            strip: 'one'
+        }, {
+            strip: 'two'
+        }, {
+            strip: 'three'
+        }, {
+            strip: 'four'
+        }],
+        index: 'id',
+        server: false,
+        emit: true
+    }];
+
+    var links = [{
+        pub: 'models.colorful',
+        sub: '#main.list'
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+    assert.deepEqualSplitKeys(app.get('#main.target').unsafeGet(), ['1%%one'], '%%');
+    assert.deepEqualSplitKeys(app.get('router').unsafeGet(), {
+        '1%%one':{active: true, anc: '#main'}
+    }, '%%');
+});
+
+QUnit.test('routing of dynamic list view', function(assert) {
+    var domStr = "<ul id='main'></ul>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'list',
+        selector: '#main',
+        idKey: 'strip',
+        it: 'li',
+        tpl: "<li><span></span></li>",
+        empty: '<span>no model data yet</span>'
+    }];
+
+    var pips = [ {
+        type: 'targetItem',
+        selector: '#main',
+        required: true,
+        one: true,
+        routing: true,
+    },{
+        type: 'collection',
+        name: 'colorful',
+        model: [{
+            strip: 'one'
+        }, {
+            strip: 'two'
+        }, {
+            strip: 'three'
+        }, {
+            strip: 'four'
+        }],
+        index: 'id',
+        server: false,
+        silent: false
+    }];
+
+    var links = [{
+        pub: 'models.colorful',
+        sub: '#main.list',
+        value: function(i) {
+            return i.value;
+        }
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+    assert.deepEqual(app.get('#main.target').get(), ['1%%one']);
+    assert.deepEqual(app.get('router').get(), {
+        "1%%one": {
+            "active": true,
+            "anc": "#main"
+        }
+    });
+    assert.deepEqual(app.get('#main>li.states.NO_TARGET').get(), {
+        '1%%one': 'IS_TARGET',
+        '2%%two': 'NO_TARGET',
+        '3%%three': 'NO_TARGET',
+        '4%%four': 'NO_TARGET',
+    });
+});
+
+QUnit.test('deep nested static html', function(assert) {
+    var domStr = "<div>" +
+    "<ul id='main'>" +
+    " <li id='i1'>" +
+    "  <ul id='sub1'>" +
+    "   <li id='s11'><span></span></li>" +
+    "   <li id='s12'><span></span></li>" +
+    "   <li id='s13'><span></span></li>" +
+    "   <li id='s14'><span></span></li>" +
+    "  </ul>" +
+    " </li>" +
+    " <li id='i2'>" +
+    "  <ul id='sub2'>" +
+    "   <li id='s21'><a href='s11'></a></li>" +
+    "   <li id='s22'><a href='s12'></a></li>" +
+    "   <li id='s23'><a href='s13'></a></li>" +
+    "   <li id='s24'><a href='s14'></a></li>" +
+    "  </ul>" +
+    " </li>" +
+    " <li id='i3'><span></span></li>" +
+    " <li id='i4'><span></span></li>" +
+    "</ul>" +
+    "</div>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        selector: "#sub2>li",
+        type: "listItem",
+        idType: "href"
+    }];
+
+    var pips = [{
+        type: 'targetItem',
+        selector: '#sub1',
+        routing: true,
+        required: true,
+        one: true
+    }, {
+        type: 'select',
+        selector: '#sub2',
+        required: true,
+        one: true
+    }];
+
+    var links = [{
+        pub: '#sub1.target',
+        sub: '#sub2.select'
+    }, {
+        pub: '#sub2.select',
+        sub: '#sub1.target'
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+
+    assert.deepEqual(app.get('router').unsafeGet(), {
+        's11': {active: true, anc: '#sub1'}
+    });
+    assert.deepEqual(app.get('navTree').unsafeGet(), {
+        body: {
+            children: ['s11', 's12', 's13', 's14']
+        },
+        s11: { children: [] },
+        s12: { children: [] },
+        s13: { children: [] },
+        s14: { children: [] }
+    });
+    assert.deepEqual(app.get('#sub1>li.states.NO_TARGET').unsafeGet(), {
+        s11: 'IS_TARGET', s12: 'NO_TARGET', s13: 'NO_TARGET', s14: 'NO_TARGET'
+    });
+    assert.deepEqual(app.get('#sub2>li.states.IS_UNSELECTED').unsafeGet(), {
+        s11: 'IS_SELECTED', s12: 'IS_UNSELECTED', s13: 'IS_UNSELECTED', s14: 'IS_UNSELECTED'
+    });
+    assert.deepEqual(app.get('#sub1.target').unsafeGet(), ['s11']);
+
+});

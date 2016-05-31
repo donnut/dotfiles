@@ -1,0 +1,54 @@
+define(['require'], function(require) {
+
+  var mongoose = require('mongoose'),
+      util = require('util'),
+      _ = require('lodash'),
+      revision = require('mongoose-revisions')(mongoose),
+      Brick = require('stubs/Brick').Model;
+
+  //var Schema = mongoose.Schema;
+
+  //function BaseAppElementSchema() {
+    //Schema.apply(this, arguments);
+
+    //this.add({
+      //pid:   Schema.Types.ObjectId,
+      //DOMId: String,
+      //anc:   [Schema.Types.ObjectId],
+      //use:   String
+    //});
+
+    //this.method({
+      /**
+       * Deletes the current appEl and removes its reference from the parent
+       */
+      //delete: function(cb) {
+        //var id = this._id, that = this;
+        //// remove the widget reference from the parent
+        //this.remove(function(err) {
+          //if (err) return cb(err);
+          //mongoose.model('AppElement').findOne({chld: id}, function(err, parent) {
+            //if (err) return cb(err);
+            //if (!parent) return cb(null);
+            //var children = _.pull(parent.get('chld'), id);
+            //parent.set('chld', children);
+            //parent.save(function(err) {
+              //return cb(err);
+            //});
+          //});
+        //});
+      //}
+    //});
+  //}
+  //util.inherits(BaseAppElementSchema, Schema);
+
+  //var AppElementSchema = new BaseAppElementSchema({}, {collection: 'appelements'});
+
+  //AppElementSchema.plugin(revision.versions, {chainId: 'pid'});
+
+  //return {
+    //BaseSchema: BaseAppElementSchema,
+    //Model : mongoose.model('AppElement', AppElementSchema)
+  //};
+
+});

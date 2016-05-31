@@ -1,0 +1,32 @@
+from sklearn.externals import joblib
+from collections import Counter
+from nltk.collocations import *
+
+prev = '<s>'
+singles = []
+pairs = []
+count = 0
+with open('tokens.txt') as f:
+    for token in f:
+        token = token.strip('\n')
+        singles.append(token)
+        #pairs.append("%s %s" %(prev, token))
+        #prev = token
+        
+#unigrams = Counter(singles)
+#joblib.dump(unigrams, 'unigrams.pck')        
+#unigrams = ''
+
+def load_counts(finder):
+    """Return a Counter initialized from key-value pairs"""
+    C = Counter()
+    for k,v in finder.ngram_fd.items():
+        key = k[0] + " " + k[1]
+        C[key] = int(v)
+    return C
+
+finder = BigramCollocationFinder.from_words(singles)
+bigrams = load_counts(finder)
+
+joblib.dump(bigrams, '.bigrams.pck')
+        

@@ -1,0 +1,21 @@
+var _ = require('lodash');
+var R = require('ramda');
+
+//var sum = _.curry(_.reduce)(_, function(acc, num) {
+    //return acc += num;
+//}, 0);
+//console.log(sum([1,2,3,4,5,6,7,8,9]));
+
+var reduce = _.curry(_.reduce);
+console.log(reduce([1,2,3,4,5], function(acc, num){ return acc += num;}, 0, {}));
+
+var list = [1,2,3,4,5];
+var reduce = R.flip(R.reduce)(R.__, 0, function(acc, num) {
+    return acc += num;
+});
+console.log(reduce(list));
+
+var reduce = R.reduce(function(acc, num) {
+    return acc += num;
+}, 0);
+console.log(reduce(list));

@@ -1,0 +1,29 @@
+define(['require'], function(require) {
+
+  var Proto         = require('lib/schemas/repo/FakePrototype').Schema;
+  var FakeFactory = {
+
+    /**
+    * backPalet = array palet van backgroundkleur: [ 'string', 'number', 'nu'mber']
+    * colorSetPalets = object met in kleurset gebruikete palets, bijvoorbeeld
+                palets: {//dit zijn de in deze colorset toegepaste palets uit de colorselection
+                    grey:[0],
+                    // bright:[5],
+                    color:[0,1],//kan zal niet snel voorkomen
+                    neutral:[0]
+                  },
+    brightNeeded: boolean, als weggelaten  default false
+    *
+    **/
+    create: function(cb) {
+
+      return cb();
+    }
+
+
+  };
+
+
+  return FakeFactory;
+
+});

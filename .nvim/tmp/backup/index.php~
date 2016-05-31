@@ -1,0 +1,36 @@
+<?php
+require_once __DIR__.'/vendor/autoload.php';
+
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+$app = new Silex\Application();
+$app->register(new Silex\Provider\SwiftmailerServiceProvider());
+
+$app['swiftmailer.options'] = array(
+  'host'=>'mail.wbbit.com',
+  'port'=> '587',
+  'username' => 'erwin@wbbit.com',
+  'password' => 'LOmKMMmg9I5174',
+  'auth_mode' => 'login'
+);
+
+$app->post('/formModel', function(Request $request) use ($app) {
+
+  $message = \Swift_Message::newInstance()
+    ->setSubject("Website info request")
+    ->setFrom("noreply@wbbit.com")
+    ->setTo("erwin@wbbit.com")
+    ->setBody($request->getContent());
+
+  $app['mailer']->send($message);
+
+  return new Response('Thank you for your feedback!', 201);
+});
+
+$app->get('/', function() {
+  return file_get_contents(__DIR__.'/mope.html');
+});
+    
+$app->run();
+

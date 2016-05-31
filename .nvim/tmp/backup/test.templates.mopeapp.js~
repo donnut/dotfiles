@@ -1,0 +1,569 @@
+QUnit.module('Template and TemplateItem Pips - MOPEApp', {
+    beforeEach: function() {
+        DEBUG = true;
+        Globals.idCounter = 0;
+    }
+});
+
+QUnit.test('templatePip, creates hidden element', function(assert) {
+    var domStr = "<div id='header'></div>";
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        type: 'template',
+        selector: '#header',
+        attr: 'html',
+        empty: 'Regular text'
+    }];
+    var app = new LinkingPips.App(domStr, [], pips, []);
+    assert.equal($('#header').html(), 'Regular text');
+
+    var pipStr = app.getAll();
+    assert.equal(app.get('#header.html').get(), 'Regular text', 'default string set through options');
+
+    // update pip
+    app.get('#header.html').react({
+        value: 'new text',
+        action: 'update'
+    });
+    assert.equal(app.get('#header.html').get(), 'new text');
+    assert.equal($('#header').html(), 'new text');
+
+    // delete pip
+    app.get('#header.html').react({
+        action: 'delete'
+    });
+    assert.equal(app.get('#header.html').get(), 'Regular text');
+    assert.equal($('#header').html(), 'Regular text');
+
+    // create pip
+    app.get('#header.html').react({
+        action: 'create',
+        value: 'second try'
+    });
+    assert.equal(app.get('#header.html').get(), 'second try');
+    assert.equal($('#header').html(), 'second try');
+});
+
+// QUnit.test('templatePip on sub view', function(assert) {
+// This is kind of exceptional case where the content of an empty string
+// is filled by a template. Not important. Requires an `emptyLink` that
+// converts `remove` into `insert` and vv
+//     var domStr = "<div id='main'></div>";
+//     $('#qunit-fixture').append(domStr);
+//
+//     var nodes = [{
+//         type: 'sub',
+//         selector: '#main',
+//         tpl: "<div></div>",
+//         empty: '<p id="empty">not filled</p>'
+//     }];
+//
+//     var pips = [{
+//         type: 'template',
+//         selector: '#empty',
+//         attr: 'html',
+//         empty: 'Regular text'
+//     }];
+//
+//     var links = [{
+//         sub: "#empty",
+//         pub: "#empty.html",
+//         options: {
+//             value: ['map', function(l) {
+//                 return l.value;
+//             }],
+//             action: ['map', function(l) {
+//                 return l.action;
+//             }],
+//         }
+//     }];
+//
+//     var app = new LinkingPips.App(domStr, nodes, pips, links);
+//
+//     var pipStr = app.getAll();
+//     assert.equal(app.get('#empty.html').get(), 'Regular text', 'default string set through options');
+//
+//     // update pip
+//     app.get('#empty.html').react({
+//         value: 'new text',
+//         action: 'update'
+//     });
+//     assert.equal(app.get('#empty.html').get(), 'new text');
+//     assert.equal($('#empty').html(), 'new text');
+//
+//     // delete pip
+//     app.get('#empty.html').react({
+//         action: 'delete'
+//     });
+//     assert.equal(app.get('#empty.html').get(), 'Regular text');
+//     assert.equal($('#empty').html(), 'Regular text');
+//
+//     // create pip
+//     app.get('#empty.html').react({
+//         action: 'create',
+//         value: 'second try'
+//     });
+//     assert.equal(app.get('#empty.html').get(), 'second try');
+//     assert.equal($('#empty').html(), 'second try');
+// });
+
+QUnit.test('templateItemPip with static list', function(assert) {
+    var domStr = "<ul id='main'>" +
+        "<li id='i1'><span></span></li>" +
+        "<li id='i2'><span></span></li>" +
+        "<li id='i3'><span></span></li>" +
+        "<li id='i4'><span></span></li>" +
+        "</ul>";
+
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        selector: "#main>li",
+        type: "listItem",
+        idType: "id"
+    }];
+
+    var pips = [{
+        type: 'templateItem',
+        selector: '#main>li',
+        attr: 'html',
+        empty: 'fill here'
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, []);
+
+    assert.ok($('#i1').html('fill here'));
+    assert.ok($('#i2').html('fill here'));
+    assert.ok($('#i3').html('fill here'));
+    assert.ok($('#i4').html('fill here'));
+
+    var pipStr = app.getAll();
+    assert.deepEqual(app.get('#main>li.html').get(), {
+        i1: 'fill here',
+        i2: 'fill here',
+        i3: 'fill here',
+        i4: 'fill here'
+    }, 'default strings set through options');
+
+    // update pip
+    app.get('#main>li.html').react([{
+        value: 'new text',
+        action: 'update',
+        it: 'i3'
+    }]);
+    assert.equal(app.get('#main>li.html').get('i3'), 'new text', 'post update');
+    assert.equal($('#main>li').eq(2).html(), 'new text', 'post update');
+
+    // delete pip
+    app.get('#main>li.html').react([{
+        action: 'delete',
+        it: 'i3'
+    }]);
+    assert.equal(app.get('#main>li.html').get('i3'), 'fill here', 'post delete');
+    assert.equal($('#main>li').eq(2).html(), 'fill here', 'post delete');
+
+    // create pip -- works as update
+    app.get('#main>li.html').react([{
+        action: 'create',
+        value: 'second try',
+        it: 'i4'
+    }]);
+    assert.equal(app.get('#main>li.html').get('i4'), 'second try', 'post create');
+    assert.equal($('#main>li').eq(3).html(), 'second try', 'post create');
+
+    // insert -- impossible for static DOM, will have no effect
+    // app.get('#main.li.html').react([{
+    //     action: 'insert',
+    //     value: DOMIO.create('#main.li'),
+    //     it: 'i5'
+    // }]);
+    // assert.deepEqual(app.get('#main.li.html').get(), {}, 'post insert');
+    // assert.equal($('#main>li').length, 4, 'post insert');
+    //
+    // // remove -- impossible for static DOM, will have no effect
+    // app.get('#main.li.html').react([{
+    //     action: 'remove',
+    //     value: 'second try',
+    //     it: 'i2'
+    // }]);
+    // assert.equal(app.get('#main.li.html').get('i2'), 'fill here', 'post remove');
+    // assert.equal($('#main>li').eq(1).html(), 'fill here', 'post remove');
+
+});
+
+QUnit.test('templateItemPip with static list + listElement', function(assert) {
+    var domStr = "<ul id='main'>" +
+        "<li id='i1'><span></span></li>" +
+        "<li id='i2'><span></span></li>" +
+        "<li id='i3'><span></span></li>" +
+        "<li id='i4'><span></span></li>" +
+        "</ul>";
+
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        selector: "#main>li",
+        type: "listItem",
+        idType: "id"
+    }];
+
+    var pips = [{
+        type: 'templateItem',
+        selector: '#main>li>span',
+        attr: 'html',
+        empty: 'fill here'
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, []);
+
+    assert.ok($('#i1>span').html('fill here'));
+    assert.ok($('#i2>span').html('fill here'));
+    assert.ok($('#i3>span').html('fill here'));
+    assert.ok($('#i4>span').html('fill here'));
+
+    var pipStr = app.getAll();
+    assert.deepEqual(app.get('#main>li>span.html').get(), {
+        i1: 'fill here',
+        i2: 'fill here',
+        i3: 'fill here',
+        i4: 'fill here'
+    }, 'default strings set through options');
+
+    // update pip
+    app.get('#main>li>span.html').react([{
+        value: 'new text',
+        action: 'update',
+        it: 'i3'
+    }]);
+    assert.equal(app.get('#main>li>span.html').get('i3'), 'new text', 'post update');
+    assert.equal($('#main span').eq(2).html(), 'new text', 'post update');
+
+    // delete pip
+    app.get('#main>li>span.html').react([{
+        action: 'delete',
+        it: 'i3'
+    }]);
+    assert.equal(app.get('#main>li>span.html').get('i3'), 'fill here', 'post delete');
+    assert.equal($('#main span').eq(2).html(), 'fill here', 'post delete');
+
+    // create pip -- works as update
+    app.get('#main>li>span.html').react([{
+        action: 'create',
+        value: 'second try',
+        it: 'i4'
+    }]);
+    assert.equal(app.get('#main>li>span.html').get('i4'), 'second try', 'post create');
+    assert.equal($('#main span').eq(3).html(), 'second try', 'post create');
+
+});
+
+QUnit.test('templateItemPip on dynamic list view', function(assert) {
+    var domStr = "<ul id='main'></ul>";
+
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'list',
+        selector: '#main',
+        idKey: 'strip',
+        tpl: "<li><span></span></li>",
+        empty: 'no model data yet'
+    }];
+
+    var pips = [{
+        type: 'templateItem',
+        selector: '#main>li',
+        attr: 'append',
+        empty: 'fill here'
+    },{
+        type: 'collection',
+        name: 'colorful',
+        model: [{
+            strip: 'one'
+        }, {
+            strip: 'two'
+        }, {
+            strip: 'three'
+        }, {
+            strip: 'four'
+        }],
+        index: 'id',
+        server: false,
+        silent: false
+    }];
+
+    var links = [{
+        pub: 'models.colorful',
+        sub: '#main.list',
+        options: {
+            value: ['map', function(i) {
+                return i.value;
+            }],
+            action: ['map', function(i) {
+                return i.action;
+            }],
+            it: ['map', function(i) {
+                return i.it;
+            }]
+        }
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+
+    var pipStr = app.getAll();
+    assert.deepEqualSplitKeys(app.get('#main.list').get(), [
+        '1%%one', '2%%two', '3%%three', '4%%four'
+    ]);
+    assert.deepEqualSplitKeys(app.get('#main>li.append').get(), {
+        '1%%one': 'fill here',
+        '2%%two': 'fill here',
+        '3%%three': 'fill here',
+        '4%%four': 'fill here'
+    });
+
+    // create model in collection
+    app.get('models.colorful').react([{
+        action: 'create',
+        value: {strip: 'five'}
+    }]);
+    assert.deepEqualSplitKeys(app.get('#main>li.append').get(), {
+        "1%%one": "fill here",
+        "2%%two": "fill here",
+        "3%%three": "fill here",
+        "4%%four": "fill here",
+        "5%%five": "fill here"
+    }, 'post insert template register');
+    assert.equal($('#main>li').length, 5, 'post insert DOM');
+
+    // delete model from collection
+    var id = app.get('models.colorful').get()[0].__it;
+    app.get('models.colorful').react([{
+        action: 'delete',
+        it: id
+    }]);
+    assert.deepEqualSplitKeys(app.get('#main.list').get(), [
+        "2%%two", "3%%three", "4%%four", "5%%five",
+    ], 'post delete list register');
+    assert.deepEqualSplitKeys(R.keys(app.get('#main>li').get()), [
+        "2%%two", "3%%three", "4%%four", "5%%five",
+    ], 'post delete listItem register');
+    assert.deepEqualSplitKeys(app.get('#main>li.append').get(), {
+        "2%%two": "fill here",
+        "3%%three": "fill here",
+        "4%%four": "fill here",
+        "5%%five": "fill here"
+    }, 'post delete template register');
+    assert.equal($('#main>li').length, 4, 'post insert DOM');
+
+    // update model content used for DOM element id
+    // error: see issue #12
+    // app.get('models.colorful').react([{
+    //     action: 'update',
+    //     it: '4',
+    //     value: {strip: 'better'}
+    // }]);
+});
+
+QUnit.test('templateItemPip on dynamic list view + listElement', function(assert) {
+    var domStr = "<ul id='main'></ul>";
+
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'list',
+        selector: '#main',
+        idKey: 'strip',
+        tpl: "<li><span></span></li>",
+        empty: '<span>no model data yet</span>'
+    }];
+
+    var pips = [{
+        type: 'templateItem',
+        selector: '#main>li>span',
+        attr: 'prepend',
+        empty: 'fill here'
+    },{
+        type: 'collection',
+        name: 'colorful',
+        model: [{
+            strip: 'one'
+        }, {
+            strip: 'two'
+        }, {
+            strip: 'three'
+        }, {
+            strip: 'four'
+        }],
+        index: 'id',
+        server: false,
+        silent: false
+    }];
+
+    var links = [{
+        pub: 'models.colorful',
+        sub: '#main.list'
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+
+    var pipStr = app.getAll();
+    assert.deepEqualSplitKeys(app.get('#main>li>span.prepend').get(), {
+        '1%%one': 'fill here',
+        '2%%two': 'fill here',
+        '3%%three': 'fill here',
+        '4%%four': 'fill here'
+    });
+
+    // create model in collection
+    app.get('models.colorful').react([{
+        action: 'create',
+        value: {strip: 'five'},
+    }]);
+    assert.deepEqualSplitKeys(app.get('#main>li>span.prepend').get(), {
+        "1%%one": "fill here",
+        "2%%two": "fill here",
+        "3%%three": "fill here",
+        "4%%four": "fill here",
+        "5%%five": "fill here"
+    }, 'post insert template register');
+    assert.equal($('#main span').length, 5, 'post insert DOM');
+
+    // delete model from collection
+    app.get('models.colorful').react([{
+        action: 'delete',
+        it: '1'
+    }]);
+    assert.deepEqualSplitKeys(app.get('#main.list').get(), [
+        "2%%two", "3%%three", "4%%four", "5%%five",
+    ], 'post delete list register');
+    assert.deepEqualSplitKeys(R.keys(app.get('#main>li>span').get()), [
+        "2%%two", "3%%three", "4%%four", "5%%five",
+    ], 'post delete listItem register');
+    assert.deepEqualSplitKeys(app.get('#main>li>span.prepend').get(), {
+        "2%%two": "fill here",
+        "3%%three": "fill here",
+        "4%%four": "fill here",
+        "5%%five": "fill here"
+    }, 'post delete template register');
+    assert.equal($('#main span').length, 4, 'post insert DOM');
+
+    // delete all model items
+    app.get('models.colorful').react({
+        action: 'delete'
+    });
+    assert.deepEqual(app.get('#main.list').get(), [], 'post empty list register');
+    assert.deepEqual(R.keys(app.get('#main>li').get()), [], 'post empty listItems');
+    assert.deepEqual(R.keys(app.get('#main>li>span').get()), [], 'post empty listElements');
+    assert.deepEqual(app.get('#main>li>span.prepend').get(), {}, 'post empty templateItems');
+    assert.equal($('#main span').length, 1, 'post empty DOM');
+    assert.equal($('#main span').html(), 'no model data yet');
+
+});
+
+QUnit.test('templateItemPip on dynamic list view deleting collection', function(assert) {
+    var domStr = "<ul id='main'></ul>";
+
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'list',
+        selector: '#main',
+        idKey: 'strip',
+        it: 'li',
+        tpl: "<li><span></span></li>",
+        empty: '<span>no model data yet</span>'
+    }];
+
+    var pips = [{
+        type: 'templateItem',
+        selector: '#main>li>span',
+        attr: 'prepend',
+        empty: 'fill here'
+    },{
+        type: 'collection',
+        name: 'colorful',
+        model: [{
+            strip: 'one'
+        }, {
+            strip: 'two'
+        }, {
+            strip: 'three'
+        }, {
+            strip: 'four'
+        }],
+        index: 'id',
+        server: false,
+        silent: false
+    }];
+
+    var links = [{
+        pub: 'models.colorful',
+        sub: '#main.list'
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+
+    app.get('models.colorful').react({action: 'delete'});
+
+    assert.deepEqual(app.get('models.colorful').get(), [], 'empty collection');
+    assert.deepEqual(app.get('#main.list').get(), [], 'empty list');
+    assert.deepEqual(app.get('#main>li').get(), {}, 'empty listItems');
+    assert.deepEqual(app.get('#main>li>span').get(), {}, 'empty listElements');
+    assert.deepEqual(app.get('#main>li>span.prepend').get(), {}, 'empty stateItems');
+    assert.equal($('#main li').length, 0, 'empty DOM');
+});
+
+QUnit.test('templatePip on dom input tag, see issue #8 of pips-todomvc', function(assert) {
+    var domStr = "<div id='main'><input/></div>";
+
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        type: 'template',
+        selector: '#main>input',
+        attr: 'value',
+        empty: '<span>fill here</span>'
+    },{
+        type: 'model',
+        name: 'colorful',
+        model: {
+            strip: 'one'
+        },
+        index: 'id',
+        server: false,
+        silent: false
+    },{
+        type: 'event',
+        selector: '#main>input',
+        events: 'value'
+    }];
+
+    var links = [{
+        pub: 'models.colorful',
+        sub: '#main>input.value',
+        value: function(i) {
+            return i.value.strip;
+        }
+    },{
+        pub: '#main>input.events.value',
+        sub: 'models.colorful',
+        value: function(l) {
+            return l.value;
+        }
+    }];
+
+    var app = new LinkingPips.App(domStr, [], pips, links);
+
+    assert.deepEqual(app.get('models.colorful').get(), {strip: 'one'}, 'initial model');
+    assert.deepEqual(app.get('#main>input.value').get(), 'one', 'initial input value');
+    assert.deepEqual($('#main>input').val(), 'one', 'initial input value');
+
+    // $('#main>input').val('three');
+    // assert.deepEqual(app.get('#main>input.value').get(), 'three', 'manual set input value');
+    // assert.deepEqual($('#main>input').val(), 'three', 'manual set input value');
+
+    app.get('models.colorful').react({action: 'update', value: {strip: 'two'}});
+    assert.deepEqual(app.get('models.colorful').get(), {strip: 'two'}, 'model');
+    assert.deepEqual(app.get('#main>input.value').get(), 'two', 'input value');
+});

@@ -1,0 +1,47 @@
+import pytest
+import pickle
+
+from nltk.tokenize.punkt import PunktSentenceTokenizer
+from nltk import word_tokenize
+
+from ocr.train import Train
+from ocr.features import ServiceKenLM, ServiceNgrams
+
+#@pytest.fixture(scope='session')
+#def sents():
+    #with open('./ocr/test/fixtures/samanthas-droom.txt', 'r') as f:
+        #raw = f.read()
+        #sents = PunktSentenceTokenizer().sentences_from_text(raw)
+        #tokened_sents = [word_tokenize(s) for s in sents]
+    #return tokened_sents
+
+@pytest.fixture(scope='session')
+def service():
+    #with open('./ocr/test/fixtures/lexicon.p', 'rb') as f:
+        #return pickle.load(f)
+    return ServiceKenLM()
+
+def test_assert_sents(service):
+    clean = ['<s>','Zij', 'ging', ('vroeg',1), 'naar bed', '.']
+    best =  ['<s>','Zij', 'ging', '__null__', ('vroeg',1), 'naar bed', '.']
+    t = Train(service)
+    assert t.assert_sents(best, clean)
+
+def test_assert_sents_2(service):
+    best =   ['', 'over', 'wat', 'daar', 'allemaal', 'tuss en', 'ligt', ',', 'over', 'zonsverduistering en', '__null__',  ('vallende', 1), 'sterren', ',', 'over', 'stormen', 'en', 'de', 'stilte', 'die', 'daaraan', 'vooraf', 'pleegt', 'te', 'gaan', '', 'al', 'varend', 'Barend se', '57', 'op', 'de', 'het', 'eigen', 'rustige', '', 'kopen', 'en', 'deskundige', 'manier', 'gaan', 'vertellen']
+    clean =  ['', 'Over', 'wat', 'daar', 'allemaal', 'tussen', 'ligt', ',', 'over', 'zonsverduisteringen',  'vallende', 'sterren', ',', 'over', 'stormen', 'en', 'de', 'stilte', 'die', 'daaraan', 'vooraf', 'pleegt', 'te', 'gaan', ',', 'zal', 'Barend', 'Barendse', '57', 'op', 'de', 'hem', 'eigen', 'rustige', ',', 'open', 'en', 'deskundige', 'manier', 'gaan', 'vertellen']
+    t = Train(service)
+    assert not t.assert_sents(best, clean)
+
+def test_assert_sents_3(service):
+    best =   ['', 'Over', 'wat daar', 'allemaal', 'tussen', 'ligt', ',', 'over',  '__null__',  ('vallende', 1), 'sterren', '.']
+    clean =  ['', 'Over', 'wat', 'daar', 'allemaal', 'tussen', 'ligt', ',', 'over',  'vallende', 'sterren', '.']
+    t = Train(service)
+    assert t.assert_sents(best, clean)
+
+def test_train_1(service):
+    clean = [['<s>','Zij', 'ging', ('vroeg',1), 'naar bed', '.']]
+    dirty = [['<s>', 'Zij', 'ging', 'vr', 'oeg', 'naarbed', '.']]
+    t = Train(service)
+    assert t.train(dirty, clean) == (
+           0.027098388388812823, 0.20413926851582248, 0.1, 0.1 )

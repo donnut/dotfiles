@@ -1,0 +1,48 @@
+var
+  mongoose = require('mongoose'),
+  assert = require('assert'),
+  async = require('async'),
+  requirejs = require('requirejs');
+
+requirejs.config({
+  baseUrl: __dirname+'/..',
+  nodeRequire: require
+});
+
+
+var fixtures = null;
+mongoose.connection.on('error', function() {});
+mongoose.connect('localhost/test_wbbit');
+//mongoose.set('debug',true);
+
+describe('Repo', function() {
+
+  before(function(done) {
+   fixtures = require('pow-mongodb-fixtures').connect('test_wbbit');
+    fixtures.clearAllAndLoad(__dirname + '/fixtures/defaultRepo-fixtures.js', function() {
+      done();
+    });
+  });
+
+  describe('create', function() {
+    it('should create Repo', function(done) {
+      requirejs(['require'], function(require) {
+        var RepoFactory = require('lib/factories/FakeFactory');
+
+        RepoFactory.create(function(err) {
+          if(err) {
+            console.log('test', err);
+            done();
+          } else {
+            console.log('done');
+            done();
+          }
+        });
+      });
+    });
+  });
+
+  after(function() {
+  });
+
+});

@@ -1,0 +1,131 @@
+QUnit.module('DOM Tree reshaping', {
+    beforeEach: function() {
+        DEBUG = true;
+        Globals.idCounter = 0;
+        Globals.pips = Store.Storage(); // reset 'global' space
+
+        TPips = (function() {
+            function TPips() {
+                this.value = {};
+            }
+            TPips.prototype.set = function(domId, $domIo) {
+                this.value[domId] = $domIo;
+            }
+            TPips.prototype.get = function(id) {
+                return this.value[id];
+            }
+            return TPips;
+        }());
+    },
+    afterEach: function() {
+        TPips = void 0;
+    }
+});
+
+
+QUnit.test('basic integration test', function(assert) {
+    var domStr = "<div id='main'></div>";
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        type: 'treeModel',
+        name: 'storage',
+        tpl: '<div></div>',
+        server: false,
+        silent: false,
+    }];
+
+    var app = new LinkingPips.App(domStr, pips, [], [], 'pips', {
+        name: 'treeModel',
+        ref: 'model',
+        options: {
+            diffTest: Tree.Diff.diff,
+            pipFn: Tree.Reshape.morf
+        }
+    });
+});
+
+QUnit.test('insert nodes in partially filed tree', function(assert) {
+    $('#qunit-fixture').append("<div class='1'><div class='3'></div></div>");
+    var pips = new TPips();
+    pips.set('#1', DOMIO.create('.1'));
+    pips.set('#3', DOMIO.create('.3'));
+
+    var from = new Tree.Reshape.TNode('<div class="1"></div>', '1',
+                new Tree.Reshape.TNode('<p class="3"></p>', '3'));
+
+    var to = new Tree.Reshape.TNode('<div class="1"></div>', '1',
+                new Tree.Reshape.TNode('<div class="2"></div>', '2',
+                    new Tree.Reshape.TNode('<div class="4"></div>', '4',
+                        new Tree.Reshape.TNode('<div class="6"></div>', '6')),
+                    new Tree.Reshape.TNode('<div class="5"></div>', '5')),
+                new Tree.Reshape.TNode('<p class="3"></p>', '3',
+                    new Tree.Reshape.TNode('<div class="8"></div>', '8',
+                        new Tree.Reshape.TNode('<div class="9"></div>', '9'))));
+    var pipOut = Tree.Reshape.morf(from, to, pips);
+    assert.equal($(($('.1').children())[0]).attr('class'), '2');
+    assert.equal($(($('.1').children())[1]).attr('class'), '3');
+    assert.equal($(($('.2').children())[0]).attr('class'), '4');
+    assert.equal($(($('.2').children())[1]).attr('class'), '5');
+    assert.equal($(($('.4').children())[0]).attr('class'), '6');
+    assert.equal($(($('.3').children())[0]).attr('class'), '8');
+    assert.equal($(($('.8').children())[0]).attr('class'), '9');
+    assert.deepEqual(R.pluck('it', pipOut), ['2','4','6','5','8','9']);
+});
+
+QUnit.test('one-node tree, unchanged', function(assert) {
+
+    var from = {
+        nid: '1',
+        tpl: '<div></div>',
+        child: []
+    }
+
+    var recipe = Tree.Reshape.morf(from, from);
+    assert.deepEqual(recipe, []);
+});
+
+QUnit.test('from three-node tree to empty', function(assert) {
+
+    $('#qunit-fixture').append("<div class='1'><div class='2'></div><div class='3'></div></div>");
+    var pips = new TPips();
+    pips.set('#1', DOMIO.create('.1'));
+    pips.set('#2', DOMIO.create('.2'));
+    pips.set('#3', DOMIO.create('.3'));
+    var from = new Tree.Reshape.TNode('<div class="1"></div>', '1',
+                new Tree.Reshape.TNode('<div class="2"></div>', '2'),
+                new Tree.Reshape.TNode('<div class="3"></div>', '3'));
+    var to = {};
+
+    var pipOut = Tree.Reshape.morf(from, to, pips);
+    assert.deepEqual(R.zip(R.pluck('action', pipOut), R.pluck('it', pipOut)), [
+        [ "remove", "1" ],
+        [ "remove", "2" ],
+        [ "remove", "3" ]
+    ]);
+});
+
+QUnit.test('shuffled two-level tree', function(assert) {
+    $('#qunit-fixture').append("<div class='1'><div class='2'></div><div class='3'></div><div class='4'></div></div>");
+    var pips = new TPips();
+    pips.set('#1', DOMIO.create('.1'));
+    pips.set('#2', DOMIO.create('.2'));
+    pips.set('#3', DOMIO.create('.3'));
+    pips.set('#4', DOMIO.create('.4'));
+
+    var from = new Tree.Reshape.TNode('<div class="1"></div>', '1',
+                new Tree.Reshape.TNode('<div class="2"></div>', '2'),
+                new Tree.Reshape.TNode('<div class="3"></div>', '3'),
+                new Tree.Reshape.TNode('<div class="4"></div>', '4'));
+    var to = new Tree.Reshape.TNode('<div class="1"></div>', '1',
+                new Tree.Reshape.TNode('<div class="3"></div>', '3'),
+                new Tree.Reshape.TNode('<div class="2"></div>', '2'),
+                new Tree.Reshape.TNode('<div class="4"></div>', '4'));
+
+    var pipOut = Tree.Reshape.morf(from, to, pips);
+    assert.equal($(($('.1').children())[0]).attr('class'), '3');
+    assert.equal($(($('.1').children())[1]).attr('class'), '2');
+    assert.equal($(($('.1').children())[2]).attr('class'), '4');
+    assert.equal(pipOut.length, 0);
+});
+

@@ -1,0 +1,37 @@
+import pytest
+import pickle
+from collections import Counter
+from ocr.kneser_ney import KneserNeyLM
+from nltk.corpus import gutenberg
+from nltk.util import ngrams
+
+@pytest.mark.skip(reason='takes a long time')
+def test_unigram():
+    gut_ngrams = (
+        ngram for sent in gutenberg.sents() for ngram in ngrams(sent, 1,
+        pad_left=True, pad_right=True, pad_symbol='<s>'))
+    lm = KneserNeyLM(1, gut_ngrams, end_pad_symbol='<s>')
+    score = lm.score_sent(('This', 'is', 'a', 'sample', 'sentence', '.'))
+    assert round(score, 3) == -45.503
+    assert round(lm.logprob(('This',)), 3) == -7.701
+
+#@pytest.mark.skip(reason='takes a long time')
+def test_bigram():
+    gut_ngrams = (
+        ngram for sent in gutenberg.sents() for ngram in ngrams(sent, 2,
+        pad_left=True, pad_right=True, pad_symbol='<s>'))
+    lm = KneserNeyLM(2, gut_ngrams, end_pad_symbol='<s>')
+    score = lm.score_sent(('This', 'is', 'a', 'sample', 'sentence', '.'))
+    assert round(score, 3) == -61.410
+    assert round(lm.logprob(('<s>','This')), 3) == -16.836
+    assert round(lm.logprob(('This','is')), 3) == -7.924
+
+@pytest.mark.skip(reason='takes a long time')
+def test_trigram():
+    gut_ngrams = (
+        ngram for sent in gutenberg.sents() for ngram in ngrams(sent, 3,
+        pad_left=True, pad_right=True, pad_symbol='<s>'))
+    lm = KneserNeyLM(3, gut_ngrams, end_pad_symbol='<s>')
+    score = lm.score_sent(('This', 'is', 'a', 'sample', 'sentence', '.'))
+    assert round(score, 3) == -56.198
+

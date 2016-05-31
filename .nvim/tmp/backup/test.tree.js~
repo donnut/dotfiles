@@ -1,0 +1,774 @@
+QUnit.module('Tree', {
+    beforeEach: function() {
+        DEBUG = true;
+        Globals.idCounter = 0;
+        Globals.pips = Store.Storage(); // reset 'global' space
+    }
+});
+
+QUnit.test('element reg pips have relative selectors', function(assert) {
+
+    var domStr = '' +
+        '<div id="outside">' +
+        '   <div id="inside">' +
+        '   </div>' +
+        '</div>';
+
+    var done = assert.async();
+    var analyser = Tree.Analyser();
+    var tree = analyser.extract(domStr);
+    assert.deepEqual(R.keys(tree.children[0]), [
+        "rootPath",
+        "listItemPath",
+        "attribs",
+        "name",
+        "isRoot",
+        "element",
+        "children"
+    ], 'item element');
+    assert.deepEqual(tree.element, {
+        anc: void 0,
+        sel: "div",
+        selector: "#outside"
+    });
+    assert.deepEqual(tree.children[0].element, {
+        anc: "#outside",
+        sel: "div",
+        selector: "#inside"
+    });
+    done();
+});
+
+QUnit.test('chain with dangling list', function(assert) {
+
+    var domStr = '' +
+        '<div id="outside">' +
+        '   <div id="inside">' +
+        '     <span></span><span></span>' +
+        '   </div>' +
+        '</div>';
+
+    var done = assert.async();
+    var analyser = Tree.Analyser();
+    var tree = analyser.extract(domStr);
+    assert.ok(tree.element);
+    assert.ok(tree.children[0].element, 'element');
+    assert.ok(tree.children[0].children[0].listItem);
+    assert.ok(tree.children[0].children[1].listItem);
+    done();
+});
+
+QUnit.test('tag tree with selectors', function(assert) {
+
+    var domStr = '' +
+        '<ul id="filters">' +
+        '   <li>' +
+        '       <a class="selected" href="#/"></a>' +
+        '   </li>' +
+        '   <li id="two">' +
+        '       <a href="#/active"></a>' +
+        '   </li>' +
+        '   <li>' +
+        '       <a href="#/completed"></a>' +
+        '   </li>' +
+        //'   <span></span>' +
+        '</ul>';
+
+    var done = assert.async();
+    var analyser = new Tree.Analyser();
+    var tree = analyser.extract(domStr);
+    assert.deepEqual(tree.children[0].element, void 0, 'not an element');
+    assert.deepEqual(tree.children[0].shadowElement, void 0, 'not an shadow element');
+    assert.deepEqual(tree.children[0].listItem, {
+        anc: "#filters",
+        root: "#filters",
+        sel: "li",
+        selector: "#filters>li"
+    });
+    assert.deepEqual(tree.children[0].children[0].itemElement, {
+        anc: "#filters>li",
+        item: "#filters>li",
+        root: "#filters",
+        sel: "a",
+        selector: "#filters>li>a"
+    });
+    assert.deepEqual(tree.children[1].children[0].itemElement, {
+        anc: "#filters>li",
+        item: "#filters>li",
+        root: "#filters",
+        sel: "a",
+        selector: "#filters>li>a"
+    });
+
+    done();
+});
+
+QUnit.test('tag tree with selectors, deep', function(assert) {
+
+    var domStr = '' +
+        '<ul id="filters">' +
+        '   <li>' +
+        '       <a class="selected" href="#/"><div id="one"></div></a>' +
+        '   </li>' +
+        '   <li id="two">' +
+        '       <a href="#/active"><div></div><div></div></a>' +
+        '   </li>' +
+        '   <li>' +
+        '       <a href="#/completed"></a>' +
+        '   </li>' +
+        //'   <span></span>' +
+        '</ul>';
+
+    var done = assert.async();
+    var analyser = new Tree.Analyser();
+    var tree = analyser.extract(domStr);
+    // first level
+    assert.ok(tree.children[0].listItem);
+    assert.ok(tree.children[0].shadowElement, 'shadow element li');
+    assert.ok(tree.children[1].shadowElement, 'shadow element li');
+    assert.ok(!tree.children[2].shadowElement, 'no shadow element li');
+
+    // second level
+    assert.ok(tree.children[0].children[0].itemElement, 'itemElement a');
+    assert.ok(tree.children[0].children[0].element, 'element a');
+    assert.ok(tree.children[1].children[0].itemElement, 'itemElement a');
+    assert.ok(tree.children[1].children[0].element, 'element a');
+    assert.ok(tree.children[2].children[0].itemElement, 'itemElement a');
+
+    // third level
+    assert.ok(tree.children[0].children[0].children[0].element, 'element div');
+    assert.ok(tree.children[1].children[0].children[0].listItem, 'listItem div');
+    assert.ok(tree.children[1].children[0].children[1].listItem, 'listItem div');
+
+    assert.deepEqual(tree.children[0].shadowElement, {
+        anc: "#filters>li",
+        sel: ":0",
+        selector: "#filters>li(0)"
+    });
+    assert.deepEqual(tree.children[1].shadowElement, {
+        anc: "#filters>li",
+        sel: ":1",
+        selector: "#two"
+    });
+    assert.deepEqual(tree.children[0].listItem, {
+        anc: "#filters",
+        root: "#filters",
+        sel: "li",
+        selector: "#filters>li"
+    });
+    done();
+});
+
+QUnit.test('tag tree with selectors, deeper', function(assert) {
+
+var domStr = '' +
+        '<ul id="filters">' +
+        '   <li>' +
+        '       <a class="selected" href="#/"><div id="one"><h1><h2><h3><h4 id="text">Text</h4></h3></h2></h1></div></a>' +
+        '   </li>' +
+        '   <li id="two">' +
+        '       <a href="#/active"><div></div><div></div></a>' +
+        '   </li>' +
+        '   <li>' +
+        '       <a href="#/completed"></a>' +
+        '   </li>' +
+        //'   <span></span>' +
+        '</ul>';
+
+    var done = assert.async();
+    var analyser = new Tree.Analyser();
+    var tree = analyser.extract(domStr);
+    assert.deepEqual(R.keys(tree.children[0]), [
+        "rootPath",
+        "listItemPath",
+        "attribs",
+        "name",
+        "isRoot",
+        "shadowElement",
+        "listItem",
+        "children"
+    ]);
+    assert.deepEqual(tree.children[0].shadowElement, {
+        anc: "#filters>li",
+        sel: ":0",
+        selector: "#filters>li(0)"
+    });
+    assert.deepEqual(tree.children[0].listItem, {
+        anc: "#filters",
+        root: '#filters',
+        sel: "li",
+        selector: "#filters>li"
+    }, 'first listItem');
+    assert.deepEqual(tree.children[1].listItem, {
+        anc: '#filters',
+        root: '#filters',
+        sel: "li",
+        selector: "#filters>li"
+    }, 'second listItem');
+    assert.deepEqual(tree.children[0].children[0].itemElement, {
+        anc: '#filters>li',
+        root: '#filters',
+        item: '#filters>li',
+        sel: 'a',
+        selector: "#filters>li>a"
+    }, 'first itemElem');
+    assert.deepEqual(tree.children[0].children[0].element, {
+        anc: "#filters>li(0)",
+        sel: "a",
+        selector: "#filters>li(0)>a"
+    }, 'a is also element with shadowElement as anc');
+    assert.deepEqual(tree.children[0].children[0].children[0].element, {
+        anc: "#filters>li(0)>a",
+        sel: "div",
+        selector: "#one"
+    });
+    assert.deepEqual(tree.children[0].children[0].children[0].children[0].element, {
+        anc: "#one",
+        sel: "h1",
+        selector: "#one>h1"
+    });
+    assert.deepEqual(tree.children[0].children[0].children[0].children[0].children[0].children[0].element, {
+        anc: "#one>h1>h2",
+        sel: "h3",
+        selector: "#one>h1>h2>h3"
+    });
+    assert.deepEqual(tree.children[0].children[0].children[0].children[0].children[0].children[0].children[0].element, {
+        anc: "#one>h1>h2>h3",
+        sel: "h4",
+        selector: "#text"
+    });
+    assert.deepEqual(tree.children[0].children[0].children[0].children[0].children[0].children[0].children[0].listItemPath,
+        ['ul>li']);
+    assert.deepEqual(tree.children[0].children[0].children[0].children[0].children[0].children[0].children[0].rootPath,
+        ['#filters']);
+    done();
+});
+
+QUnit.test('full webapp html', function(assert) {
+    var domStr = '' +
+        '<html lang="en">' +
+        '  <head>' +
+        '    <meta charset="utf-8">' +
+        '    <title>Template • TodoMVC</title>' +
+        '    <link rel="stylesheet" href="base.css">' +
+        '  </head>' +
+        '  <body>' +
+        '    <section id="todoapp">' +
+        '      <header id="header">' +
+        '        <h1>todos</h1>' +
+        '        <input id="new-todo" placeholder="What needs to be done?" >' +
+        '      </header>' +
+        '      <!-- This section should be hidden by default and shown when there are todos -->' +
+        '      <section id="main">' +
+        '        <input id="toggle-all" type="checkbox">' +
+        '        <label for="toggle-all">Mark all as complete</label>' +
+        '        <ul id="todo-list">' +
+        '        </ul>' +
+        '      </section>' +
+        '      <footer id="footer">' +
+        '        <span id="todo-count"><!-- <strong>1</strong> item  -->left</span>' +
+        '        <ul id="filters">' +
+        '          <li>' +
+        '            <a class="selected" href="#/">All</a>' +
+        '          </li>' +
+        '          <li>' +
+        '            <a href="#/active">Active</a>' +
+        '          </li>' +
+        '          <li>' +
+        '            <a href="#/completed">Completed</a>' +
+        '          </li>' +
+        '        </ul>' +
+        '        <button id="clear-completed">Clear completed (1)</button>' +
+        '      </footer>' +
+        '    </section>' +
+        '    <footer id="info">' +
+        '      <p>Double-click to edit a todo</p>' +
+        '      <p>Template by <a href="http://github.com/sindresorhus">Sindre Sorhus</a></p>' +
+        '      <p>Created by <a href="http://todomvc.com">you</a></p>' +
+        '      <p>Part of <a href="http://todomvc.com">TodoMVC</a></p>' +
+        '    </footer>' +
+        '    <script src="bower_components/jquery/dist/jquery.min.js"></script>' +
+        '    <script src="bower_components/ramda/dist/ramda.js"></script>' +
+        '    <script src="linkingPips.js"></script>' +
+        '    <script src="spec_todos.js"></script>' +
+        '  </body>' +
+        '</html>';
+
+    var pips = [{
+        selector: '#one',
+        'default': 'noediting',
+        type: 'state',
+        states:[{
+            name: 'editing',
+            attr: 'class',
+            value: 'editing'
+        },
+        {
+            name: 'noediting',
+            attr: 'class',
+            value: ''
+        }]
+    }];
+
+    var done = assert.async();
+    var analyser = new Tree.Analyser();
+    var tree = analyser.extract(domStr);
+    analyser.showTree(tree);
+    assert.deepEqual(R.keys(tree.children[0]), [
+        "rootPath",
+        "listItemPath",
+        "attribs",
+        "name",
+        "isRoot",
+        "element",
+        "children"
+    ]);
+    assert.deepEqual(tree.children[1].children[0].name, "section");
+    assert.deepEqual(tree.children[1].children[0].element, {
+        "anc": "html>body",
+        "sel": "section",
+        "selector": "#todoapp"
+    });
+    assert.deepEqual(tree.children[1].children[0].children[0].children[1].element, {
+        "anc": "#header",
+        "sel": "input",
+        "selector": "#new-todo"
+    });
+    assert.ok(tree.children[1].children[0].children[0].listItem === void 0);
+
+    assert.deepEqual(tree.children[1].children[0].children[2].element, {
+        "anc": "#todoapp",
+        "sel": "footer",
+        "selector": "#footer"
+    });
+    assert.deepEqual(tree.children[1].children[0].children[2].children[1].element, {
+        "anc": "#footer",
+        "sel": "ul",
+        "selector": "#filters"
+    });
+
+    assert.deepEqual(R.keys(tree.children[1].children[0].children[2].children[1]), [
+        "rootPath",
+        "listItemPath",
+        "attribs",
+        "name",
+        "isRoot",
+        "element",
+        "children"
+    ]);
+    assert.deepEqual(tree.children[1].children[0].children[2].children[1].children[0].listItem, {
+        "anc": "#filters",
+        "root": "#filters",
+        "sel": "li",
+        "selector": "#filters>li"
+    });
+    done();
+});
+
+QUnit.test('tag tree extended with subtree', function(assert) {
+
+    var mainStr = '' +
+        '<ul id="filters">' +
+        '</ul>';
+    $('#qunit-fixture').append(mainStr);
+
+    var subStr = '' +
+        '   <li>' +
+        '       <a class="selected" href="#/"></a>' +
+        '   </li>' +
+        '   <li id="two">' +
+        '       <a href="#/active"></a>' +
+        '   </li>' +
+        '   <li>' +
+        '       <a href="#/completed"></a>' +
+        '   </li>';
+
+    var done = assert.async();
+    var analyser = new Tree.Analyser();
+    var tree = analyser.extract(mainStr);
+    assert.deepEqual(R.keys(tree), [
+        "rootPath",
+        "listItemPath",
+        "attribs",
+        "name",
+        "isRoot",
+        "element",
+        "children"
+    ], 'item element');
+    assert.deepEqual(tree.itemElement, void 0, 'not an itemElement element');
+    assert.deepEqual(tree.shadowElement, void 0, 'not an shadow element');
+    assert.deepEqual(tree.element, {
+        anc: void 0,
+        sel: "ul",
+        selector: "#filters"
+    });
+
+    // add subtree
+    var subtree = analyser.extract(subStr, '#filters');
+
+    assert.deepEqual(subtree[0].listItem, {
+        anc: "#filters",
+        root: "#filters",
+        sel: "li",
+        selector: "#filters>li"
+    });
+    assert.deepEqual(subtree[1].listItem, {
+        anc: "#filters",
+        root: "#filters",
+        sel: "li",
+        selector: "#filters>li"
+    });
+    assert.deepEqual(subtree[0].children[0].itemElement, {
+        anc: "#filters>li",
+        item: "#filters>li",
+        root: "#filters",
+        sel: "a",
+        selector: "#filters>li>a"
+    });
+    assert.deepEqual(subtree[1].children[0].itemElement, {
+        anc: "#filters>li",
+        item: "#filters>li",
+        root: "#filters",
+        sel: "a",
+        selector: "#filters>li>a"
+    });
+    done();
+});
+
+QUnit.test('unbalanced tree', function(assert) {
+
+    var domStr = "" +
+        "<section>" +
+        "  <div id='header'></div>" +
+        "  <div id='main'>" +
+        "    <div id='page1'>" +
+        "      <div id='section1'></div>" +
+        "    </div>" +
+        "    <div id='page2'>" +
+        "      <div id='section2'></div>" +
+        "    </div>" +
+        "  </div>" +
+        "</section>";
+
+    $('#qunit-fixture').append(domStr);
+
+    var done = assert.async();
+    var analyser = new Tree.Analyser();
+    var tree = analyser.extract(domStr);
+
+    assert.equal(tree.itemElement, void 0, 'not an itemElement element');
+    assert.ok(tree.children[0].element === void 0, 'header is no element');
+    assert.ok(tree.children[0].listItem !== void 0, 'header is a listItem');
+    assert.ok(tree.children[1].shadowElement !== void 0, 'main is shadowelement');
+    assert.ok(tree.children[1].listItem !== void 0, 'main is listItem');
+
+    assert.ok(tree.children[1].children[0].listItem !== void 0, 'page 1');
+    assert.ok(tree.children[1].children[1].listItem !== void 0, 'page 2');
+
+    assert.ok(tree.children[1].children[0].children[0].itemElement !== void 0, 'left bottom element is itemElement');
+    assert.ok(tree.children[1].children[1].children[0].itemElement !== void 0, 'right bottom element is itemElement');
+
+    assert.deepEqual(tree.element, {
+        anc: void 0,
+        sel: "section",
+        selector: "section"
+    }, 'section is an element');
+
+    assert.deepEqual(tree.children[0].listItem, {
+        anc: 'section',
+        "root": "section",
+        "sel": "div",
+        "selector": "section>div"
+    }, 'first level children are listItems ...');
+    assert.deepEqual(tree.children[1].listItem, {
+        anc: 'section',
+        "root": "section",
+        "sel": "div",
+        "selector": "section>div"
+    }, '... and a listItem');
+    assert.deepEqual(tree.children[1].shadowElement, {
+        anc: 'section>div',
+        sel: ":1",
+        selector: "#main"
+    }, 'second root is shadowElement');
+    assert.deepEqual(tree.children[1].children[0].listItem, {
+        anc: "#main",
+        root: "#main",
+        sel: "div",
+        selector: "#main>div"
+    });
+    assert.deepEqual(tree.children[1].children[0].children[0].itemElement, {
+        anc: "#main>div",
+        item: "#main>div",
+        root: "#main",
+        sel: "div",
+        selector: "#main>div>div"
+    });
+
+    done();
+});
+
+QUnit.test('deep nested subtree', function(assert) {
+
+    var domStr = "" +
+        "<div>" +
+        "<ul>" +
+        "  <li>" +
+        "    <div>" +
+        "      <input></input>" +
+        "      <label></label>" +
+        "      <button></button>" +
+        "    </div>" +
+        "  </li>" +
+        "  <li>" +
+        "    <div>" +
+        "      <input></input>" +
+        "      <label></label>" +
+        "      <button></button>" +
+        "    </div>" +
+        "  </li>" +
+        "</ul>" +
+        "</div>";
+
+    $('#qunit-fixture').append(domStr);
+
+    var done = assert.async();
+    var analyser = new Tree.Analyser();
+    var tree = analyser.extract(domStr);
+
+    assert.deepEqual(tree.element, {
+        anc: void 0,
+        sel: "div",
+        selector: "div"
+    });
+    assert.deepEqual(tree.children[0].element, {
+        anc: 'div',
+        sel: "ul",
+        selector: "div>ul"
+    });
+    assert.deepEqual(tree.children[0].children[0].listItem, {
+        anc: 'div>ul',
+        root: 'div>ul',
+        sel: "li",
+        selector: "div>ul>li"
+    });
+    assert.deepEqual(tree.children[0].children[1].children[0].itemElement, {
+        anc: 'div>ul>li',
+        item: "div>ul>li",
+        root: "div>ul",
+        sel: "div",
+        selector: "div>ul>li>div"
+    });
+    assert.deepEqual(tree.children[0].children[1].children[0].children[0].itemElement, {
+        anc: "div>ul>li>div",
+        item: "div>ul>li",
+        root: "div>ul",
+        sel: "input",
+        selector: "div>ul>li>div>input"
+    });
+    assert.deepEqual(tree.children[0].children[1].children[0].children[1].itemElement, {
+        anc: "div>ul>li>div",
+        item: "div>ul>li",
+        root: "div>ul",
+        sel: "label",
+        selector: "div>ul>li>div>label"
+    });
+    assert.deepEqual(tree.children[0].children[1].children[0].children[2].itemElement, {
+        anc: "div>ul>li>div",
+        item: "div>ul>li",
+        root: "div>ul",
+        sel: "button",
+        selector: "div>ul>li>div>button"
+    });
+    done();
+});
+
+QUnit.test('#issue 17 - 1, no unwanted shadow elements', function(assert) {
+
+    var domStr = "" +
+        "<div><ul id='main'></ul><ul id='pill'><li id='one'></li><li id='four'></li></ul></div>";
+
+    $('#qunit-fixture').append(domStr);
+
+    var done = assert.async();
+    var analyser = new Tree.Analyser();
+    var tree = analyser.extract(domStr);
+
+    assert.ok(tree.element, 'top div');
+    assert.ok(tree.children[0].listItem, 'main ul');
+    assert.ok(tree.children[1].listItem, 'pill ul');
+    // assert.ok(tree.children[0].shadowElement, 'main ul');
+    // assert.ok(tree.children[1].shadowElement, 'pill ul');
+    assert.ok(tree.children[1].children[0].listItem, 'one');
+    assert.ok(tree.children[1].children[1].listItem, 'two');
+    assert.ok(!tree.children[1].children[0].shadowElement, 'no shadow for one');
+    assert.ok(!tree.children[1].children[1].shadowElement, 'no shadow for two');
+    done();
+});
+
+QUnit.test('#issue 17 - 2, no unwanted shadow elements', function(assert) {
+
+    var domStr = "" +
+        "<div><ul id='main'></ul><div id='pill'><div id='one'></div><div id='four'></div></div></div>";
+
+    $('#qunit-fixture').append(domStr);
+
+    var done = assert.async();
+    var analyser = new Tree.Analyser();
+    var tree = analyser.extract(domStr);
+
+    assert.ok(tree.element, 'top div');
+    assert.ok(tree.children[0].element, 'main ul');
+    assert.ok(tree.children[1].element, 'pill ul');
+    assert.ok(tree.children[1].children[0].listItem, 'one');
+    assert.ok(tree.children[1].children[1].listItem, 'two');
+    assert.ok(!tree.children[1].children[0].shadowElement, 'no shadow for one');
+    assert.ok(!tree.children[1].children[1].shadowElement, 'no shadow for two');
+    done();
+});
+
+
+QUnit.test('nested tree with shadowElements for subtree', function(assert) {
+
+var domStr = '' +
+        '<ul id="filters">' +
+        '   <li>' +
+        '       <a></a><a></a>' +
+        '   </li>' +
+        '   <li id="two">' +
+        '       <a></a><a></a>' +
+        '   </li>' +
+        '</ul>';
+
+    var done = assert.async();
+    var analyser = new Tree.Analyser();
+    var tree = analyser.extract(domStr);
+
+    assert.deepEqual(tree.children[0].listItem, {
+        anc: "#filters",
+        root: '#filters',
+        sel: "li",
+        selector: "#filters>li"
+    }, 'first listItem');
+    assert.deepEqual(tree.children[1].listItem, {
+        anc: '#filters',
+        root: '#filters',
+        sel: "li",
+        selector: "#filters>li"
+    }, 'second listItem');
+    assert.deepEqual(tree.children[0].children[0].itemElement, {
+        anc: '#filters>li',
+        root: '#filters',
+        item: '#filters>li',
+        sel: 'a(0)',
+        selector: "#filters>li>a(0)"
+    }, 'itemElement first level');
+    assert.deepEqual(tree.children[0].children[1].itemElement, {
+        anc: '#filters>li',
+        root: '#filters',
+        item: '#filters>li',
+        sel: 'a(1)',
+        selector: "#filters>li>a(1)"
+    }, 'itemElement first level');
+    assert.deepEqual(tree.children[0].shadowElement, {
+        anc: "#filters>li",
+        sel: ":0",
+        selector: "#filters>li(0)"
+    });
+    assert.deepEqual(tree.children[1].shadowElement, {
+        anc: "#filters>li",
+        sel: ":1",
+        selector: "#two"
+    });
+    assert.deepEqual(tree.children[0].children[0].listItem, {
+        anc: '#filters>li(0)',
+        root: '#filters>li(0)',
+        sel: 'a',
+        selector: "#filters>li(0)>a"
+    }, 'listItem second level');
+    assert.deepEqual(tree.children[0].children[1].listItem, {
+        anc: '#filters>li(0)',
+        root: '#filters>li(0)',
+        sel: 'a',
+        selector: "#filters>li(0)>a"
+    }, 'listItem second level');
+    done();
+});
+
+QUnit.test('issue #15, two ul\'s inside a div', function(assert) {
+
+var domStr = "<div>" +
+    "<ul id='main'>" +
+    " <li id='i1'></li>" +
+    " <li id='i2'></li>" +
+    " <li id='i3'></li>" +
+    " <li id='i4'></li>" +
+    "</ul>" +
+    "<ul id='menu'>" +
+    " <li><a href='i1'></a></li>" +
+    " <li><a href='i2'></a></li>" +
+    " <li><a href='i3'></a></li>" +
+    " <li><a href='i4'></a></li>" +
+    "</ul>" +
+    "</div>";
+
+    var done = assert.async();
+    var analyser = new Tree.Analyser();
+    var tree = analyser.extract(domStr);
+
+    assert.ok(tree.children[0].element === void 0, 'main');
+    assert.ok(tree.children[0].listItem !== void 0, 'main');
+    assert.ok(tree.children[0].shadowElement !== void 0, 'main');
+    assert.ok(tree.children[0].element === void 0, 'menu');
+    assert.ok(tree.children[0].listItem !== void 0, 'menu');
+    assert.ok(tree.children[0].shadowElement !== void 0, 'menu');
+    assert.ok(R.reduce(function(acc, item) {
+        return acc && item.listItem && !item.element && item.itemElement;
+    }, true, tree.children[0].children), 'all children #main are listItems and itemElement');
+    assert.ok(R.reduce(function(acc, item) {
+        return acc && item.listItem && !item.element && item.itemElement;
+    }, true, tree.children[1].children), 'all children #menu are listItems');
+    assert.ok(R.reduce(function(acc, item) {
+        return acc && item.children[0].itemElement;
+    }, true, tree.children[1].children), 'all children\'s children #menu are itemElement');
+    done();
+});
+
+QUnit.test('issue #16, div without id above div doesnt give errors', function(assert) {
+
+var domStr = "<div>" +
+    "<div id='main'>" +
+    " <div id='i1'></div>" +
+    " <div id='i2'></div>" +
+    " <div id='i3'></div>" +
+    " <div id='i4'></div>" +
+    "</div>" +
+    "<ul id='menu'>" +
+    " <li><a href='i1'></a></li>" +
+    " <li><a href='i2'></a></li>" +
+    " <li><a href='i3'></a></li>" +
+    " <li><a href='i4'></a></li>" +
+    "</ul>" +
+    "</div>";
+
+    var done = assert.async();
+    var analyser = new Tree.Analyser();
+    var tree = analyser.extract(domStr);
+
+    assert.ok(tree.children[0].element !== void 0, 'main');
+    assert.ok(tree.children[0].listItem === void 0, 'main');
+    assert.ok(tree.children[0].shadowElement === void 0, 'main');
+    assert.ok(tree.children[0].element !== void 0, 'menu');
+    assert.ok(tree.children[0].listItem === void 0, 'menu');
+    assert.ok(tree.children[0].shadowElement === void 0, 'menu');
+    assert.ok(R.reduce(function(acc, item) {
+        return acc && item.listItem && !item.element && !item.itemElement;
+    }, true, tree.children[0].children), 'all children #main are listItems');
+    assert.ok(R.reduce(function(acc, item) {
+        return acc && item.listItem && !item.element && !item.itemElement;
+    }, true, tree.children[1].children), 'all children #menu are listItems');
+    assert.ok(R.reduce(function(acc, item) {
+        return acc && item.children[0].itemElement;
+    }, true, tree.children[1].children), 'all children\'s children #menu are itemElement');
+    done();
+});

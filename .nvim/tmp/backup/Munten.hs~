@@ -1,0 +1,42 @@
+module Munten where
+
+import Data.List
+
+data Munt = FiveCt
+          | TenCt
+          | FiftyCt
+          | OneEuro
+          | TwoEuro
+          deriving Eq
+
+type Groep = (Munt, Int)
+type Verzameling = [Groep]
+
+type Spaarvarken = [Munt]
+
+waarde :: Munt -> Float
+waarde m = case m of
+             FiveCt -> 0.05
+             TenCt  -> 0.10
+             FiftyCt -> 0.50
+             OneEuro -> 1.00
+             TwoEuro -> 2.00
+
+tellen :: [Munt] -> Float
+tellen = foldl (\acc m -> acc + waarde m) 0.00
+
+zoeken :: Munt -> Verzameling -> Maybe Groep
+zoeken m = find (\g -> fst g == m)
+
+incr :: Groep -> Groep
+incr g = (fst g, snd g + 1)
+
+toevoegen :: Munt -> Verzameling -> Groep
+toevoegen m vs = case zoeken m vs of
+    (Just g) -> incr g
+
+{-sorteren :: [Munt] ->Verzameling-}
+{-sorteren ms = foldl (\acc m -> -}
+
+spaarvarken :: Spaarvarken
+spaarvarken = [FiveCt, FiveCt, OneEuro, TenCt]

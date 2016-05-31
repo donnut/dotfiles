@@ -1,0 +1,40 @@
+exports.nodes = [{
+        type: 'list',
+        selector: '#list',
+        idKey: 'strip',
+        tpl: "<li></li>",
+        empty: '<span>no model data yet</span>'
+    }],
+
+exports.pips = [{
+        type: 'collection',
+        name: 'colorful',
+        model: [{
+            strip: 'one'
+        }, {
+            strip: 'two'
+        }, {
+            strip: 'three'
+        }, {
+            strip: 'four'
+        }],
+        index: 'id',
+        server: false,
+        silent: false
+    }],
+
+exports.links = [{
+        pub: 'models.colorful',
+        sub: '#list.list',
+        options: {
+            value: ['map', function(i) {
+                return i.value;
+            }],
+            action: ['map', function(i) {
+                return i.action;
+            }],
+            it: ['map', function(i) {
+                return i.it;
+            }]
+        }
+    }]

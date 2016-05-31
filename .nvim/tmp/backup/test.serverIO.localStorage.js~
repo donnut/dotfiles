@@ -1,0 +1,195 @@
+QUnit.module('serverIO - localStorage', {
+    beforeEach: function() {
+        while (localStorage.length) localStorage.removeItem(localStorage.key(0));
+        // this.server = new ServerIO.Server(ServerLocal.Server, 'colorful', true);
+        Globals.serverAddress = '/fake';
+        DEBUG = true;
+        Globals.idCounter = 0;
+    },
+    afterEach: function() {
+        while (localStorage.length) localStorage.removeItem(localStorage.key(0));
+    }
+});
+
+QUnit.test('data is NOT added to collection', function(assert) {
+
+    var done = assert.async();
+    var domStr = "<div id='main'>";
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        type: 'collection',
+        name: 'colorful',
+        index: 'id',
+        server: false
+    }];
+
+    var app = new LinkingPips.App(domStr, [], pips, []);
+    app.get('models.colorful').react([{action: 'create', it: "1", value: {strip: 'new'}}]);
+    assert.deepEqual(app.get('models.colorful').unsafeGet('1'), {
+        "strip": "new"
+    });
+    assert.equal(localStorage['colorful.1'], void 0);
+    done();
+});
+
+QUnit.test('data IS added to collection', function(assert) {
+
+    var done = assert.async();
+    var domStr = "<div id='main'>";
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        type: 'collection',
+        name: 'colorful',
+        index: 'id',
+        server: true
+    }];
+
+    var app = new LinkingPips.App(domStr, [], pips, []);
+    app.get('models.colorful').react([{action: 'create', it: "1", value: {strip: 'new'}}]);
+    assert.deepEqual(app.get('models.colorful').unsafeGet('1'), {
+        "strip": "new"
+    });
+    assert.deepEqual(JSON.parse(localStorage['colorful.1']), {"strip": "new"});
+    done();
+});
+
+QUnit.test('collection updates data to server', function(assert) {
+    var done = assert.async();
+    var domStr = "<div id='main'>";
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        type: 'collection',
+        name: 'colorful',
+        index: 'id',
+        server: true
+    }];
+    window.localStorage['colorful.1'] = JSON.stringify({"count":"1231", "strip": "een"});
+    window.localStorage['colorful.2'] = JSON.stringify({"count":"1232", "strip": "twee"});
+    window.localStorage['colorful.3'] = JSON.stringify({"count":"1233", "strip": "drie"});
+    window.localStorage['colorful.4'] = JSON.stringify({"count":"1234", "strip": "vier"});
+    var app = new LinkingPips.App(domStr, [], pips, []);
+
+    var obj = R.head(app.get('models.colorful').get());
+    var id = obj.__it;
+
+    app.get('models.colorful').react([{action: 'update', it: id, value: {count: "99", strip: 'new'}}]);
+    assert.deepEqual(app.get('models.colorful').unsafeGet(id), {
+        "count": "99",
+        "strip": "new"
+    });
+    done();
+});
+
+QUnit.test('collection updates data to server + acknowledgement', function(assert) {
+    var done = assert.async();
+    var domStr = "<div id='main'>";
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        type: 'collection',
+        name: 'colorful',
+        index: 'id',
+        server: true
+    },{
+        type: 'state',
+        selector: '#main',
+        states: [{
+            name: 'waiting',
+            attr: 'class',
+            value: 'orange'
+        },{
+            name: 'ready',
+            attr: 'class',
+            value: 'green'
+        }]
+    }];
+
+    var links = [{
+        pub: 'models.colorful',
+        sub: '#main.states.waiting',
+        binding: true,
+        value: function(i) {
+            return 'ready';
+        },
+        action: 'update'
+    }];
+
+    window.localStorage['colorful.1'] = JSON.stringify({"count":"1231", "strip": "een"});
+    window.localStorage['colorful.2'] = JSON.stringify({"count":"1232", "strip": "twee"});
+    window.localStorage['colorful.3'] = JSON.stringify({"count":"1233", "strip": "drie"});
+    window.localStorage['colorful.4'] = JSON.stringify({"count":"1234", "strip": "vier"});
+    var app = new LinkingPips.App(domStr, [], pips, links);
+
+    app.get('models.colorful').react([{action: 'update', it: "1", value: {count: "99", strip: 'new'}}]);
+    assert.deepEqual(app.get('models.colorful').unsafeGet('1'), {
+        "count": "99",
+        "strip": "new"
+    });
+    done();
+});
+
+QUnit.test('collection deletes data from server', function(assert) {
+    var done = assert.async();
+    var domStr = "<div id='main'>";
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        type: 'collection',
+        name: 'colorful',
+        server: true
+    }];
+    window.localStorage['colorful.1'] = JSON.stringify({"count":"1231", "strip": "een"});
+    window.localStorage['colorful.2'] = JSON.stringify({"count":"1232", "strip": "twee"});
+    window.localStorage['colorful.3'] = JSON.stringify({"count":"1233", "strip": "drie"});
+    window.localStorage['colorful.4'] = JSON.stringify({"count":"1234", "strip": "vier"});
+    var app = new LinkingPips.App(domStr, [], pips, []);
+
+    app.get('models.colorful').react([{action: 'delete', it: "1"}]);
+
+    assert.deepEqual(app.get('models.colorful').unsafeGet(), {
+        2: {
+            "count": "1232",
+            "strip": "twee"
+        },
+        3: {
+            "count": "1233",
+            "strip": "drie"
+        },
+        4: {
+            "count": "1234",
+            "strip": "vier"
+        }
+    });
+    assert.equal(localStorage['colorful.1'], void 0);
+    done();
+});
+
+QUnit.test('collection removes all its data from server', function(assert) {
+    var done = assert.async();
+    var domStr = "<div id='main'>";
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        type: 'collection',
+        name: 'colorful',
+        index: 'id',
+        server: true
+    }];
+    window.localStorage['colorful.1'] = JSON.stringify({"_id":"1231", "strip": "een"});
+    window.localStorage['colorful.2'] = JSON.stringify({"_id":"1232", "strip": "twee"});
+    window.localStorage['colorful.3'] = JSON.stringify({"_id":"1233", "strip": "drie"});
+    window.localStorage['colorful.4'] = JSON.stringify({"_id":"1234", "strip": "vier"});
+    var app = new LinkingPips.App(domStr, [], pips, []);
+
+    app.get('models.colorful').react({action: 'delete'});
+
+    assert.deepEqual(app.get('models.colorful').get(), []);
+    assert.equal(localStorage['colorful.1'], void 0);
+    assert.equal(localStorage['colorful.2'], void 0);
+    assert.equal(localStorage['colorful.3'], void 0);
+    assert.equal(localStorage['colorful.4'], void 0);
+    done();
+});

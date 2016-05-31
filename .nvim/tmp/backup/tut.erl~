@@ -1,0 +1,5 @@
+-module(tut).
+-export([double/l]).
+
+double(x) ->
+  2 * x.

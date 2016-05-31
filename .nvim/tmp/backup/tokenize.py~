@@ -1,0 +1,18 @@
+#import sys
+#sys.path.append('/home/donnut/Documents/dedatameester/projects/ocr')
+
+from nltk.tokenize.punkt import PunktSentenceTokenizer
+from nltk import word_tokenize
+
+def convert_to_tokens(fn_in, fn_out):
+    with open(fn_in, 'r') as fi:
+        raw = fi.read()
+        print(raw)
+        sents = PunktSentenceTokenizer().sentences_from_text(raw)
+        with open(fn_out, 'w') as fo:
+            for sent in sents:
+                for token in word_tokenize(sents):
+                    fo.write("%s" % token)
+
+if __name__ == "__main__":
+    convert_to_tokens('./ocr/test/fixture/betoog.txt', './ocr/test/fixture/betook_tokens.txt')

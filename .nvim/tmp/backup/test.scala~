@@ -1,0 +1,31 @@
+import scala.concurrent.{Promise, Future, ExecutionContext}
+import scala.util._
+import ExecutionContext.Implicits.global
+object test {
+  val firstOccurrence: Future[Int] = Future {
+    val source = scala.io.Source.fromFile("/tmp/text.txt")
+    source.toSeq.indexOfSlice("regel")
+  }
+  firstOccurrence onSuccess {
+    case idx => println("Het keyword first appeared at position: " + idx)
+  }
+
+
+  def slowText(): String = {
+    Thread.sleep(3000)
+    "slow waarde"
+  }
+  val longProc: Future[String] = Future {
+    slowText()
+  }
+  longProc onComplete {
+    case Success(text) => println("Success")
+    case Failure(t) => println("Foutje")
+  }
+
+
+//      val fs = List(Future {(i:Int)=>Thread.sleep(i)}, Future {(i:Int)=>Thread.sleep(i)}, Future { (i:Int)=>Thread.sleep(i)})
+//      fs.map(f => f.flatMap(_))
+//  }
+
+}

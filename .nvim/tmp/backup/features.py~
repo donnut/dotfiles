@@ -1,0 +1,137 @@
+import math
+from ocr.ngram import KneserNeyNGram
+from ocr.lcsubstr import LCS
+from ocr.confusion import Confusion
+from ocr.kenlmwrap import KenLMWrap
+
+class ServiceNgrams:
+
+    def __init__(self, sents, max_n=2):
+        self.unigrams = KneserNeyNGram(n=1, sents=sents, D=1)
+        self.bigrams  = KneserNeyNGram(n=2, sents=sents, D=1)
+        self.trigrams = KneserNeyNGram(n=3, sents=sents, D=1)
+        self.max_n = max_n
+
+    def logprob(self, phrase):
+        tokens = phrase.split(' ')[-self.max_n:]
+        if len(tokens) > 3:
+            raise NotImplementedError("Not implemented yet")
+        try:
+            if len(tokens) == 1:
+                return math.log10(self.unigrams.cond_prob(tokens[0].lower(), ()))
+            elif len(tokens) == 2:
+                return math.log10(self.bigrams.cond_prob(tokens[0].lower(), (tokens[1].lower(),)))
+            elif len(tokens) == 3:
+                return math.log10(self.trigrams.cond_prob(tokens[0].lower(), (tokens[1].lower(),tokens[2].lower())))
+        except:
+            raise ArithmeticError
+
+
+    def known(self, word):
+        try:
+            return self.unigrams.count((word.lower(),)) > 0
+        except:
+            raise ArithmeticError
+
+class ServiceKenLM:
+
+    def __init__(self, max_n=2):
+        self.kenlm = KenLMWrap()
+        self.max_n = max_n
+
+    def logprob(self, phrase):
+        tokens = phrase.split(' ')[-self.max_n:]
+        try:
+            return self.kenlm.query(" ".join(tokens))
+        except:
+            raise
+
+    def known(self, word):
+        try:
+            return self.kenlm.known(word)
+        except:
+            raise
+
+class TransitionFeatures():
+
+    def __init__(self, service, n=3):
+        self.w_trans = 1.0
+        self.service = service
+        self.n = n
+
+    def set_weights(self, weights):
+        """Set the weights
+           weights {tuple} transmission
+        """
+        self.w_trans = weights[0]
+
+    def logprob_trans(self, phrase):
+        assert isinstance(phrase, str)
+        return self.service.logprob(phrase)
+
+    def logprob(self, phrase):
+        assert isinstance(phrase, str)
+        return self.w_trans*self.logprob_trans(phrase)
+
+    def known(self, word):
+        assert isinstance(word, str)
+        return self.service.known(word)
+
+    def logprob_sent(self, sentence):
+        """Returns the transitional probability of the padded sentence
+           sentence {list} of tokens
+        """
+        return sum([self.logprob_trans(" ".join(sentence[i:self.n])) for i, t in enumerate(sentence[:-self.n])])
+
+class EmissionFeatures():
+
+    def __init__(self):
+        self.confusion = Confusion(type='base')
+
+    #def _confuse(self, inc, cor):
+        #"""Computes the kind of transformation to get from inc to cor, which are different by definition.
+           #The function only excepts string of max length of 2! Otherwise it is uncertain what kind of
+           #transformation is done in the correction process."""
+        #linc = len(inc)
+        #lcor = len(cor)
+
+        #if lcor > 2 or linc > 2:
+            #return 0.0
+
+        #if (inc, cor) in self.CM:
+            #return self.CM[(inc,cor)]
+        #else:
+            #return 0.0000001
+
+    def wed(self, cand_frag, word_frag):
+        """Returns confusion probability of candidate and word fragments"""
+
+        if len(cand_frag) <= 2 and len(word_frag) <= 2:
+            return self.confusion.logprob(cand_frag, word_frag)
+        else:
+            raise Exception('diff-string length larger than 2')
+
+    def logprob_wed(self, cand, word):
+        """Return the confusion probability of the candidate compared to the word"""
+
+        error_pairs = LCS.diffs(cand, word)
+        prob = 0.0
+        for error in error_pairs:
+            try:
+                prob += self.wed(error[0], error[1])
+            except:
+                print('Unknown %s or %s' %(cand, word))
+
+        return prob
+
+    def logprob_merge(self, merged):
+        """Returns the log probability of merged that consists of merged words and the
+           number of additional words involved
+        """
+        assert isinstance(merged, tuple)
+        return math.log10(1/(1+10*merged[1]))
+
+    def logprob_split(self, splitted):
+        """Return the log probability of split words"""
+        nr_words = len(splitted.split(' '))
+        return math.log10(1/(1+10*nr_words))

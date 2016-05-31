@@ -1,0 +1,65 @@
+var Twitter = require('twitter');
+var mongoose = require('mongoose');
+var fs = require('fs');
+var async = require('async');
+
+var client = new Twitter({
+    consumer_key: 'cWN3UpsbOqG7jn0m8EmvoqtSV',
+    consumer_secret: 'e5Ep2oM1FRVHXgXKiEJwGEZasytAuNDv6h69XS0nPLGmDLx3gz',
+    access_token_key: '15123362-RkHEznCU2x8RhIhu4vWNEzb5BETha2nsLIp7M0vXf',
+    access_token_secret: 't9GeqpH4ufn2fix14BEdM5EKrrOHGGYUDVVbVFkeENsYy'
+});
+
+
+// initialize model(s)
+require('../models/tweet');
+var Tweet = mongoose.model('Tweet');
+
+mongoose.connect('mongodb://localhost/spijt_vluchtelingen', {
+    db:{safe: { j: 1, w: 0, wtimeout: 10000 }}
+});
+
+Tweet.
+    find({"check_deleted": {$eq: null}}).
+    sort({timestamp_ms: -1}).
+    exec(function(err, tweets) {
+    if (err) console.log(err);
+    // show status of tweet, if tweet doesn't exist, update deleted field
+    async.eachSeries(tweets, function(tweet, cb) {
+
+        client.get('application/rate_limit_status', {resources: 'statuses'}, function (err, response) {
+            if (err) {
+                console.log(err)
+                setTimeout(function(err) {
+                    cb(err);
+                }, 4500);
+            }
+            var remaining = response['resources']['statuses']['/statuses/show/:id']['remaining'];
+            console.log(remaining);
+            if (remaining > 0) {
+                client.get('statuses/show/'+tweet.id_str, function(err, old_tweet, response) {
+                    if (err) {
+                        console.log("Removed: " + tweet.id_str + " - " + tweet.text);
+                        Tweet.findByIdAndUpdate(tweet._id, {$set:{ "check_deleted": Date.now()}}, function(err) {
+                            setTimeout(function(err) {
+                                cb(err);
+                            }, 4500);
+                        });
+                    } else {
+                        setTimeout(function(err) {
+                            cb(err);
+                        }, 4500);
+                    }
+                });
+            } else {
+                // wait one minute
+                setTimeout(function(err) {
+                    cb(err);
+                }, 60000);
+            }
+        });
+    }, function(err) {
+        mongoose.disconnect();
+    } )
+});
+

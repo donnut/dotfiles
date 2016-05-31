@@ -1,0 +1,155 @@
+QUnit.module('Parser.RouterRegister', {
+    beforeEach: function() {
+        DEBUG = true;
+        Globals.idCounter = 0;
+        Globals.pips = Store.Storage(); // reset 'global' space
+    }
+});
+
+QUnit.test('create url string, single path', function(assert) {
+    var navTree = [
+        {__it: 'body', children: ['#modal', '#page1', '#page2']},
+        {__it: '#modal', children: []},
+        {__it: '#page1', children: ['#tab1', '#tab2']},
+        {__it: '#tab1', children: []},
+        {__it: '#tab2', children: []},
+        {__it: '#page2', children: []}
+    ];
+    var router = {
+        '#page1': {active: true, anc: '#main'},
+        '#page2': {active: false, anc: '#main'},
+        '#modal': {active: false},
+        '#tab1':  {active: false, anc: '#tabs'},
+        '#tab2':  {active: true, anc: '#tabs'}
+    };
+    var register = new Parser.Register.RouterRegister(router);
+    var parser = new Parser.Register.Parser(register);
+    var ast = parser.read(navTree);
+
+    assert.equal(ast.createUrl(), 'body/#page1/#tab2');
+});
+
+QUnit.test('create url string, multi path', function(assert) {
+    var navTree = [
+        {__it: 'body', children: ['#modal', '#page1', '#page2']},
+        {__it: '#modal', children: []},
+        {__it: '#page1', children: ['#tab1', '#tab2']},
+        {__it: '#tab1', children: []},
+        {__it: '#tab2', children: []},
+        {__it: '#page2', children: []}
+    ];
+
+    var router = {
+        '#page1': {active: true, anc: '#main'},
+        '#page2': {active: false, anc: '#main'},
+        '#modal': {active: false},
+        '#tab1':  {active: true, anc: '#tabs'},
+        '#tab2':  {active: true, anc: '#tabs'}
+    };
+    var register = new Parser.Register.RouterRegister(router);
+    var parser = new Parser.Register.Parser(register);
+    var ast = parser.read(navTree);
+
+    assert.equal(ast.createUrl(), 'body/#page1/(#tab1&#tab2)');
+});
+
+QUnit.test('create url string, one top-level item', function(assert) {
+    var navTree = [
+        {__it: 'body', children: ['#modal', '#page1', '#page2']},
+        {__it: '#modal', children: []},
+        {__it: '#page1', children: ['#tab1', '#tab2']},
+        {__it: '#tab1', children: []},
+        {__it: '#tab2', children: []},
+        {__it: '#page2', children: []}
+    ];
+
+    var router = {
+        '#page1': {active: false, anc: '#main'},
+        '#page2': {active: false, anc: '#main'},
+        '#modal': {active: true},
+        '#tab1':  {active: false, anc: '#tabs'},
+        '#tab2':  {active: false, anc: '#tabs'}
+    };
+    var register = new Parser.Register.RouterRegister(router);
+    var parser = new Parser.Register.Parser(register);
+    var ast = parser.read(navTree);
+
+    assert.equal(ast.createUrl(), 'body/#modal');
+});
+
+QUnit.test('create url string, ignore lowlevel truthy nodes', function(assert) {
+    var navTree = [
+        {__it: 'body', children: ['#modal', '#page1', '#page2']},
+        {__it: '#modal', children: []},
+        {__it: '#page1', children: ['#tab1', '#tab2']},
+        {__it: '#tab1', children: []},
+        {__it: '#tab2', children: []},
+        {__it: '#page2', children: []}
+    ];
+    var router = {
+        '#page1': {active: false, anc: '#main'},
+        '#page2': {active: false, anc: '#main'},
+        '#modal': {active: false},
+        '#tab1':  {active: true, anc: '#tabs'},
+        '#tab2':  {active: true, anc: '#tabs'}
+    };
+    var register = new Parser.Register.RouterRegister(router);
+    var parser = new Parser.Register.Parser(register);
+    var ast = parser.read(navTree);
+
+    assert.equal(ast.createUrl(), 'body');
+});
+
+QUnit.test('create url string, deep-level nodes - 1', function(assert) {
+    var navTree = [
+        {__it: 'body', children: ['#modal', '#page1', '#page2']},
+        {__it: '#modal', children: []},
+        {__it: '#page1', children: ['#tab1','#tab2']},
+        {__it: '#tab1', children: ['acc1','acc2']},
+        {__it: 'acc1', children: []},
+        {__it: 'acc2', children: []},
+        {__it: '#tab2', children: []},
+        {__it: '#page2', children: []}
+    ];
+    var router = {
+        '#page1': {active: true, anc: '#main'},
+        '#page2': {active: false, anc: '#main'},
+        '#modal': {active: false},
+        '#tab1':  {active: true, anc: '#tabs'},
+        '#tab2':  {active: true, anc: '#tabs'},
+        'acc1':   {active: true, anc: '#tab1'},
+        'acc2':   {active: false, anc: '#tab1'}
+    };
+    var register = new Parser.Register.RouterRegister(router);
+    var parser = new Parser.Register.Parser(register);
+    var ast = parser.read(navTree);
+
+    assert.equal(ast.createUrl(), 'body/#page1/(#tab1/acc1&#tab2)');
+});
+
+QUnit.test('create url string, deep-level nodes - 2', function(assert) {
+    var navTree = [
+        {__it: 'body', children: ['#modal', '#page1', '#page2']},
+        {__it: '#modal', children: []},
+        {__it: '#page1', children: ['#tab1','#tab2']},
+        {__it: '#tab1', children: ['acc1','acc2']},
+        {__it: 'acc1', children: []},
+        {__it: 'acc2', children: []},
+        {__it: '#tab2', children: []},
+        {__it: '#page2', children: []}
+    ];
+    var router = {
+        '#page1': {active: true, anc: '#main'},
+        '#page2': {active: false, anc: '#main'},
+        '#modal': {active: false},
+        '#tab1':  {active: true, anc: '#tabs'},
+        '#tab2':  {active: true, anc: '#tabs'},
+        'acc1':   {active: true, anc: '#tab1'},
+        'acc2':   {active: true, anc: '#tab1'}
+    };
+    var register = new Parser.Register.RouterRegister(router);
+    var parser = new Parser.Register.Parser(register);
+    var ast = parser.read(navTree);
+
+    assert.equal(ast.createUrl(), 'body/#page1/(#tab1/(acc1&acc2)&#tab2)');
+});

@@ -1,0 +1,8 @@
+from pattern.nl import singularize, pluralize
+from pattern.nl import conjugate, INFINITIVE, PRESENT, SG, PL
+from pattern.search import search
+from pattern.en import parsetree
+
+t = parsetree('uit de Kringen Rotterdam')
+print t
+print search('NP', t)

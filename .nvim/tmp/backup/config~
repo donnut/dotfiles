@@ -1,0 +1,9 @@
+Host gitlab-erwin
+  HostName gitlab
+  User git
+  IdentityFile /home/donnut/.ssh/id_rsa
+Host github-mopee
+  HostName github.com
+  PreferredAuthentications publickey
+  IdentityFile ~/.ssh/id_rsa_mopee
+

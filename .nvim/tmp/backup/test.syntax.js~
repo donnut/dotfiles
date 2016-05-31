@@ -1,0 +1,263 @@
+QUnit.module('Syntax', {
+    beforeEach: function() {
+        LBGlobals.idCounter = 0;
+    }
+});
+
+QUnit.test('create multiply', function(assert) {
+    var collection = [{
+        type: 'subject',
+        it: 'root',
+        children: ['p1'],
+        selected: 'branch'
+    },{
+        type: 'subject',
+        it: 'p1',
+        children: ['val2', 'val1'],
+        selected: 'multiply',
+        areaName: 'action'
+    },{
+        type: 'value',
+        it: 'val1',
+        areaName: 'action'
+    },{
+        type: 'value',
+        it: 'val2',
+        areaName: 'action'
+    }];
+
+    var tree = Expression.makeTree(collection);
+    assert.deepEqual(Expression.writeJS(tree), "return (val2*val1)");
+});
+
+QUnit.test('create filter', function(assert) {
+    var collection = [{
+        type: 'subject',
+        it: 'root',
+        children: ['p1'],
+        selected: 'branch'
+    },{
+        type: 'subject',
+        it: 'p1',
+        children: ['cond1', 'val1'],
+        selected: 'filter',
+        areaName: 'action'
+    },{
+        type: 'value',
+        it: 'val1',
+        areaName: 'action'
+    },{
+        type: 'subject',
+        it: 'cond1',
+        areaName: 'action',
+        selected: 'not',
+        children: ['comp1']
+    },{
+        type: 'comparison',
+        it: 'comp1',
+        areaName: 'action',
+        selected: 'gte',
+        children: ['val2', 'val3']
+    },{
+        type: 'value',
+        it: 'val2',
+        areaName: 'action'
+    },{
+        type: 'value',
+        it: 'val3',
+        areaName: 'action'
+    }];
+
+    var tree = Expression.makeTree(collection);
+    assert.deepEqual(Expression.writeJS(tree), "return filter(!(val2 >= val3), val1)");
+});
+
+QUnit.test('create value', function(assert) {
+    var subjects = [{
+        type: 'value',
+        it: 'val1',
+        areaName: 'action'
+    }];
+
+    var tree = Expression.makeTree(subjects);
+    assert.deepEqual(Expression.writeJS(tree), "val1");
+});
+
+QUnit.test('create negate of value', function(assert) {
+    var subjects = [{
+        type: 'subject',
+        it: 'not1',
+        areaName: 'action',
+        selected: 'not',
+        children: ['val1']
+    },{
+        type: 'value',
+        it: 'val1',
+        areaName: 'action'
+    }];
+
+    var tree = Expression.makeTree(subjects);
+    assert.deepEqual(Expression.writeJS(tree), "!val1");
+});
+
+QUnit.test('create sum of values', function(assert) {
+    var subjects = [{
+        type: 'subject',
+        it: 'sum',
+        areaName: 'action',
+        selected: 'plus',
+        children: ['val1', 'val2']
+    },{
+        type: 'value',
+        it: 'val1',
+        areaName: 'action'
+    },{
+        type: 'value',
+        it: 'val2',
+        areaName: 'action'
+    }];
+
+    var tree = Expression.makeTree(subjects);
+    assert.deepEqual(Expression.writeJS(tree), "(val1+val2)");
+});
+
+QUnit.test('create division of values', function(assert) {
+    var subjects = [{
+        type: 'subject',
+        it: 'sum',
+        areaName: 'action',
+        selected: 'divide',
+        children: ['val1', 'val2']
+    },{
+        type: 'value',
+        it: 'val1',
+        areaName: 'action'
+    },{
+        type: 'value',
+        it: 'val2',
+        areaName: 'action'
+    }];
+
+    var tree = Expression.makeTree(subjects);
+    assert.deepEqual(Expression.writeJS(tree), "(val1/val2)");
+});
+
+QUnit.test('count number of values', function(assert) {
+    var subjects = [{
+        type: 'subject',
+        it: 'sum',
+        areaName: 'action',
+        selected: 'count',
+        children: ['val1']
+    },{
+        type: 'value',
+        it: 'val1',
+        areaName: 'action'
+    }];
+
+    var tree = Expression.makeTree(subjects);
+    assert.deepEqual(Expression.writeJS(tree), "length(val1)");
+});
+
+QUnit.test('create a case into an existing expression area', function(assert) {
+    var subjects = [{
+        type: 'subject',
+        selected: 'branch',
+        it: 'b1',
+        areaName: 'myArea',
+        children: ['val1']
+    },{
+        type: 'value',
+        it: 'val1',
+        areaName: 'myArea'
+    }];
+
+    var tree = Expression.makeTree(subjects);
+    assert.deepEqual(Expression.writeJS(tree), "return val1");
+});
+
+QUnit.test('create case with one condition', function(assert) {
+    var subjects = [{
+        it: 'b1',
+        type: 'subject',
+        selected: 'branch',
+        children: ['case1', 'b2']
+    },{
+        it: 'case1',
+        type: 'subject',
+        children: ['cond1', 'b3'],
+        selected: 'case'
+    },{
+        it: 'b2',
+        type: 'subject',
+        selected: 'branch',
+        children: ['val2']
+    },{
+        it: 'b3',
+        type: 'subject',
+        selected: 'branch',
+        children: ['val3']
+    },{
+        it: 'cond1',
+        type: 'subject',
+        selected: 'not',
+        children: ['val1'],
+    },{
+        it: 'val1',
+        type: 'value',
+    },{
+        it: 'val2',
+        type: 'value',
+    },{
+        it: 'val3',
+        type: 'value',
+    }];
+
+    var tree = Expression.makeTree(subjects);
+    assert.deepEqual(Expression.writeJS(tree), "if (!val1) return val3 else return val2");
+});
+
+QUnit.test('create case with one comparison', function(assert) {
+    var subjects = [{
+        it: 'b1',
+        type: 'subject',
+        selected: 'branch',
+        children: ['case1', 'b2']
+    },{
+        it: 'case1',
+        type: 'subject',
+        children: ['comp1', 'b3'],
+        selected: 'case'
+    },{
+        it: 'b2',
+        type: 'subject',
+        selected: 'branch',
+        children: ['val2']
+    },{
+        it: 'b3',
+        type: 'subject',
+        selected: 'branch',
+        children: ['val3']
+    },{
+        it: 'comp1',
+        type: 'comparison',
+        selected: 'gte',
+        children: ['val1', 'val4'],
+    },{
+        it: 'val1',
+        type: 'value',
+    },{
+        it: 'val2',
+        type: 'value',
+    },{
+        it: 'val3',
+        type: 'value',
+    },{
+        it: 'val4',
+        type: 'value',
+    }];
+
+    var tree = Expression.makeTree(subjects);
+    assert.deepEqual(Expression.writeJS(tree), "if ((val1 >= val4)) return val3 else return val2");
+});
+

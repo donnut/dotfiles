@@ -1,0 +1,57 @@
+import pytest
+import pickle
+from nltk.tokenize.punkt import PunktSentenceTokenizer
+from nltk import word_tokenize
+
+from ocr.corrections import Corrections
+from ocr.features import ServiceNgrams, ServiceKenLM
+
+@pytest.fixture(scope='session')
+#def service():
+    #with open('./ocr/test/fixtures/samanthas-droom.txt', 'r') as f:
+        #raw = f.read()
+        #sents = PunktSentenceTokenizer().sentences_from_text(raw)
+        #tokened_sents = [word_tokenize(s) for s in sents]
+    #return ServiceNgrams(tokened_sents)
+
+def service():
+    return ServiceKenLM()
+#@pytest.fixture(scope='session')
+#def CM():
+    #with open('./ocr/test/fixtures/confusion.p', 'rb') as f:
+        #return pickle.load(f)
+
+#@pytest.mark.skip()
+def test_update_phrase(service):
+    correction = Corrections(service=service)
+    a = correction.update_phrase('al', 'al', (['<s>'], 0.0, (0.0,0.0,0.0,0.0)))
+    assert a[0] == ['<s>', 'al']
+    assert a[1] < 0
+    a = correction.update_phrase('haar', 'hair', (['<s>','Al'], 0.0, (0.0,0.0,0.0,0.0)))
+    assert a[0] == ['<s>', 'Al', 'haar']
+    assert round(a[1], 5) == -12.10448
+    #a = correction.update_phrase('__null__', 'al', (['<s>'], 0.0, (0.0,0.0,0.0,0.0)))
+    #assert a[0] == ['<s>', '__null__']
+    #assert a[1] == 0.0
+
+#def test_best(service):
+    #correction = Corrections(service=service)
+    #correction.set_weights({'trans':0.5,'inword':5.0,'merge':1.0,'split':1.0})
+    #result = correction.best(['Al', 'hair', 'spullen', 'wren','ingepakt','.'])
+    #assert result[0][0] == ['<s>', 'Al', 'haar', 'spullen', 'waren','ingepakt','.']
+    #result = correction.best(['<s>', 'Ze', 'gng', 'vroug', 'naar', 'bed','.'])
+    #assert result[0][0] == ['<s>', 'Ze', 'ging', 'vroeg', 'naar', 'bed','.']
+    #result = correction.best(['<s>', 'Zeging'])
+    #assert result[0][0] == ['<s>', 'Ze ging']
+    #result = correction.best(['<s>', 'Ze', 'gng', 'vroug', 'na', 'ar', 'bed','.'])
+    #assert result[0][0] == ['<s>', 'Ze', 'ging', 'vroeg', '__null__', ('naar',1), 'bed','.']
+
+def test_best_2(service):
+    correction = Corrections(service=service)
+    correction.set_weights({'trans':1.5,'inword':5.0,'merge':1.0,'split':1.0})
+    org = correction.best(['hij','hoopt','daarbij'])
+    cor = correction.best(['hij','loopt','daar bij'])
+    print(org[0][0])
+    print(cor[0][0])
+    assert org[0][1] == cor[0][1]
+

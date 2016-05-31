@@ -1,0 +1,64 @@
+class LCS:
+    """LongestCommonSubstring"""
+
+    @staticmethod
+    def lcsubstr(s1, s2):
+        """Returns the longest substring of s1 and s2, including the start position and (inclusive) end position"""
+        m = [[0] * (1 + len(s2)) for i in range(1 + len(s1))]
+        longest, x_longest, y_longest = 0, 0, 0
+        TOL = 2
+        for x in range(1, 1 + len(s1)):
+            for y in range(1, min(TOL+x, 1 + len(s2))):
+                if s1[x - 1] == s2[y - 1]:
+
+                    m[x][y] = m[x - 1][y - 1] + 1
+                    if m[x][y] > longest:
+                        longest = m[x][y]
+                        x_longest = x
+                        y_longest = y
+                else:
+                    m[x][y] = 0
+        return (s1[x_longest - longest: x_longest], x_longest-longest, x_longest-1, y_longest-longest, y_longest-1)
+
+    @staticmethod
+    def all_lcsubstrs(s1, s2):
+
+        def substrs(result, s1, s2, start1, start2):
+            st, s1s, s1e, s2s, s2e = LongestCommonSubstring.lcsubstr(s1, s2)
+
+            if len(st) > 0:
+                result.append((st, s1s+start1, s1e+start1, s2s+start2, s2e+start2))
+                if s1s > 0 and s2s > 0:
+                    substrs(result, s1[0:s1s], s2[0:s2s], start1, start2)
+                if s1e < len(s1)-1 and s2e < len(s2)-1:
+                    substrs(result, s1[s1e+1:], s2[s2e+1:], s1e+1+start1, s2e+1+start2)
+
+        result = []
+        substrs(result, s1, s2, 0, 0)
+        return sorted(result, key=lambda x: x[1])
+
+    @staticmethod
+    def diffs(s1, s2):
+        """Returns all the unequal substrings that are left after match substrings"""
+        result = []
+        p_inc, p_cor = 0, 0
+
+        pieces = LongestCommonSubstring.all_lcsubstrs(s1, s2)
+        if len(pieces) == 0 and len(s1) > 0 and len(s2) > 0:
+            result.append((s1, s2))
+        else:
+            for piece in pieces:
+                if piece[1] > p_inc or piece[3] > p_inc:
+                    result.append((s1[p_inc:piece[1]], s2[p_cor:piece[3]]))
+                p_inc = piece[2] + 1
+                p_cor = piece[4] + 1
+
+            try:
+                last = pieces[-1]
+                if last[2] < len(s1)-1 or last[4] < len(s2)-1:
+                    result.append((s1[last[2]+1:], s2[last[4]+1:]))
+            except:
+                pass
+                #print(pieces, s1, s2)
+
+        return result

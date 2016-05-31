@@ -1,0 +1,82 @@
+import csv
+
+sqlfile = open('./biomijnnatuur/biomijnnatuur.sql', 'w')
+
+sqlfile.write("""
+SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;
+SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
+SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='TRADITIONAL,ALLOW_INVALID_DATES';\n
+""")
+
+csvfile = open('./biomijnnatuur/bio_check.csv', 'rb')
+try:
+    foodreader = csv.DictReader(csvfile, delimiter=",", quotechar='"')
+    for idx, row in enumerate(foodreader):
+        id = idx + 1
+        sqlfile.write("""insert into `subcategory` set `id`=%s, `description`="%s", `category_id`=%s;\n""" % ( id, "farm", "1"))
+        subcategory_id = id
+
+        sqlfile.write("""insert into `food_point` set `id`=%s, `name`="%s", `owner_name`="%s", `description`="%s", `opening_description`="%s", `phone`="%s", `email`="%s", `website`="%s", `facebook`="%s", `is_disabled`="%s", `nation_id`="%s", `post_code`="%s", `city`="%s", `address_number`="%s", `address_string`="%s", `latitude`="%s", `longitude`="%s", `subcategory_id`=%s;\n """ % (
+                id,
+                row['food_point > name'],
+                'BioMijnNatuur',
+                '',
+                row['food_point > opening_description'],
+                row['food_point > phone'],
+                row['food_point > email'],
+                row['food_point > website'],
+                row['food_point > facebook'],
+                0,
+                'BE',
+                row['position > postcode'],
+                row['position > city'],
+                row['position > address_number'],
+                row['position > address_string'],
+                row['position > latitude'],
+                row['position > longitude'],
+                subcategory_id))
+        food_point_id = id
+
+        weekday_str = row['opening > weekday']
+        if weekday_str != '':
+            weekdays = weekday_str.split(',')
+        else:
+            weekdays = []
+
+        for weekday in weekdays:
+
+            if row['opening > opening_time'] == '' or row['opening > closing_time'] == '':
+                print "error in opening hours: %s" id
+            else:
+                command = """insert into `opening` set `weekday`=%s, """ % weekday
+
+                command += """ `opening_time`="%s", """ % row['opening > opening_time']
+
+                command += """ `closing_time`="%s", """ % row['opening > closing_time']
+
+                if row['opening > pause_start'] != '':
+                    command += """ `pause_start`="%s", """ % row['opening > pause_start']
+
+                if row['opening > pause_end'] != '':
+                    command += """ `pause_end`="%s", """ % row['opening > pause_end']
+
+                if row['opening > season_start'] != '':
+                    command += """ `season_start`="%s", """ % row['opening > season_start']
+
+                if row['opening > season_end'] != '':
+                    command += """ `season_end`="%s", """ % row['opening > season_end']
+
+                command += """ `food_point_id`=%s;\n""" % food_point_id
+
+                sqlfile.write(command)
+
+finally:
+    csvfile.close()
+
+sqlfile.write("""
+SET SQL_MODE=@OLD_SQL_MODE;
+SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
+SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;\n
+""")
+
+sqlfile.close()

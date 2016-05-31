@@ -1,0 +1,10 @@
+"use strict";
+var rules = require('./configRules');
+
+//'event', 'dimensions', 'offset', 'effects', 'ajax', 'ajax-load', 'ajax-transport', 'xhr', 'script', 'jsonp', 'wrap', 'deprecated'
+
+function validate(options) {
+	return rules.test(options);
+}
+
+exports.validate = validate;

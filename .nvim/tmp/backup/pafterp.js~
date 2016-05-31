@@ -1,0 +1,6 @@
+'use strict';
+
+first().then(function(value) {
+  return second.resolve(value);
+}).then(console.log)
+

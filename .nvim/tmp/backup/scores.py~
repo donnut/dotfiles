@@ -1,0 +1,22 @@
+from ocr.features import TransitionFeatures, EmissionFeatures
+
+class Scores:
+
+    def __init__(self, sents, n=2):
+        self.n = n
+        self.tf = TransitionFeatures()
+        if n == 2:
+            self.tf.load_bigrams(sents)
+        else:
+            raise Exception("Make up yuor mind")
+
+    def setWeights(self, weights):
+        self.weights = weights
+
+    def transition(self, word, context):
+        return self.tf.logprob(word, context[-self.n+1])
+
+
+    def emission(self):
+        pass
+

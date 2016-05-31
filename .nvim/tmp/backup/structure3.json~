@@ -1,0 +1,142 @@
+//@type: Restaurant = Restaurant, Store = Shop, //LocalBusiness = Farm, Deliverypoint, Event
+
+<script type="application/ld+json">
+{
+	"@context": "http://schema.org",
+	"@type": "Restaurant",
+	"address": {
+		"@type": "PostalAddress",
+		"addressCountry": "country",
+		"addressLocality": "city",
+		"postalCode": "postalCode",
+		"streetAddress": "streetAndNumber"
+	},
+	"biomijnnatuurID": "111111",
+	"category": "organic",
+	"description": "Cheesy farm",
+	"email": "mailto:jane-doe@xyz.edu",
+	"employee": "nameOfOwner",
+	"geo": {
+		"@type": "GeoCoordinates",
+		"latitude": "40.75",
+		"longitude": "73.98"
+	},
+    "hasOfferCatalog":{
+        "CSA": true,
+        "education":false,
+        "sheltered employment":true,
+        "tourism": true
+    },
+    "hasPOS": {
+        'food_points': [{
+            "_id":"123asdfw342e(mongoid)",
+            "name":"Farmname1"},
+        {
+            "_id":"adsfad(mongoid)",
+            "name":"Farmname2"},
+        {
+            "_id":"fgsfdsdf(mongoid)",
+            "name":"Farmname3"},
+        {
+            "_id":"ertyertg45g(mongoid)",
+            "name":"Farmname4"
+        }],
+        'description': item['producer'],
+        'description2': item['delivery_ID']
+    },
+    "kindOfPlace":"farm",
+	"name": "name",
+	"openingHoursSpecification": [{
+		"@type": "OpeningHoursSpecification",
+		"dayOfWeek": [
+			"Tuesday",
+			"Wednesday",
+			"Thursday",
+			"Friday"
+		],
+		"opens": "09:00",
+		"closes": "12:00",
+		"validFrom": "2016-06-01",
+		"validThrough": "2016-08-31"
+	}, {
+		"@type": "OpeningHoursSpecification",
+		"dayOfWeek": [
+			"Tuesday",
+			"Wednesday",
+			"Thursday"
+		],
+		"opens": "14:00",
+		"closes": "17:00",
+		"validFrom": "2016-06-01",
+		"validThrough": "2016-08-31"
+	},{
+		"@type": "OpeningHoursSpecification",
+		"dayOfWeek": [
+			"Saturday",
+			"Sunday"
+		],
+		"opens": "10:00",
+		"closes": "15:00",
+		"validFrom": "2016-06-01",
+		"validThrough": "2016-08-31"
+	},{
+		"@type": "OpeningHoursSpecification",
+		"dayOfWeek": [
+			"Saturday",
+			"Sunday"
+		],
+		"opens": "10:00",
+		"closes": "12:00",
+		"validFrom": "2016-09-01",
+		"validThrough": "2017-05-31"
+	}, {
+		"@type": "OpeningHoursSpecification",
+		"dayOfWeek": [
+			"Tuesday",
+			"Wednesday"
+		],
+		"opens": "9:30",
+		"closes": "12:00",
+		"validFrom": "2016-09-01",
+		"validThrough": "2017-05-31"
+	},{
+		"@type": "OpeningHoursSpecification",
+		"dayOfWeek": [
+			"Tuesday",
+			"Wednesday"
+		],
+		"opens": "14:00",
+		"closes": "16:30",
+		"validFrom": "2016-09-01",
+		"validThrough": "2017-05-31"
+	},{
+		"@type": "OpeningHoursSpecification",
+		"description": "lasdjflsakdfjksadj"
+	}],
+	"product": {
+        "bread":true,
+        "dairy":true,
+        "drinks":true,
+        "eggs":true,
+        "fruit":true,
+        "meat":true,
+        "vegetables":true,
+    },
+	"servesCuisine": {
+		"flexitarian":true,
+		"vegan":true,
+		"vegetarian":false
+    },
+    "status":"1",
+	"telephone": ["(408) 714-1489",
+    "(408) 714-1489",
+    "(408) 714-1489"],
+	"url": "http://www.your-site.com",
+	"sameAs": [
+		"http://www.facebook.com/your-profile",
+		"http://www.twitter.com/yourProfile",
+		"https://www.instagram.com/greenpeace/",
+		"https://telegram.me/telegram"
+	]
+}
+</script>

@@ -1,0 +1,40 @@
+import pickle
+import re
+from nltk.tokenize.punkt import PunktSentenceTokenizer
+from nltk import word_tokenize
+
+class Corpus:
+
+    @staticmethod
+    def read_text(file_name):
+        with open(file_name, 'r') as f:
+            raw = f.read()
+            sents = PunktSentenceTokenizer().sentences_from_text(raw)
+            return [word_tokenize(s) for s in sents]
+
+    @staticmethod
+    def create_lexicon(token_sents, file_name):
+        with open(file_name, 'wb') as f:
+            unigrams = Counter([t for tokens in token_sents for t in tokens])
+            pickle.dump(unigrams, f)
+
+    @staticmethod
+    def convert_to_tokens(fn_in, fn_out):
+        with open(fn_in, 'r') as fi:
+            raw = fi.read()
+            sents = PunktSentenceTokenizer().sentences_from_text(raw)
+            with open(fn_out, 'w') as fo:
+                for sent in sents:
+                    print(sent)
+                    for token in word_tokenize(sent):
+                        fo.write("%s" % token)
+
+    def remove_noise(fn_in, fn_out):
+        allowed = r'([^a-zA-Z0-9àáèéëòóùúü,])'
+        with open(fn_in, 'r') as fi:
+            with open(fn_out, 'w') as fo:
+                for line in fi.readlines():
+                    sents = re.sub(allowed, ' ', line)
+                    tokens = ['<s>'] + [token for token in word_tokenize(sents)]
+                    print(tokens)
+                    fo.write("%s\n%s\n\n" % (tokens,tokens))

@@ -1,0 +1,7 @@
+var fs = require('fs');
+
+fs.readFile('./index.js', 'utf8', function(err, data) {
+    if (err) throw new Error(err);
+    console.log(data);
+    process.exit();
+});

@@ -1,0 +1,21 @@
+function curry2(fn: Function): (a: number, b?: number) => number {
+    return function(a, b) {
+        switch (arguments.length) {
+            case 0:
+                new TypeError('Function called with no arguments');
+            case 1:
+                return function(b: number) {
+                    return fn(a, b);
+                };
+            default:
+                return fn(a, b);
+        }
+    };
+}
+
+const add = (x: number, y: number) => x + y;
+
+const curriedAdd = curry2(add);
+
+const res1 = curriedAdd(1);
+

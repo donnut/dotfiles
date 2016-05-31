@@ -1,0 +1,15 @@
+var mongoose = require('mongoose')
+
+mongoose.connect('mongodb://localhost/foodpoints');
+
+var FoodSchema = mongoose.Schema({}, {strict: false});
+
+
+var Food = mongoose.model('FoodPoint', FoodSchema);
+
+var food = new Food({name:'Biomijnnatuur', phone: '0234556665'})
+
+food.save(function(err) {
+    if (err) console.log('failed to save');
+    else console.log('Saved');
+});

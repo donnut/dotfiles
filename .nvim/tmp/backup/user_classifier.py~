@@ -1,0 +1,59 @@
+import pandas as pd
+
+import numpy as np
+
+import re, os
+
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_extraction import DictVectorizer
+from sklearn.externals import joblib
+
+from nltk.corpus import stopwords
+from nltk.tokenize import TweetTokenizer
+from nltk.stem import SnowballStemmer
+
+class UserClassifier:
+    '''Classificatie op basis van description
+    '''
+
+    def __init__(self):
+        path = os.path.dirname(os.path.realpath(__file__))
+        self.clf = joblib.load("%s/%s" % (path,'classifier/description_classifier.pkl'))
+        self.v = joblib.load("%s/%s" % (path, 'classifier/description_vector.pkl'))
+        self.stemmer = SnowballStemmer("dutch")
+        self.tknzr = TweetTokenizer()
+        self.punctuation = [',', '!', '?', ':', '&', '-', '.', '|', '@', '...']
+
+
+    def _make_tokens(self, text):
+        # http address to URL
+        print(text)
+        text_nurl = re.sub('http(?:s)?.*?(?: |$)', 'URL', text)
+        tokens = self.tknzr.tokenize(text_nurl)
+        tokens_dash = [word for word_combi in tokens for word in word_combi.split('-')]
+        tokens_min_stop = [word.lower() for word in tokens_dash if word not in stopwords.words('dutch') and word not in self.punctuation and len(word) > 1]
+        tokens_no_numbers = [word for word in tokens_min_stop if not re.search('[0-9]', word)]
+        tokens_hash = [re.sub('^(#|@)', '', word) for word in tokens_no_numbers]
+        tokens_stemmed = [self.stemmer.stem(word) for word in tokens_hash]
+        result = {}
+        for token in tokens_stemmed:
+            if token in result:
+                result[token] += 1
+            else:
+                result[token] = 1
+        return result
+
+    def get_type(self, input):
+
+        if type(input) == str:
+            description = [input]
+        else:
+            description = input
+
+        words = [self._make_tokens(text) for text in description]
+
+        X = self.v.transform(words)
+
+        predicted = self.clf.predict(X)
+
+        return predicted

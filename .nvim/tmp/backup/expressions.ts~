@@ -1,0 +1,90 @@
+/// <reference path="../dts/ramda.d.ts"/>
+/// <reference path="./lb-globals"/>
+/// <reference path="./expressionTree"/>
+
+module Expression {
+
+    export function makeJS(tree: Tree): string {
+        let args: string[] = [];
+
+        function write(item) {
+            if (item.constructor === Expression.NumberOperator) {
+                switch (item.selected) {
+                    case 'plus':
+                        return `(${write(item.children[0])}+${write(item.children[1])})`;
+                    case 'minus':
+                        return `(${write(item.children[0])}-${write(item.children[1])})`;
+                    case 'multiply':
+                        return `(${write(item.children[0])}*${write(item.children[1])})`;
+                    case 'divide':
+                        return `(${write(item.children[0])}/${write(item.children[1])})`;
+                }
+            } else if (item.constructor === Expression.StringOperator) {
+                switch (item.selected) {
+                    case 'plus':
+                        return `(${write(item.children[0])}+${write(item.children[1])})`;
+                }
+            } else if (item.constructor === Expression.BooleanOperator) {
+            } else if (item.constructor === Expression.LogicalOperator) {
+                switch (item.selected) {
+                    case 'and':
+                        return `(${write(item.children[0])} && ${write(item.children[1])})`;
+                    case 'or':
+                        return `(${write(item.children[0])} || ${write(item.children[1])})`;
+                    case 'not':
+                        return `(!${write(item.children[0])})`;
+                }
+            } else if (item.constructor === Expression.ReduceOperator) {
+                switch (item.selected) {
+                    case 'count':
+                        return `R.length(${write(item.children[0])})`;
+                    case 'max':
+                        return `R.max(${write(item.children[0])})`;
+                    case 'min':
+                        return `R.min(${write(item.children[0])})`;
+                }
+            } else if (item.constructor === Expression.BlockOperator) {
+                switch (item.selected) {
+                    case 'branch':
+                        if (item.children.length === 1) return `${write(item.children[0])}`;
+                        if (item.children.length === 2) return `Utils.branch(${write(item.children[0])}, ${write(item.children[1])})`;
+                        if (item.children.length === 3) return `Utils.branch(${write(item.children[0])}, ${write(item.children[1])}, ${write(item.children[2])})`;
+                        break;
+                }
+            } else if (item.constructor === Expression.ArrayOperator) {
+                switch (item.selected) {
+                    case 'findOne':
+                        return `R.find(${write(item.children[0])}, ${write(item.children[1])})`;
+                    case 'find':
+                        return `R.filter(${write(item.children[0])}, ${write(item.children[1])})`;
+                    case 'sort':
+                        return `R.sort(${write(item.children[0])}, ${write(item.children[1])})`;
+                }
+            } else if (item.constructor === Expression.Comparators) {
+                switch (item.selected) {
+                    case 'eq':
+                        return `(${write(item.children[0])} === ${write(item.children[1])})`;
+                    case 'ne':
+                        return `(${write(item.children[0])} !== ${write(item.children[1])})`;
+                    case 'lt':
+                        return `(${write(item.children[0])} < ${write(item.children[1])})`;
+                    case 'lte':
+                        return `(${write(item.children[0])} <= ${write(item.children[1])})`;
+                    case 'gt':
+                        return `(${write(item.children[0])} > ${write(item.children[1])})`;
+                    case 'gte':
+                        return `(${write(item.children[0])} >= ${write(item.children[1])})`;
+                }
+            } else if (item.constructor === Expression.Value) {
+                if (item.selected) {
+                    return item.selected;
+                } else {
+                    args.push(item.it);
+                    return item.it;
+                }
+            }
+        }
+        let exprBody = write(tree);
+        return `function(${R.join(',',R.uniq(args))}) {return ${exprBody};}`
+    }
+}

@@ -1,0 +1,807 @@
+QUnit.module('ExpressionTree - search');
+
+var pluck = function(tree, value) {
+    var result = [];
+    function walk(tree) {
+        if (tree[value] && typeof value === 'string') result.push(tree[value]);
+        if (tree.children) R.forEach(walk, tree.children);
+    }
+    walk(tree);
+    return result;
+}
+
+QUnit.test('variable', function(assert) {
+
+    var model = {
+        selected: 'expression',
+        children: [{
+            selected: 'expression-area',
+            children: [{
+                selected: 'label-var'
+            },{
+                selected: 'area',
+                children: [{
+                    selected: 'case',
+                    children: [{
+                        selected: 'not',
+                        children: [{
+                            family: 'value',
+                            cat: 'drop',
+                            value: 'models.todo.value.completed',
+                            type: 'boolean'
+                        }]
+                    }, {
+                        selected: 'area',
+                        children: [{
+                            selected: 'branch',
+                            children: [{
+                                selected: 'count',
+                                nid: 'p1',
+                                children: [{
+                                    family: 'value',
+                                    cat: 'drop',
+                                    value: 'models.todolist.value',
+                                    type: 'string[]'
+                                }]
+                            }]
+                        }]
+                    }]
+                }]
+            }]
+        }]
+    };
+
+    var tree = Expression.makeTree(model);
+    assert.deepEqual(pluck(tree, 'selected'), [
+        "expression",
+        "expression-area",
+        "area",
+        "case",
+        "not",
+        "area",
+        "branch",
+        "count"
+    ]);
+    assert.deepEqual(pluck(tree, 'value'), [
+        "var",
+        "models.todo.value.completed",
+        "models.todolist.value"
+    ]);
+});
+
+QUnit.test('search', function(assert) {
+
+    var model = {
+        selected: 'expression',
+        children: [{
+            selected: 'message-area',
+            children: [{
+                nid: '2',
+                selected: 'message-branch',
+                children: [{
+                    nid: '3',
+                    selected: 'message',
+                    children: [{
+                        nid: '4',
+                        selected: 'expression-area',
+                        children: [{
+                            nid: '62',
+                            selected: 'value-area'
+                        },{
+                            nid: '5',
+                            selected: 'area',
+                            children: [{
+                                nid: '6',
+                                selected: 'branch',
+                                children: [{
+                                    nid: 'p1',
+                                    selected: 'minus',
+                                    children: [{
+                                        nid: 'val2',
+                                        type: 'number'
+                                    },{
+                                        nid: 'val1',
+                                        type: 'number'
+                                    }]
+                                }]
+                            }]
+                        }]
+                    }]
+                }]
+            }]
+        }]
+    };
+
+    var tree = Expression.makeTree(model);
+
+    assert.equal(Expression.search(tree, 'missing')[2], null);
+    var node = Expression.search(tree, 'val1');
+    assert.ok(node[2] instanceof Expression.Value);
+    assert.equal(node[2].nid, 'val1');
+    assert.equal(node[2].selected, void 0);
+
+    var node = Expression.search(tree, 'p1');
+    assert.ok(node[2] instanceof Expression.NumberOperator);
+    assert.equal(node[2].nid, 'p1');
+    assert.equal(node[2].selected, 'minus');
+    assert.equal(node[2].children.length, 2);
+});
+
+QUnit.module('ExpressionTree - manipulation');
+
+QUnit.test('insert node', function(assert) {
+
+    var model = {
+        selected: 'expression',
+        children: [{
+            selected: 'message-area',
+            children: [{
+                nid: '2',
+                selected: 'message-branch',
+                children: [{
+                    nid: '3',
+                    selected: 'message',
+                    children: [{
+                        nid: '4',
+                        selected: 'expression-area',
+                        children: [{
+                            nid: '62',
+                            selected: 'value-area'
+                        },{
+                            nid: '5',
+                            selected: 'area',
+                            children: [{
+                                nid: '6',
+                                selected: 'branch',
+                                children: [{
+                                    nid: 'p1',
+                                    selected: 'minus',
+                                    children: [{
+                                        nid: 'val2',
+                                        type: 'number'
+                                    },{
+                                        nid: 'val1',
+                                        type: 'number'
+                                    }]
+                                }]
+                            }]
+                        }]
+                    }]
+                }]
+            }]
+        }]
+    };
+
+    var tree = Expression.makeTree(model);
+    var newNodeNid = Expression.insert(tree, 'minus', 'val2', 'left');
+    var result = Expression.search(tree, newNodeNid);
+    assert.ok(result[0] instanceof Expression.NumberOperator, 'ancestor');
+    assert.equal(result[1], 0, 'position');
+    assert.ok(result[2] instanceof Expression.NumberOperator, 'new node');
+});
+
+QUnit.test('remove node', function(assert) {
+
+    var model = {
+        selected: 'expression',
+        children: [{
+            selected: 'message-area',
+            children: [{
+                selected: 'message-branch',
+                children: [{
+                    selected: 'message',
+                    children: [{
+                        selected: 'expression-area',
+                        children: [{
+                            selected: 'value-area'
+                        },{
+                            selected: 'area',
+                            children: [{
+                                selected: 'branch',
+                                children: [{
+                                    selected: 'minus',
+                                    nid: 'p1',
+                                    children: [{
+                                        selected: 'minus',
+                                        nid: 'p2',
+                                        children: [{
+                                            nid: 'val2',
+                                            type: 'number'
+                                        },{
+                                            nid: 'val3',
+                                            type: 'number'
+                                        }]
+                                    },{
+                                        nid: 'val1',
+                                        type: 'number'
+                                    }]
+                                }]
+                            }]
+                        }]
+                    }]
+                }]
+            }]
+        }]
+    };
+
+    var tree = Expression.makeTree(model);
+    var result = Expression.search(tree, 'p1');
+    assert.ok(result[0] instanceof Expression.BranchOperator);
+    assert.equal(result[1], 0);
+    assert.ok(result[2] instanceof Expression.NumberOperator);
+
+    Expression.remove(tree, 'p1', 'left');
+    result = Expression.search(tree, 'p1');
+    assert.ok(result[0] === null);
+});
+
+QUnit.test('diff equal trees', function(assert) {
+
+    var model = {
+        selected: 'expression',
+        children: [{
+            selected: 'message-area',
+            children: [{
+                selected: 'message-branch',
+                children: [{
+                    selected: 'message',
+                    children: [{
+                        selected: 'expression-area',
+                        children: [{
+                            selected: 'value-area'
+                        },{
+                            selected: 'area',
+                            children: [{
+                                selected: 'branch',
+                                children: [{
+                                    selected: 'minus',
+                                    nid: 'p1',
+                                    children: [{
+                                        selected: 'minus',
+                                        nid: 'p2',
+                                        children: [{
+                                            nid: 'val2',
+                                            type: 'number'
+                                        },{
+                                            nid: 'val3',
+                                            type: 'number'
+                                        }]
+                                    },{
+                                        nid: 'val1',
+                                        type: 'number'
+                                    }]
+                                }]
+                            }]
+                        }]
+                    }]
+                }]
+            }]
+        }]
+    };
+
+    var tree1 = Expression.makeTree(model);
+    var tree2 = Expression.makeTree(model);
+    var diff = Expression.diff(tree1, tree2);
+    assert.deepEqual(diff, []);
+});
+
+QUnit.test('diff unequal trees', function(assert) {
+
+    var model1 = {
+        selected: 'expression',
+        children: [{
+            selected: 'message-area',
+            children: [{
+                nid: '2',
+                selected: 'message-branch',
+                children: [{
+                    nid: '3',
+                    selected: 'message',
+                    children: [{
+                        nid: '4',
+                        selected: 'expression-area',
+                        children: [{
+                            nid: '62',
+                            selected: 'value-area'
+                        },{
+                            nid: '5',
+                            selected: 'area',
+                            children: [{
+                                nid: '6',
+                                selected: 'branch',
+                                children: [{
+                                    nid: 'p1',
+                                    selected: 'minus',
+                                    children: [{
+                                        nid: 'val2',
+                                        type: 'number'
+                                    },{
+                                        nid: 'val1',
+                                        type: 'number'
+                                    }]
+                                }]
+                            }]
+                        }]
+                    }]
+                }]
+            }]
+        }]
+    };
+
+    var model2 = {
+        selected: 'expression',
+        children: [{
+            selected: 'message-area',
+            children: [{
+                selected: 'message-branch',
+                children: [{
+                    selected: 'message',
+                    children: [{
+                        selected: 'expression-area',
+                        children: [{
+                            selected: 'value-area'
+                        },{
+                            selected: 'area',
+                            children: [{
+                                selected: 'branch',
+                                children: [{
+                                    selected: 'minus',
+                                    nid: 'p1',
+                                    children: [{
+                                        selected: 'minus',
+                                        nid: 'p2',
+                                        children: [{
+                                            nid: 'val2',
+                                            type: 'number'
+                                        },{
+                                            nid: 'val3',
+                                            type: 'number'
+                                        }]
+                                    },{
+                                        nid: 'val1',
+                                        type: 'number'
+                                    }]
+                                }]
+                            }]
+                        }]
+                    }]
+                }]
+            }]
+        }]
+    };
+
+    var tree1 = Expression.makeTree(model1);
+    var tree2 = Expression.makeTree(model2);
+    var diff = Expression.diff(tree1, tree2);
+    assert.deepEqual(R.map(function(item) {
+       return item.nid;
+    }, R.flatten(diff)), ['val2', 'p2']);
+    assert.equal(diff[0][0].constructor, Expression.Value);
+    assert.equal(diff[0][1].constructor, Expression.NumberOperator);
+});
+
+QUnit.test('diff trees, 2 leafs swapped', function(assert) {
+
+    var model1 = {
+        selected: 'expression',
+        children: [{
+            selected: 'message-area',
+            children: [{
+                nid: '2',
+                selected: 'message-branch',
+                children: [{
+                    nid: '3',
+                    selected: 'message',
+                    children: [{
+                        nid: '4',
+                        selected: 'expression-area',
+                        children: [{
+                            nid: '62',
+                            selected: 'value-area'
+                        },{
+                            nid: '5',
+                            selected: 'area',
+                            children: [{
+                                nid: '6',
+                                selected: 'branch',
+                                children: [{
+                                    nid: 'p1',
+                                    selected: 'minus',
+                                    children: [{
+                                        nid: 'val2',
+                                        type: 'number'
+                                    },{
+                                        nid: 'val1',
+                                        type: 'number'
+                                    }]
+                                }]
+                            }]
+                        }]
+                    }]
+                }]
+            }]
+        }]
+    };
+
+    var model2 = {
+        selected: 'expression',
+        children: [{
+            selected: 'message-area',
+            children: [{
+                nid: '2',
+                selected: 'message-branch',
+                children: [{
+                    nid: '3',
+                    selected: 'message',
+                    children: [{
+                        nid: '4',
+                        selected: 'expression-area',
+                        children: [{
+                            nid: '62',
+                            selected: 'value-area'
+                        },{
+                            nid: '5',
+                            selected: 'area',
+                            children: [{
+                                nid: '6',
+                                selected: 'branch',
+                                children: [{
+                                    nid: 'p1',
+                                    selected: 'minus',
+                                    children: [{
+                                        nid: 'val1',
+                                        type: 'number'
+                                    },{
+                                        nid: 'val2',
+                                        type: 'number'
+                                    }]
+                                }]
+                            }]
+                        }]
+                    }]
+                }]
+            }]
+        }]
+    };
+
+    var tree1 = Expression.makeTree(model1);
+    var tree2 = Expression.makeTree(model2);
+    var diff = Expression.diff(tree1, tree2);
+    assert.deepEqual(diff, []);
+});
+
+
+QUnit.test('swap two nodes', function(assert) {
+
+    var model = {
+        selected: 'expression',
+        children: [{
+            selected: 'message-area',
+            children: [{
+                selected: 'message-branch',
+                children: [{
+                    selected: 'message',
+                    children: [{
+                        selected: 'expression-area',
+                        children: [{
+                            selected: 'value-area'
+                        },{
+                            selected: 'area',
+                            children: [{
+                                selected: 'branch',
+                                children: [{
+                                    selected: 'minus',
+                                    nid: 'p1',
+                                    children: [{
+                                        selected: 'minus',
+                                        nid: 'p2',
+                                        children: [{
+                                            nid: 'val2',
+                                            type: 'number'
+                                        },{
+                                            nid: 'val3',
+                                            type: 'number'
+                                        }]
+                                    },{
+                                        nid: 'val1',
+                                        type: 'number'
+                                    }]
+                                }]
+                            }]
+                        }]
+                    }]
+                }]
+            }]
+        }]
+    };
+
+    var tree = Expression.makeTree(model);
+    Expression.swap(tree, 'val2', 'val3');
+    var result = Expression.search(tree, 'val3');
+    var anc = result[0];
+    assert.deepEqual(R.pluck('nid', anc.children), ['val3', 'val2']);
+    Expression.swap(tree, 'val1', 'p2');
+    var result = Expression.search(tree, 'p2');
+    anc = result[0];
+    assert.deepEqual(R.pluck('nid', anc.children), ['val1', 'p2']);
+});
+
+QUnit.module('ExpressionTree - types');
+
+
+QUnit.test('Invalid value type', function(assert) {
+
+    var collection = {
+        cat: 'value',
+        nid: 'val1',
+        type: 'integer'
+    };
+
+    var tree = Expression.makeTree(collection);
+    assert.deepEqual(Expression.typeCheckResults(), ['Value can not be of type integer']);
+});
+
+QUnit.test('String operator gets number argument', function(assert) {
+
+    var model = {
+        selected: 'expression',
+        children: [{
+            selected: 'message-area',
+            children: [{
+                selected: 'message-branch',
+                children: [{
+                    selected: 'message',
+                    children: [{
+                        selected: 'expression-area',
+                        children: [{
+                            selected: 'value-area'
+                        },{
+                            selected: 'area',
+                            children: [{
+                                selected: 'branch',
+                                children: [{
+                                    selected: 'add',
+                                    nid: 'p1',
+                                    children: [{
+                                        nid: 'val2',
+                                        type: 'number'
+                                    },{
+                                        nid: 'val3',
+                                        type: 'string'
+                                    }]
+                                }]
+                            }]
+                        }]
+                    }]
+                }]
+            }]
+        }]
+    };
+
+    var tree = Expression.makeTree(model);
+    assert.deepEqual(Expression.typeCheckResults(), ['Number operator requires two numbers']);
+});
+
+QUnit.test('Number operator gets string argument', function(assert) {
+
+    var model = {
+        selected: 'expression',
+        children: [{
+            selected: 'message-area',
+            children: [{
+                selected: 'message-branch',
+                children: [{
+                    selected: 'message',
+                    children: [{
+                        selected: 'expression-area',
+                        children: [{
+                            selected: 'value-area'
+                        },{
+                            selected: 'area',
+                            children: [{
+                                selected: 'branch',
+                                children: [{
+                                    selected: 'divide',
+                                    nid: 'p1',
+                                    children: [{
+                                        nid: 'val2',
+                                        type: 'number'
+                                    },{
+                                        nid: 'val3',
+                                        type: 'string'
+                                    }]
+                                }]
+                            }]
+                        }]
+                    }]
+                }]
+            }]
+        }]
+    };
+
+    var tree = Expression.makeTree(model);
+    assert.deepEqual(Expression.typeCheckResults(), ['Number operator requires two numbers']);
+});
+
+QUnit.test('Count operator requires array', function(assert) {
+
+    var model = {
+        selected: 'expression',
+        children: [{
+            selected: 'message-area',
+            children: [{
+                selected: 'message-branch',
+                children: [{
+                    selected: 'message',
+                    children: [{
+                        selected: 'expression-area',
+                        children: [{
+                            selected: 'value-area'
+                        },{
+                            selected: 'area',
+                            children: [{
+                                selected: 'branch',
+                                children: [{
+                                    selected: 'count',
+                                    nid: 'p1',
+                                    children: [{
+                                        nid: 'val2',
+                                        type: 'number'
+                                    }]
+                                }]
+                            }]
+                        }]
+                    }]
+                }]
+            }]
+        }]
+    };
+
+    var tree = Expression.makeTree(model);
+    assert.deepEqual(Expression.typeCheckResults(), ['Math operator requires an array']);
+});
+
+QUnit.test('Case operator requires boolean - wrong condition operator', function(assert) {
+
+    var model = {
+        selected: 'expression',
+        children: [{
+            selected: 'message-area',
+            children: [{
+                selected: 'message-branch',
+                children: [{
+                    selected: 'message',
+                    children: [{
+                        selected: 'expression-area',
+                        children: [{
+                            selected: 'value-area'
+                        },{
+                            selected: 'area',
+                            children: [{
+                                selected: 'case',
+                                children: [{
+                                    selected: 'plus',
+                                    nid: 'c1',
+                                    children: [{
+                                        nid: 'val1',
+                                        type: 'number'
+                                    },{
+                                        nid: 'val2',
+                                        type: 'number'
+                                    }]
+                                }, {
+                                    selected: 'area',
+                                    children: [{
+                                        selected: 'branch',
+                                        children: [{
+                                            nid: 'val3',
+                                            type: 'string'
+                                        }]
+                                    }]
+                                }]
+                            }]
+                        }]
+                    }]
+                }]
+            }]
+        }]
+    };
+
+    var tree = Expression.makeTree(model);
+    assert.deepEqual(Expression.typeCheckResults(), ['Case operator requires a boolean as condition']);
+});
+
+QUnit.test('Case operator requires boolean - broken comparative operator', function(assert) {
+
+    var model = {
+        selected: 'expression',
+        children: [{
+            selected: 'message-area',
+            children: [{
+                selected: 'message-branch',
+                children: [{
+                    selected: 'message',
+                    children: [{
+                        selected: 'expression-area',
+                        children: [{
+                            selected: 'value-area'
+                        },{
+                            selected: 'area',
+                            children: [{
+                                selected: 'case',
+                                children: [{
+                                    selected: 'lt',
+                                    nid: 'c1',
+                                    children: [{
+                                        nid: 'val1',
+                                        type: 'string'
+                                    },{
+                                        nid: 'val2',
+                                        type: 'number'
+                                    }]
+                                }, {
+                                    selected: 'area',
+                                    children: [{
+                                        selected: 'branch',
+                                        children: [{
+                                            nid: 'val3',
+                                            type: 'string'
+                                        }]
+                                    }]
+                                }]
+                            }]
+                        }]
+                    }]
+                }]
+            }]
+        }]
+    };
+
+    var tree = Expression.makeTree(model);
+    assert.deepEqual(Expression.typeCheckResults(), ['Comparative operator requires strings or numbers']);
+});
+
+QUnit.test('Filter operator requires boolean and a list', function(assert) {
+
+    var model = {
+        selected: 'expression',
+        children: [{
+            selected: 'message-area',
+            children: [{
+                selected: 'message-branch',
+                children: [{
+                    selected: 'message',
+                    children: [{
+                        selected: 'expression-area',
+                        children: [{
+                            selected: 'value-area'
+                        },{
+                            selected: 'area',
+                            children: [{
+                                selected: 'branch',
+                                children: [{
+                                    nid: 'val3',
+                                    selected: 'filter',
+                                    children: [{
+                                        type: 'string',
+                                        nid: 'val1',
+                                        family: 'value'
+                                    },{
+                                        type: 'string',
+                                        nid: 'list1',
+                                        family: 'value'
+                                    }]
+                                }]
+                            }]
+                        }]
+                    }]
+                }]
+            }]
+        }]
+    };
+    var tree = Expression.makeTree(model);
+    assert.deepEqual(Expression.typeCheckResults(), [
+        "Map operator requires an array",
+        "Map condition operator requires a boolean"
+    ]);
+});

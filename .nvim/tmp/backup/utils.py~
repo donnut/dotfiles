@@ -1,0 +1,16 @@
+import re
+#function that tokenizes post s, and adds it to a set
+#def extender(t,s):
+#    t.update(set(tknzr.tokenize(s)))
+#    return t
+
+# function that removes url's
+p_http = re.compile('[^http]')
+def http_filter(s):
+    return p_http.match(s)
+
+# function that removes numbers
+# filter(digit_filter, ['a', '100', '1.1', '1:00', '27e', 'e1']) #-> ['a', '27e', 'e1']
+p_number = re.compile('^\d+[^a-z]+$')
+def digit_filter(s):
+    return not p_number.match(s)

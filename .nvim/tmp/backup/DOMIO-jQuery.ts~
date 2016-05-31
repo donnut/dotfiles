@@ -1,0 +1,315 @@
+/// <reference path="../dts/jquery.d.ts" />
+/// <reference path="../dts/ramda.d.ts" />
+
+/// <reference path="./IO.ts" />
+
+module DOMIO {
+
+    import IO = Monads.IO;
+    enum OV {
+        append, prepend, html, unAppend, unPrepend, wrap, remove, insertBefore, insertAfter
+    }
+
+    export interface Instance extends IO {}
+    export interface IElement extends JQuery {}
+
+    export interface IEvent {
+        currentTarget: any;
+        target: any;
+        preventDefault: Function;
+        data?: any;
+    }
+
+    export interface IAttribute {
+        attr: string;
+        value: string;
+    }
+
+    export var create = R.curry(function(scope: string|IElement|IO): IO {
+        return ((scope instanceof IO) && (<IO>scope).fn)
+            ? scope
+            : IO.of($(scope));
+    });
+
+    export var createScoped = R.curry(function(scope: string|IElement|IO, selector: string): IO {
+        return R.is(String, scope) || R.is(IO, scope)
+            ? IO.of($(scope).children(selector))
+            : (<IO>scope).map(($el) => $($el).children(selector));
+    });
+
+    export function remove($elem: IElement) {
+        return $elem.remove();
+    }
+
+    export function detach($elem: IElement) {
+        return $elem.detach();
+    }
+
+    export var mapItems = R.curry(function(fn: ($elem: IElement) => any, io: IO): any[] {
+        var result = [];
+        io.map(function($elem) {
+            $elem.map(function() {
+                var io = create(this);
+                result.push(io.map(fn).runIO());
+            });
+        }).runIO();
+        return result;
+    });
+
+    export var addClass = R.curry(function(name: string, $elem: IElement): IElement {
+        return $elem.addClass(name);
+    });
+
+    export var removeClass = R.curry(function(name: string, $elem: IElement): IElement {
+        return $elem.removeClass(name);
+    });
+
+    export var addCss = R.curry(function(attr: IAttribute, $elem: IElement): IElement {
+        return $elem.css.call($elem, attr.attr, attr.value);
+    });
+
+    export var addAttr = R.curry(function(attr: IAttribute, $elem: IElement): IElement {
+        return $elem.attr.apply($elem, R.flatten(R.toPairs(attr)));
+    });
+
+    export var getAttr = R.curry(function(attrName: string, $elem: IElement): string {
+        return $elem.attr(attrName);
+    });
+
+    export var addProp = R.curry(function(prop: string, $elem: IElement): IElement {
+        return $elem.prop.call($elem, prop, true);
+    });
+
+    export var removeProp = R.curry(function(prop: string, $elem: IElement): IElement {
+        return $elem.prop.call($elem, prop, false);
+    });
+
+    export var getProp = R.curry(function(prop: string, $elem: IElement): string {
+        return $elem.prop(prop);
+    });
+
+    var cleanHref = function(href: string) {
+        if (!href) {
+            return '';
+        }
+        var tail: string = R.last(href.split('/'));
+        if (tail) {
+            tail = R.last(tail.split('#'));
+        }
+        return tail;
+    };
+
+    export var getDOMItemId = R.curry(function(idType: string, $elem: IElement): string {
+        var itemId: string = '';
+        switch (idType) {
+            case 'href':
+                if ($elem[0].tagName === 'A') {
+                    itemId = cleanHref($elem.attr('href'));
+                } else {
+                    itemId = cleanHref($elem.find('a').attr('href'));
+                }
+                if (!itemId){
+                    //a is niet gelijk en geen geen child van $obj,
+                    //zoek nu a als parent omhoog
+                    itemId = cleanHref($elem.closest('a').attr('href'));
+                }
+                break;
+            default:
+                //idType = id veralgemeniseert , nu ook mogelijk idType = title of name, mits idType kane worden gevonden als attr van een tag!!
+                // get attr=idType by looking at the $items and their parents and children
+                itemId = $elem.attr(idType);
+                if (!itemId) {
+                    itemId = $elem.find(":contains(" + idType + ")").attr(idType);
+                }
+        }
+        return itemId;
+    });
+
+    export interface Handler {
+        (e: JQueryEventObject, ...args: any[]): any
+    }
+
+    export var setVal = R.curryN(2, function(value: any, $elem: IElement): IElement {
+        return $elem.val(value);
+    });
+
+    export function getVal($elem: IElement) {
+        return trim($elem.val());
+    }
+
+    export var preventDefault = function(evt: DOMIO.IEvent) {
+        evt.preventDefault()
+    };
+
+    export function addEvent(eventName: string, selector: string, data: any[], method: Handler): ($elem: IElement) => IElement;
+    export function addEvent(eventName: string, data: any[], method: Handler): ($elem: IElement) => IElement;
+    export function addEvent(eventName: string, selector: any, data: any, method?: Handler) {
+        if (R.is(Array, selector)) {
+            method = data;
+            data = selector;
+            return function($elem: IElement): IElement {
+                return $elem.on(eventName, data, method);
+            }
+        } else {
+            return function($elem: IElement): IElement {
+                return $elem.on(eventName, selector, data, method);
+            }
+        }
+    }
+
+    export function removeEvent(event: string, selector: string): Function; //($elem: IElement, selector: string) => IElement;
+    export function removeEvent(event: string): Function; //($elem: IElement) => IElement;
+    export function removeEvent(event: string, selector?: string): Function {
+        if (selector == null) {
+            return function($elem: IElement): IElement {
+                return $elem.off(event);
+            }
+        } else {
+            return function($elem: IElement, selector: string): IElement {
+                return $elem.off(event, selector);
+            }
+        }
+    }
+
+    export var html = R.curryN(2, function(tplString: string, $elem: IElement): IElement {
+        return $elem.html(tplString);
+    });
+
+    export var prependString = R.curryN(2, function(tplString: string, $elem: IElement): IElement {
+        return $elem.prepend(tplString);
+    });
+
+    export var appendString = R.curryN(2, function(tplString: string, $elem: IElement): IElement {
+        return $elem.append(tplString);
+    });
+
+    export var prependElement = R.curryN(2, function($parent: IElement, $child: IElement): IElement {
+        return $parent.prepend($child);
+    });
+
+    export var appendElement = R.curryN(2, function($parent: IElement, $child: IElement): IElement {
+        return $parent.append($child);
+    });
+
+    export var insertBeforeElement = R.curryN(2, function($target: IElement, $sibling: IElement): IElement {
+        return $sibling.insertBefore($target);
+    });
+
+    export var insertAfterElement = R.curryN(2, function($target: IElement, $sibling: IElement): IElement {
+        return $sibling.insertAfter($target);
+    });
+
+    export var unPrependElement = R.curryN(2, function($parent: IElement, $child: IElement): IElement {
+        return $parent.children().not($child).first().remove();
+    });
+
+    export var unAppendElement = R.curryN(2, function($parent: IElement, $child: IElement): IElement {
+        return $parent.children().not($child).last().remove();
+    });
+
+    export var wrapElement = R.curryN(2, function($parent: IElement, $element: IElement): IElement {
+        return $parent.wrap($element);
+    });
+
+    export var unWrapElement = R.curryN(1, function($element: IElement): IElement {
+        return $element.unwrap();
+    });
+
+    export var removeElement = R.curryN(2, function($parent: IElement, $child: IElement): IElement {
+        if ($child.length === 0) return;
+        let selector = $child.selector;
+        if (selector === "") {
+            let id = $child.attr("id"),
+                name = $child.attr('name'),
+            classes = $child.attr('class');
+            if (id) return $parent.children(selector).remove();
+            if (name) return $parent.children(selector).remove();
+            if (classes) return $parent.children('.' + R.join(' .', R.split(' ', classes))).remove();
+            return $parent.children($child[0].tagName).remove();
+        } else {
+            return $parent.children(selector).remove();
+        }
+    });
+
+
+    export function detachElement($elem: IElement) {
+        // keeps all JQuery data associated with the element
+        return DOMIO.create($elem.detach());
+    }
+
+    export var empty = function($elem: IElement): IElement {
+        return $elem.empty();
+    };
+
+    export function manipulate($anc: DOMIO.Instance, method/*: G.DOMmethods*/, $chunk: DOMIO.Instance){
+        switch(method){
+            case OV.prepend:
+                $anc.chain((r) => {
+                    return R.map((t) => {
+                        return prependElement(r, t);
+                    }, $chunk);
+                }).runIO();
+                break;
+            case OV.append:
+                $anc.chain((r) => {
+                    return R.map((t) => {
+                        return appendElement(r, t);
+                    }, $chunk);
+                }).runIO();
+                break;
+            case OV.unPrepend:
+                $anc.chain((a) => {
+                    return R.map((c) => {
+                        return unPrependElement(a, c);
+                    }, $chunk);
+                }).runIO();
+                break;
+            case OV.unAppend:
+                $anc.chain((a) => {
+                    return R.map((c) => {
+                        return unAppendElement(a, c);
+                    }, $chunk);
+                }).runIO();
+                break;
+            case OV.insertBefore://nu chunk als argument al DOMIO.instance
+                $anc.chain((a) => {
+                    return R.map((c) => {
+                        return insertBeforeElement(a, c);
+                    }, $chunk);
+                }).runIO();
+                break;
+            case OV.insertAfter://nu chunk als argument al DOMIO.instance
+                $anc.chain((a) => {
+                    return R.map((c) => {
+                        return insertAfterElement(a, c);
+                    }, $chunk);
+                }).runIO();
+                break;
+            case OV.remove:
+                $anc.chain((a) => {
+                    return R.map((c) => {
+                        return removeElement(a, c);
+                    }, $chunk);
+                }).runIO();
+                break;
+            case OV.wrap:
+                $anc.chain((a) => {
+                    return R.map((c) => {
+                        return wrapElement(a, c);
+                    }, $chunk);
+                }).runIO();
+                break;
+            default:// OV[OV.unwrap]
+                $anc.chain((a) => {
+                    return R.map((c) => {
+                        return unWrapElement(a, c);
+                    }, $chunk);
+                }).runIO();
+        }
+    }
+
+    function trim(str: string): string {
+        return str.replace(/^\s+|\s+$/g, '');
+    }
+
+}

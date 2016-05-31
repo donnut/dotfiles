@@ -1,0 +1,28 @@
+module Lists where
+
+import Data.List
+import Chapter2.DataTypes
+
+apply3f2 :: (Integer -> Integer) -> Integer -> Integer
+apply3f2 f a = 3*f(a+2)
+
+filterOne :: [Integer] -> [Integer]
+filterOne = filter (== 1)
+
+filterANumber :: Integer -> [Integer] -> [Integer]
+filterANumber n = filter (==n)
+
+duplicateOdds :: [Integer] -> [Integer]
+duplicateOdds = map (*2) . filter odd
+
+elem :: Eq a => a -> [a] -> Bool
+elem n xs = case find (\x -> x==n) xs of
+           Just _  -> True
+           Nothing -> False
+
+compareClient :: ClientR -> ClientR -> Ordering
+compareClient (IndividualR {person = p1}) (IndividualR {person = p2}) = 
+    compare (firstName p1) (firstName p2)
+compareClient (IndividualR {}) _ = GT
+compareClient _ (IndividualR {}) = LT
+compareClient c1 c3  = compare (clientName c1) (clientName c2)

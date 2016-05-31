@@ -1,0 +1,38 @@
+var Twitter = require('twitter');
+var mongoose = require('mongoose');
+
+var client = new Twitter({
+    consumer_key: 'cWN3UpsbOqG7jn0m8EmvoqtSV',
+    consumer_secret: 'e5Ep2oM1FRVHXgXKiEJwGEZasytAuNDv6h69XS0nPLGmDLx3gz',
+    access_token_key: '15123362-RkHEznCU2x8RhIhu4vWNEzb5BETha2nsLIp7M0vXf',
+    access_token_secret: 't9GeqpH4ufn2fix14BEdM5EKrrOHGGYUDVVbVFkeENsYy'
+});
+
+
+// initialize model(s)
+require('../models/tweet');
+var Tweet = mongoose.model('Tweet');
+
+mongoose.connect('mongodb://localhost/all_terms', {
+    db:{safe: { j: 1, w: 0, wtimeout: 10000 }}
+});
+
+//var terms = 'klacht,klaag,klagen,telefoon,#fail,form,formulier,aanvraag,aanvragen,mail,antwoord,service,contact,opgeruim~,opruimen,verbeterdebuurt,vdb,14020,handhav,ondergronds,overlast,last,vuil,zwerfie,rotzooi,smerig,ophaaldag,prullenbak,prullebak,container,huisvuilpas,rommel,melding,wrak,hond,ratt,duif,duiven,meeuw,hondenpoep,hondepoep,poep,staking,troep,veegwagen,bezemwagen,kliko,buurtmannetje,afvalbak,glasbak,kapot,stoep,park,straat,papierbak,ruik,schoon,vies';
+//var terms = 'bierfiets,straatmuziekant,balansindestad,muziekant';
+//var terms = '#cambuur, #camgra, @degraafschap, @sccambuurLwd';
+var terms = 'vluchtelingen';
+//client.stream('statuses/filter', {language: 'nl', track: 'adam,amsterdam,020,hoofdstad,stadsdeel,noord,nieuw-west,centrum'}, function (stream) {
+client.stream('statuses/filter', {language: 'nl'}, function (stream) {
+    stream.on('data', function(data) {
+        var tweet = new Tweet(data);
+        tweet.save(function(err) {
+            if (err) console.log(err);
+        });
+        console.log(tweet.text);
+    });
+
+    stream.on('error', function(err) {
+        throw err;
+    });
+});
+

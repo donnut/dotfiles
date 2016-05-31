@@ -1,0 +1,268 @@
+QUnit.module('DOM Tree reshaping', {
+    beforeEach: function() {
+        DEBUG = true;
+
+        TPips = (function() {
+            function TPips() {
+                this.value = {};
+            }
+            TPips.prototype.set = function(domId, $domIo) {
+                this.value[domId] = $domIo;
+            }
+            TPips.prototype.get = function(id) {
+                return this.value[id];
+            }
+            return TPips;
+        }());
+    },
+    afterEach: function() {
+        TPips = void 0;
+    }
+});
+
+
+QUnit.test('empty tree', function(assert) {
+    var domStr = "<ul id='tree'></ul>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'tree',
+        empty: '<p>empty view</p>',
+        idKey: 'id',
+        contentKey: 'tpl',
+        childKey: 'children',
+        selector: '#tree'
+    }];
+    var app = new LinkingPips.App(domStr, nodes, [], [], 'pips', [{
+        name: 'tree',
+        options: function(opts, address, ns) {
+            return TreePip.props.tree.call(this, opts, address, ns, this.storage, 'id');
+        }
+    }]);
+    assert.equal($('#tree').html(), '<p>empty view</p>');
+});
+
+QUnit.test('basic integration test', function(assert) {
+    var domStr = "<ul id='tree'></ul>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'tree',
+        empty: '<p>empty view</p>',
+        idKey: 'id',
+        contentKey: 'tpl',
+        childKey: 'children',
+        selector: '#tree'
+    }];
+
+    var pips = [{
+        type: 'model',
+        name: 'storage',
+        server: false
+    }, {
+        type: 'templateItem',
+        selector: '#tree_*',
+        refine: {attr: 'class', value: 'sub'},
+        method: 'html',
+        attr: 'html',
+        empty: 'stupid text'
+    }, {
+        type: 'stateItem',
+        selector: '#tree_*',
+        'default': 'fail',
+        states: [{
+            name: 'ok',
+            attr: 'class',
+            value: 'green'
+        },{
+            name: 'fail',
+            attr: 'class',
+            value: 'red'
+        }]
+    }];
+
+    function employTree(model) {
+        var tpl = {
+            0: '<li class="page"></li>',
+            1: '<ul></ul>',
+            2: '<li class="sub"></li>'
+        }
+        return walk(model, 0);
+        function walk(node, level) {
+            var result = {};
+            result.id = node.id;
+            result.tpl = tpl[level];
+            if (node.children) {
+                level++;
+                result.children = R.map(function(node) {
+                    return walk(node, level);
+                }, node.children);
+            }
+            return result;
+        }
+    }
+
+    var links = [{
+        pub: 'models.storage',
+        sub: '#tree.tree',
+        value: function(input) {
+            return employTree(input.value);
+        }
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links, 'pips', [{
+        name: 'tree',
+        options: function(opts, address, storage) {
+            return TreePip.props.tree.call(this, opts, address, storage, 'id');
+        }
+    }]);
+
+    app.get('models.storage').react({
+        action: 'update',
+        value: {
+            id: 'page1',
+            children: [{
+                id: 'subs',
+                children: [{
+                    id: 'sub11'
+                }, {
+                    id: 'sub12'
+                }]
+            }]
+        }
+    });
+    assert.equal($('#tree').children().length, 1);
+    assert.equal($('.page>ul>li').length, 2);
+    assert.equal($('.page>ul>li').eq(0).html(), 'stupid text');
+    assert.ok($('.page').hasClass('red'));
+    assert.ok($('.sub').hasClass('red'));
+
+    app.get('models.storage').react({
+        action: 'update',
+        value: {
+            id: 'page1',
+            children: [{
+                id: 'subs',
+                children: [{
+                    id: 'sub11'
+                }, {
+                    id: 'sub12'
+                }, {
+                    id: 'sub13'
+                }]
+            }]
+        }
+    });
+    assert.equal($('.sub').length, 3);
+    assert.equal($('.page>ul>li').length, 3);
+    assert.equal($('.page>ul>li').eq(2).html(), 'stupid text');
+
+    app.get('models.storage').react({
+        action: 'update',
+        value: {
+            id: 'page1',
+            children: [{
+                id: 'subs',
+                children: [{
+                    id: 'sub12'
+                }, {
+                    id: 'sub13'
+                }]
+            }]
+        }
+    });
+    assert.equal($('.sub').length, 2);
+    assert.equal($('.page>ul>li').length, 2);
+    assert.equal($('.page>ul>li').eq(1).html(), 'stupid text');
+
+    app.get('models.storage').react({
+        action: 'update',
+        value: {}
+    });
+    assert.equal($('#tree').html(), '<p>empty view</p>');
+});
+/*
+QUnit.test('insert nodes in partially filled tree', function(assert) {
+    $('#qunit-fixture').append("<div class='1'><div class='3'></div></div>");
+    var pips = new TPips();
+    pips.set('#1', DOMIO.create('.1'));
+    pips.set('#3', DOMIO.create('.3'));
+
+    var from = new Nest.Reshape.TNode('<div class="1"></div>', '1',
+                new Nest.Reshape.TNode('<p class="3"></p>', '3'));
+
+    var to = new Nest.Reshape.TNode('<div class="1"></div>', '1',
+                new Nest.Reshape.TNode('<div class="2"></div>', '2',
+                    new Nest.Reshape.TNode('<div class="4"></div>', '4',
+                        new Nest.Reshape.TNode('<div class="6"></div>', '6')),
+                    new Nest.Reshape.TNode('<div class="5"></div>', '5')),
+                new Nest.Reshape.TNode('<p class="3"></p>', '3',
+                    new Nest.Reshape.TNode('<div class="8"></div>', '8',
+                        new Nest.Reshape.TNode('<div class="9"></div>', '9'))));
+    var pipOut = Nest.Reshape.morf(from, to, pips);
+    assert.equal($(($('.1').children())[0]).attr('class'), '2');
+    assert.equal($(($('.1').children())[1]).attr('class'), '3');
+    assert.equal($(($('.2').children())[0]).attr('class'), '4');
+    assert.equal($(($('.2').children())[1]).attr('class'), '5');
+    assert.equal($(($('.4').children())[0]).attr('class'), '6');
+    assert.equal($(($('.3').children())[0]).attr('class'), '8');
+    assert.equal($(($('.8').children())[0]).attr('class'), '9');
+    assert.deepEqual(R.pluck('it', pipOut), ['2','4','6','5','8','9']);
+});
+
+QUnit.test('one-node tree, unchanged', function(assert) {
+
+    var from = {
+        nid: '1',
+        tpl: '<div></div>',
+        child: []
+    }
+
+    var recipe = Nest.Reshape.morf(from, from);
+    assert.deepEqual(recipe, []);
+});
+
+QUnit.test('from three-node tree to empty', function(assert) {
+
+    $('#qunit-fixture').append("<div class='1'><div class='2'></div><div class='3'></div></div>");
+    var pips = new TPips();
+    pips.set('#1', DOMIO.create('.1'));
+    pips.set('#2', DOMIO.create('.2'));
+    pips.set('#3', DOMIO.create('.3'));
+    var from = new Nest.Reshape.TNode('<div class="1"></div>', '1',
+                new Nest.Reshape.TNode('<div class="2"></div>', '2'),
+                new Nest.Reshape.TNode('<div class="3"></div>', '3'));
+    var to = {};
+
+    var pipOut = Nest.Reshape.morf(from, to, pips);
+    assert.deepEqual(R.zip(R.pluck('action', pipOut), R.pluck('it', pipOut)), [
+        [ "remove", "1" ],
+        [ "remove", "2" ],
+        [ "remove", "3" ]
+    ]);
+});
+
+QUnit.test('shuffled two-level tree', function(assert) {
+    $('#qunit-fixture').append("<div class='1'><div class='2'></div><div class='3'></div><div class='4'></div></div>");
+    var pips = new TPips();
+    pips.set('#1', DOMIO.create('.1'));
+    pips.set('#2', DOMIO.create('.2'));
+    pips.set('#3', DOMIO.create('.3'));
+    pips.set('#4', DOMIO.create('.4'));
+
+    var from = new Nest.Reshape.TNode('<div class="1"></div>', '1',
+                new Nest.Reshape.TNode('<div class="2"></div>', '2'),
+                new Nest.Reshape.TNode('<div class="3"></div>', '3'),
+                new Nest.Reshape.TNode('<div class="4"></div>', '4'));
+    var to = new Nest.Reshape.TNode('<div class="1"></div>', '1',
+                new Nest.Reshape.TNode('<div class="3"></div>', '3'),
+                new Nest.Reshape.TNode('<div class="2"></div>', '2'),
+                new Nest.Reshape.TNode('<div class="4"></div>', '4'));
+
+    var pipOut = Nest.Reshape.morf(from, to, pips);
+    assert.equal($(($('.1').children())[0]).attr('class'), '3');
+    assert.equal($(($('.1').children())[1]).attr('class'), '2');
+    assert.equal($(($('.1').children())[2]).attr('class'), '4');
+    assert.equal(pipOut.length, 0);
+});
+*/

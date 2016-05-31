@@ -1,0 +1,99 @@
+# Tree
+
+Doel van Tree is het toevoegen van structuur en eigenschappen aan de HTML-boom zodat deze geschikt is voor het verwerken in LinkingPips.
+
+De structuur bestaat uit het categoriseren van de DOM-elementen (nodes genoemd) in vier verschillende types en het toevoegen van selectors,
+ancestors. 
+
+De Tree wordt gevormd door lijsten en losse ketens van DOM-elementen. Een lijst is direct te herkennen aan de tagname
+van een DOM-element (`ul`, ol`, `dl`) of aan een gestructureerde verzameling gelijksoortige DOM-elementen zoals `div`s. 
+Een lijst kan uit 1 of meerdere lagen bestaan. In een lijst met tagnames ul, dl of ol wordt de eerste laag gevormd door
+nodes met tagnames `li`, `do`, etc. De eventueel twee en volgende lagen daaronder behoren tot die lijst als ze aan de eis van
+gelijkvormigheid voldoen, zie `Gelijkvormigheid`. Lijsten kunnen ook bestaan uit relaties van gelijksoortige DOM-elementen mits die aan
+de eis van gelijkvormigheid voldoen.
+
+Het resultaat van de analyse is een virtuele DOM bestaande uit de vier typen. Deze virtuele boom heeft zijn eigen structuur, nauw gekoppeld
+met de HTML-structuur; het combineert DOM-elementen als ze bijvoorbeeld tot dezelfde laag in een lijst behoren.
+
+## Types
+Er zijn de volgende vier typen:
+**Element**
+Een Element is een node als het de root van de tree is, of een node geen onderdeel van een lijst uitmaakt.
+
+**ListItem**
+Een listItem zijn nodes die onderdeel vormen van een lijst, direct onder de root van deze lijst.
+
+**ItemElement**
+Als ListItems children hebben, kunnen die van het type ItemElement zijn, mits aan de eis van gelijkvormigheid is voldaan.
+
+**ShadowElement**
+Onder een node van het type shadowElement kan een andere lijst hangen.
+
+Types zijn er in twee soorten, enkelvoudig en meervoudig voor een enkele node resp een verzameling van nodes.
+
+**Enkelvoudige types**
+- element
+- shadowElement
+
+**Meervoudige types**
+- listItem
+- itemElement
+
+
+## Gelijkvormigheid
+Tijdens de analyse worden aan de DOM-elementen typen toegekend. Dit gebeurt op basis van de structuur van de DOM-elementen die 
+wordt gevormd door de onderlinge relaties. De belangrijkste structuur die in de DOM-elementrelaties gezocht wordt is die 
+van een lijst. Een lijst vormt de basis voor menus en voor (dynamische) lijsten met gegevens.
+
+Een lijst bestaat uit DOM-elementen die een tagname hebben die naar een lijst of een onderdeel daarvan verwijst, zoals `ul`.
+Maar een lijst kan ook bestaan uit DOM-elementen met de structuur van een lijst. Dit betekent dat
+de DOM-elementen op de eerste laag, direct onder de root van de lijst dezelfde tagnames hebben, bijvoorbeeld `div`.
+
+Een lijst kan meer dan een laag hebben. Eis om tot zo'n extra laag te behoren is die van `gelijkvormigheid`. Dit betekent
+dat iedere tak van de lijst onder de eerste laag uit dezelfde DOM-elementen bestaat, dus hetzelfde aantal van dezelfde tagname en
+dezelfde onderlinge relatie. De gelijkvormigheid wordt per laag beoordeeld. Zodra deze van een laag afwijkt, stopt de lijst.
+
+Lijsten kunnen bestaan uit sublijsten. De root van zo'n sublijst is een shadow-element.
+
+Er zullen dus veel lijsten in een HTML-bestand voor kunnen komen. 
+
+Hieronder staan de criteria waarmee bepaald wordt van welke types en DOM-element moet worden.
+
+**Element**
+- DOM-element is de top van de HTML structuur
+- DOM-element behoort te geen van de andere drie typen
+- Vormt de root van een lijst die geen onderdeel is van een andere lijst, in tegenstelling tot een ShadowElement die de root van
+  een lijst binnen een andere lijst vormt.
+Gegevens:
+* anc: ancestor, de parent van het DOM-element
+* sel:
+* selector: 
+
+**ListItem**
+- DOM-element met de tagname `li`, `di`, etc
+- DOM-element waarvan al zijn siblings dezelfde tagname hebben (HOE ZIT HET MET LIJSTEN MET CLUSTERS VAN LISTITEMS?)
+Gegevens:
+*
+
+**ItemELement**
+- DOM-element waarvan de parent een ListItem is en alle siblings van die parent hetzelfde DOM-element bevatten (gelijkvormigheid)
+Gegevens:
+*
+
+**ShadowElement**
+- Vormt de root van een sublijst in tegenstelling tot een Element die de root van een losse lijst vormt.
+- Gekoppeld met een ListItem als ancestor
+- Heeft een of meerdere children die geen ItemElement zijn (niet aan eis van gelijkvormigheid voldoen)
+Gegevens:
+*
+
+## Selectors versus id's
+Veel eigenschappen van de Tree-elementen zijn uitgedrukt in selectors. Deze selectors vormen een query die naar het element verwijzen.
+Een selector kan een element opleveren, of een groep van elementen. Een tree-elementen van het meervoudige type, die een set
+van elementen betreft zoals listItem en ItemElement, zullen dus altijd een selector gebruiken. Tree-elementen van het enkelvoudige
+type, Element en ShadowElement, verwijzen naar een tree-element. De selector moet hier dus een eenduidig antwoord geven. Sommige
+DOM-elementen hebben een id ter identificatie. Een enkelvoudig type kan in dat geval ook van deze id gebruik maken.
+
+## Speciale gevallen
+Een lijst kan dynamisch opgebouwd worden, dus tijdens het gebruik van de applicatie. In dat geval kan de (deels) opgebouwde HTML
+structuur een geraamte van een lijst vormen met bijvoorbeeld een `ul` als root en een `li` als enig lijst element. 

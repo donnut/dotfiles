@@ -1,0 +1,93 @@
+/// <reference path="../dts/ramda.d.ts" />
+/// <reference path="./lb-globals"/>
+
+module ExpressionEditor {
+
+    import G = LBGlobals;
+    import CMP = LBGlobals.Comparators;
+    import Subject = LBGlobals.Subject;
+    import ISubjectBasics = LBGlobals.ISubjectBasics;
+    import MK = LBGlobals.MessageKey;
+
+    let links = [];
+
+    links.concat([{
+        pub: '#operators.select',
+        sub: 'models.subjects',
+        drop: ['models.operator', 'models.subjects'],
+        pre: function(){ //lekker:maar één tegelijk!
+            var
+            operatorsModel = this['models.operators'],
+            subjectId = operatorsModel.subjectId,
+            //areaName = operatorsModel.areaName,
+            subjects = this['models.subjects'],//moet array worden
+            newOperatorId = (R.find(R.propEq('value', true))(this.pub)).it;
+
+            if (operatorsModel.mode !== 'change') {  //add-left || add-right
+                var locationSpecification = (operatorsModel.mode === 'add-left')? 'left' : 'right';
+                return Syntax.createSubjects(subjects, newOperatorId, subjectId, locationSpecification);
+            } else {
+                var oldOperatorId = (R.find(R.propEq('value', false), this.pub.get())).it;
+                if (R.contains(newOperatorId, ['delete', 'delete-left', 'delete-right'])) {
+                    var locSpec = (newOperatorId === 'delete-right')
+                        ? 'right'
+                        : 'left';
+                    return  Syntax.deleteSubjects(subjects, subjectId, locSpec);
+                } else { //update
+                    if (Syntax.defineGrammar(oldOperatorId, locationSpecification) === Syntax.defineGrammar(newOperatorId,locationSpecification)) {
+                        //operators zijn uitwisselbaar: simpele update van selected operator
+                        return [{
+                            action: MK[MK.update],
+                            value:{
+                                selected: newOperatorId
+                            },
+                            it: subjectId
+                        }];
+                    }
+                    else {
+                        //eerst delete old dan create new}
+                        var locationSpec;
+                        if (Syntax.locationSpecRequired(oldOperatorId)){
+                            locationSpec = 'right';
+                        }
+                        let messages = Syntax.deleteSubjects(subjects, subjectId, locationSpec);
+                        //als bij create geen locationSpec toegevoegd default left en dat gaat goed!!
+                        return R.concat(messages, Syntax.createSubjects(subjects, newOperatorId, subjectId/*, locationSpec*/));
+                    }
+                }
+            }
+        },
+        //action: function(){return this.pre.action;},
+        //value: function(){ return this.pre.it;},
+        //it: function(){return this.pre.it;},
+    },
+    {//submit-linkje met speciale behandeling it!!
+        pub: '#comparators.select',
+        sub: 'models.subjects',
+        drop: ['models.comparator'],
+        pre: function(){//standaard submit-pre
+            return (R.find(R.propEq('value', true))(this.pub));
+        },
+        action: function(){return MK[MK.update];},
+        value: function(){return this.pre[MK[MK.it]];},
+        it: function(){return this.models.comparator.conditionId;},
+    },
+    {
+        pub: '#values.select',
+        sub: 'models.subjects',
+        drop: ['models.value'],
+        pre: function(){//standaard submit-pre
+            return R.find(R.propEq('value', true))(this.pub);
+        },
+        action: function(){ return MK[MK.update];},
+        value: function(){
+
+
+            //TODO
+
+            return this.pre[MK[MK.it]];
+        },
+        it: function(){return this.models.value.valueId;},
+    }
+]);
+}

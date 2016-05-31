@@ -1,0 +1,10 @@
+var assert = require('assert');
+var HandleBars = require('handlebars');
+
+descript('basic template', function() {
+    var tmp = `<div class="entry">
+        <h1>{{title}}</h1>
+        <div class="body">
+            {{body}}
+        </div>
+    </div>`;

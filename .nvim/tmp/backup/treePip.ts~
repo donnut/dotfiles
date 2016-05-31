@@ -1,0 +1,267 @@
+/// <reference path="../dts/ramda.d.ts" />
+/// <reference path="./globals.ts" />
+/// <reference path="./utils.ts" />
+/// <reference path="./DOMIO.ts" />
+
+/// <reference path="./pip.actions.ts" />
+/// <reference path="./pip.input.ts" />
+/// <reference path="./pip.itemId.ts" />
+/// <reference path="./pip.setReg.ts" />
+/// <reference path="./pip.tests.ts" />
+
+/// <reference path="./tree.reshape.ts" />
+
+module TreePip {
+    import G = Globals;
+    import ACT = G.Action;
+    import AK = G.AddressKey;
+    import MK = G.MessageKey;
+    import ON = G.OptionName;
+    import OV = G.OptionValue;
+    import PT = G.PipType;
+    import ELM = G.Element;
+
+    import IResult = G.IResult;
+    import IRegister = G.IRegister;
+    import IMessage = G.IMessage;
+    import IStorage = Store.IStorage;
+
+/** TREEPIPOPTIONS
+
+type: tree
+ittype: true
+method: default append-> ontstaat nestpip met vaste tpl waarde
+        //wrappip: method = chunk, link levert method én tpl
+        //minder waarschijnlijke varinat? method: method: dan levert link method, maar is tpl vast
+tpl: alleen als method geen chunk
+parent: default aprent maar mag andere naam hebben, bijvoorbeeld anc
+children: deafult children, maar mag andere naam hebben
+
+wel vereist dat in models in register zowel parent al children worden opgenomen
+
+**/
+
+
+
+    export var treeProps = {//address is undefined, ook werkend voor nestPip
+        tree: function(options, address, itType, storage: IStorage) {
+            return {
+                pipType: options[ON[ON.type]],
+                //pipClass: PC[PC.tree],
+                defineItemId: Pip.ItemId.node(options),
+
+                setReg: Pip.SetReg.basic,//treeSetReg,//
+                values: treeValues,//Pip.Values.Tree,
+                emptyInput: Pip.Input.defineInit(ACT[ACT.remove]),
+
+                outActions: Pip.Actions.node,
+                regActions: Pip.Actions.nodeReg,
+
+                diffTest: Pip.Tests.nestDiff,
+                //emitTest: Pip.Tests.DOMEmit, is de default
+
+                interpret: (options[ON[ON.type]] === PT[PT.nest]) ? Pip.Interpret.item : Pip.Interpret.base/*correct ivm filter, sort*/,//options[ON[ON.itType]]?
+
+                // correctInput: {
+                //     define: correctTree(options),//Pip.Input.correctTree(options), //standaard sorteren van de list!!!, filteren en extra sorteercriterium  toestaan
+                //     baseActionTest: Pip.Input.falseTest,
+                //     emptyActionTest: Pip.Input.destructTest,
+                // },
+                switchFn: function(options, addresses, storage: IStorage) {
+
+                    function relay(evaluated: IResult, register) {
+                        let $root = evaluated[ELM[ELM.anc]];
+                        if ($root) {
+                            return Tree.Reshape.morf(evaluated.oldRegister, register, storage);
+                        }
+                    }
+
+                    return function(result: IResult|IResult[], register: IRegister<string[]>): IMessage|IMessage[] {
+
+                        if (result instanceof Array) {
+                            return R.reduce(function(acc, res){
+                                acc = acc.concat(relay(res, register));
+                                return acc;
+                            } ,[], result);
+                        } else {
+                            return relay(<IResult>result, register);//, result
+                        }
+                    }
+                },
+                effect: function(options, storage: IStorage){
+                    return {
+                        append:  function(options: G.ITreePipOptions, adresses) {
+                            return function(evaluated: IResult, $parent: DOMIO.Instance, tpl:string): G.IMessage {
+                                evaluated.pipOut[MK[MK.value]] = DOMIO.manipulate($parent, tpl, OV[OV.append]);
+                                return evaluated.pipOut;//verzoorzaakt emit incl pipOut.el
+                            };
+                        },
+                        // prepend: function(options: G.ITreePipOptions, adresses) {
+                        //     return function(evaluated: IResult, $parent: DOMIO.Instance, tpl:string): G.IMessage {
+                        //         evaluated.pipOut[MK[MK.value]] = DOMIO.manipulate($parent, tpl, OV[OV.prepend]);
+                        //         return evaluated.pipOut;//verzoorzaakt emit incl pipOut.el
+                        //     };
+                        // },
+                        insertBefore: function(options: G.ITreePipOptions, adresses) {
+                            return function(evaluated: IResult, $sibling: DOMIO.Instance, tpl:string): G.IMessage {
+                                evaluated.pipOut[MK[MK.value]] = DOMIO.manipulate($sibling, tpl, OV[OV.insertBefore]);
+                                return evaluated.pipOut;//verzoorzaakt emit incl pipOut.el
+                            };
+                        },
+                        insertAfter: function(options: G.ITreePipOptions, adresses) {
+                            return function(evaluated: IResult, $sibling: DOMIO.Instance, tpl:string): G.IMessage {
+                                evaluated.pipOut[MK[MK.value]] = DOMIO.manipulate($sibling, tpl, OV[OV.insertAfter]);
+                                return evaluated.pipOut;//verzoorzaakt emit incl pipOut.el
+                            };
+                        },
+                        remove: function(options: G.ITreePipOptions, adresses) {
+                            return function(evaluated: IResult, $el: DOMIO.Instance): G.IMessage {
+                                $el.map(DOMIO.remove).runIO();
+                                return evaluated.pipOut;
+                            };
+                        },
+                        empty: function(options: G.ITreePipOptions, adresses) {
+                            return function(evaluated: IResult): G.IMessage {
+                                let $root = evaluated[ELM[ELM.anc]];//kan hier, $root hoeft niet mee als argument
+                                R.map(DOMIO.empty, $root).runIO();
+                                // no overwrite $root = pipOut.el
+                                if (options[ON[ON.empty]]) {
+                                    // insert empty string only when available
+                                    fns($root, options[ON[ON.empty]], OV[OV.append]);
+                                }
+                                // liever niks uitzenden als empty!! evaluated.pipOut;
+                                return evaluated.pipOut;
+                            };
+                        },
+                    };
+                },
+                publicFn: {
+                    defineItemId: Pip.ItemId.node(options)
+                }
+            };
+        }
+    }
+
+    // var wrapProps = R.merge(treeProps, {
+    //     pipFn:function(options, nameSpace){
+    //         var defineChunk;
+    //         if (options[ON[ON.recipe]]) {
+    //             var chunkRef = G[nameSpace].get(options[ON[ON.chunkAddress]]);
+    //             var chunkDef = G[nameSpace].get(options[ON[ON.chunk]]);
+    //             defineChunk = function(itemId) {
+    //                 var chunkName = chunkRef.get(itemId);
+    //                 var chunk = chunkDef.get(chunkName);
+    //                 return chunk;
+    //             };
+
+    //         //var keyMethod = options[ON[ON.keyMethod]];
+    //         var chunkMethods = [OV[OV.wrap], OV[OV.html], OV[OV.append], OV[OV.prepend], OV[OV.remove],OV[OV.insertBefore],
+    //                             OV[OV.insertAfter], OV[OV.unAppend], OV[OV.unPrepend], OV[OV.unwrap] ]//sequence of chunkMethods;
+    //         var inverseMethods = {
+    //             // append: OV[OV.unAppend],
+    //             // prepend: OV[OV.unPrepend],
+    //             html:OV[OV.remove],
+    //             wrap: OV[OV.unwrap],
+    //             insertBefore: 'remove',// zoeken of unPrepend parent',
+    //             insertAfter: 'remove',// zoeken of unAppend parent',
+    //             // unAppend: OV[OV.append],
+    //             // unPrepend: OV[OV.prepend],
+    //             // remove: OV[OV.html],
+    //             // unwrap: OV[OV.wrap],
+    //             // ? : OV[OV.insertBefore],
+    //             // ? : OV[OV.insertAfter],
+    //         }
+
+    //         return {
+    //             C: function(evaluated: Globals.IResult): void {
+    //                 var itemId = evaluated.pipOut.it;
+    //                 var chunks = defineChunk(itemId);
+    //                 //var $root = evaluated[ELM[ELM.root]];
+    //                 var $anc = evaluated[ELM[ELM.anc]];
+    //                 // ancestorSubject = desiredValue.anc,
+    //                 // $anc: DOMIO.Instance = getWrapAncestor(ancestorSubject); //liefst: this.getWrapAncestor
+    //                 //if ($root) {
+    //                     //er moet altijd $ancestor beschikbaar zijn bij insert, NIET noodzakelijkerwijs bij create
+    //                     //maar door check op  getAreaRoot(desiredValue) is deze test niet meer nodig
+    //                 if ($anc) {
+    //                     R.forEach(function(method) {
+    //                         if (chunks[method]) {//deze moet eerste!
+    //                             if (method === 'wrap'){//ON[ON.keyMethod]]
+    //                                 evaluated.pipOut[MK[MK.value]] = DOMIO.manipulate($anc, chunks[method], method);
+    //                             } else {
+    //                                 DOMIO.manipulate($anc, chunks[method], method);
+    //                             }
+    //                         }
+    //                     }, chunkMethods);
+    //                 } else {
+    //                         DOMIO.manipulate($root, chunks.append, OV[OV.append]);
+    //                     }
+    //                 }
+    //                 return evaluated.pipOut;//verzoorzaakt emit incl pipOut.el
+    //             },
+    //             D: function(evaluated: Globals.IResult): void {
+    //                 var itemId = evaluated.pipOut.it;
+    //                 var chunks = defineChunk(itemId);
+    //                 //var $root = evaluated[ELM[ELM.root]];
+    //                 var $anc = evaluated[ELM[ELM.anc]];
+    //                 // ancestorSubject = desiredValue.anc,
+    //                 // $anc: DOMIO.Instance = getWrapAncestor(ancestorSubject); //liefst: this.getWrapAncestor
+    //                 //if ($root) {
+    //                     //er moet altijd $ancestor beschikbaar zijn bij insert, NIET noodzakelijkerwijs bij create
+    //                     //maar door check op  getAreaRoot(desiredValue) is deze test niet meer nodig
+    //                     // if ($anc) {
+    //                         R.forEach(function(method) {
+    //                             var inverseMethod = inverseMethods[method]
+    //                             if (chunks[method]) {//deze moet eerste!
+    //                                 DOMIO.manipulate($anc, chunks[method], inverseMethod);
+    //                             }
+    //                         }, R.reverse(chunkMethods) );
+    //                     // } else if (chunks.append) {
+    //                     //     DOMIO.manipulate($root, chunks.append, OV[OV.append]);
+    //                     // }
+    //             },
+    //             E: function(evaluated: Globals.IResult): void {
+    //                 let $root = evaluated[ELM[ELM.root]];
+    //                 R.map(DOMIO.empty, $root).runIO();
+    //                 // no overwrite $root = pipOut.el
+    //                 if (options[ON[ON.empty]]) {
+    //                     // insert empty string only when available
+    //                     let $chunk: DOMIO.Instance = DOMIO.create(options[ON[ON.empty]]);
+    //                     DOMIO.manipulate($root, OV.append, $chunk);
+    //                 }
+    //                 // liever niks uitzende als empty!! evaluated.pipOut;
+    //                 return evaluated.pipOut;
+    //             }
+    //         };
+    //     },
+    // });
+
+    var treeValues: G.IValues = function(options: G.IModelPipOptions|G.ICollectionPipOptions, itType: boolean) { //onafh options addresse|:er is er maar1
+         // return itType ? defaultModels : defaultModels[0];
+
+        var extract = function(pipIn: G.IMessage) {//, register: G.IRegister<any>, itemId?: string
+            var extractObject = function(nest) {
+                var object = {};
+                object[ON[ON.idKey]] = nest[ON[ON.idKey]];
+                object[ON[ON.children]] = R.map( c => extractObject(c), nest[ON[ON.children]]);
+                return object;
+            }
+            return extractObject(pipIn[MK[MK.value]]);
+        }
+
+        return {
+            defaultValue: () => {},
+            create: extract,
+            update: extract,
+            reg: () => { return {} }
+        };
+    };
+
+    function correctTree(options: G.INavTreePipOptions) {
+        //opnieuw: net als list mogelijkheid sorteren en filteren nodig!
+        return function(pipIn: any[], register, defineItemId) {
+
+
+        }
+    }
+}

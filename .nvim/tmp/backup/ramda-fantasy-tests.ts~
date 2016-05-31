@@ -1,0 +1,7 @@
+/// reference path="ramda-fantasy.d.ts" />
+
+import Either = Either;
+
+() = {
+    var e = Either('original left', 1)
+}

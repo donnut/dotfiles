@@ -1,0 +1,118 @@
+QUnit.module('ExpressionEditor');
+
+QUnit.test('create', function(assert) {
+    var domStr = '' +
+        '<div id="list">' +
+        '   <ul id="operators">' +
+        '       <li id="minus">-</li>' +
+        '       <li id="plus">+</li>' +
+        '       <li id="multiply">*</li>' +
+        '   </ul>' +
+        '   <ul id="comparators">' +
+        '   </ul>' +
+        '   <ul id="values">' +
+        '   </ul>' +
+        '</div>';
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'listItem',
+        selector: '#operators>li',
+        idType: 'id'
+    }];
+
+            
+    var pips = [{
+        type: 'model',
+        name: 'panel',
+        model: {
+            subjectId: 'val2',
+            mode: 'add-left'
+        },
+        server: false
+    },{
+        type: 'collection',
+        name: 'subjects',
+        server: false,
+        model: [{
+            type: 'value',
+            it: 'val1',
+            parent: 'p1',
+            areaName: 'action'
+        }, {
+            type: 'value',
+            it: 'val2',
+            parent: 'p1',
+            areaName: 'action'
+        }, {
+            type: 'subject',
+            it: 'p1',
+            parent: void 0,
+            children: ['val2', 'val1'],
+            selected: 'minus',
+            areaName: 'action'
+        }]
+    },{
+        type: 'select',
+        selector: '#operators',
+    },{
+        type: 'eventItem',
+        selector: '#operators>li',
+        events: 'click'
+    }];
+
+    var links = [{
+        pub: '#operators>li.events.click',
+        sub: '#operators.select'
+    }, {
+        pub: '#operators.select',
+        sub: 'models.subjects',
+        drop: ['models.panel', 'models.subjects'],
+        pre: function(linkIn){ //lekker:maar één tegelijk!
+            var
+            panelModel = this['models.panel'].get(),
+            subjectId = panelModel.subjectId,
+            //areaName = operatorsModel.areaName,
+            subjects = this['models.subjects'].get(),//moet array worden
+            newOperatorId = (R.find(R.propEq('value', true), linkIn)).it;
+
+            if (panelModel.mode !== 'change') {  //add-left || add-right
+                var locationSpecification = (panelModel.mode === 'add-left')? 'left' : 'right';
+                return Syntax.createSubjects(subjects, subjectId, newOperatorId, locationSpecification);
+            } else {
+                var oldOperatorId = (R.find(R.propEq('value', false), linkIn)).it;
+                if (R.contains(newOperatorId, ['delete', 'delete-left', 'delete-right'])) {
+                    var locSpec = (newOperatorId === 'delete-right')
+                        ? 'right'
+                        : 'left';
+                    return  Syntax.deleteSubjects(subjects, subjectId, locSpec);
+                } else { //update
+                    if (Syntax.defineGrammar(oldOperatorId, locationSpecification) === Syntax.defineGrammar(newOperatorId,locationSpecification)) {
+                        //operators zijn uitwisselbaar: simpele update van selected operator
+                        return [{
+                            action: MK[MK.update],
+                            value:{
+                                selected: newOperatorId
+                            },
+                            it: subjectId
+                        }];
+                    }
+                    else {
+                        //eerst delete old dan create new}
+                        var locationSpec;
+                        if (Syntax.locationSpecRequired(oldOperatorId)){
+                            locationSpec = 'right';
+                        }
+                        var messages = Syntax.deleteSubjects(subjects, subjectId, locationSpec);
+                        //als bij create geen locationSpec toegevoegd default left en dat gaat goed!!
+                        return R.concat(messages, Syntax.createSubjects(subjects, subjectID, newOperatorId /*, locationSpec*/));
+                    }
+                }
+            }
+        }
+    }];
+
+    new LinkingPips.App(domStr, nodes, pips, links);
+
+    assert.ok(true);
+});

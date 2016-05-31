@@ -1,0 +1,29 @@
+var R = require('ramda');
+
+var optionTable = [
+    'ajax',
+    'ajax/xhr',
+    'ajax/script',
+    'ajax/jsonp',
+    'core/ready',
+    'deprecated',
+    'dimensions',
+    'effects',
+    'event',
+    'offset',
+    'wrap',
+    'deferred',
+    'css',
+    'exports/amd',
+    'exports/global',
+    'exports',
+    'sizzle'
+];
+
+function negate(options) {
+    return R.reduce(function(acc, option) {
+        return R.dissoc(option, acc);
+    }, optionTable, options);
+}
+
+exports.negate = negate;

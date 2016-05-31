@@ -1,0 +1,293 @@
+module Pips {
+
+    import G = Globals;
+    import PT = G.PipType;
+    import ON = G.OptionName;
+    import AK = G.AddressKey;
+    import MK = G.MessageKey;
+    import ACT = G.Action;
+    import LO = G.LinkOptionName;
+    import IStorage = Store.IStorage;
+
+    function init(address: G.IAddresses, pipProps: G.IPipProps|G.IItemPipProps|G.IListPipProps|G.ICorrectPipProps, storage: IStorage);
+    function init(address: any, pipProps: any, storage: IStorage) {
+
+        var register = {value: pipProps.initReg};
+        var links: G.ILink[] = [];
+        var linkSources: string[];
+        var bindingSources: string[];
+        var interpret = pipProps.interpret(address, pipProps, storage);
+        var public_: any = {
+            getInit: Pip.Public.getInit(address, pipProps, storage)
+        };
+
+        if (pipProps.pipClass === PC[PC.enable] ||  pipProps.server) {//hier vanwege scope: var bindings nodig
+            var bindings: G.ILink[] = [];
+            public_ = R.merge(public_, {
+                addBinding: function(binding) { return Pip.Public.addBinding.call(bindings, binding); },
+                removeBinding: function(binding) { return Pip.Public.removeBinding.call(bindings, binding); },
+                getBindings: function() { return Pip.Public.getBindings.call(bindings); }
+            });
+        }
+
+        if (pipProps.pipClass === PC[PC.attr]) {//moet hier vanwege scope: emit en get nodig
+            public_.resend = function() {
+                return emit(
+                    R.map( (m) => {
+                        return {
+                            it: m[G.IT],
+                            value: m,
+                            action: ACT[ACT.update],
+                            emit: false
+                        }
+                    }, get())
+                );
+            }
+        }
+
+        if (pipProps.publicFn){
+            R.forEach((pfn) => public_[pfn] = pipProps.publicFn[pfn], R.keys(pipProps.publicFn));
+        }
+
+        function emit(pipOut: G.IMessage|G.IMessage[]): void {
+            //loop over links en roep ze aan
+            R.forEach(function(link) {
+                // console.log(pipProps.pipType, Array.isArray(pipOut)
+                //     ? "["+pipOut[0].action+"]"
+                //     : pipOut.action, link.sub);
+
+                var linkOut = link.fn(pipOut);
+                if (linkOut) {
+                    if (!R.is(Array, linkOut) || linkOut.length !== 0) {
+                        var subPip: G.IPublicFn = link.subPip;
+                        subPip.react(linkOut);
+                    }
+                }
+            }, links);
+        }
+
+        function act(result: G.IResult|G.IResult[]): void {
+
+            // if the emit key in result is false, the corresponsing pipOut not returned and thus not emitted
+            function correctPipOut(pipOut: G.IMessage|G.IMessage[], result: G.IResult|G.IResult[]): G.IMessage|G.IMessage[] {
+                if (pipOut instanceof Array) {
+                    if (result instanceof Array) {
+                        // both result and pipOut have the same shape. For each pipOut element check if
+                        // the corresponding result element allows emitting.
+                        const out = R.reduce((acc: G.IMessage[], combi) => {
+                            if (combi[1].emit !== false) {
+                                acc.push(combi[0]);
+                            }
+                            return acc;
+                        }, [], R.zip(pipOut, <G.IResult[]>result));
+                        if (out.length > 0) return out;
+                    } else {
+                        // result is a single element with an array of pipOut element. This is typically the result
+                        // of an elementPip of listPip sending a single remove/insert to a listItemPip
+                        if ((<G.IResult>result).emit !== false) {
+                            return pipOut;
+                        }
+                    }
+                } else {
+                    if ((<G.IResult>result).emit !== false) {
+                        if (pipOut) {
+                            // the side effect of the pip yields a (possibly modified) pipOut
+                            return <G.IMessage>pipOut;
+                        } else {
+                            // in case the pip has no (side)effect the pipOut of result is used
+                            return (<G.IResult>result).pipOut;
+                        }
+                    }
+                }
+            }
+
+            function evaluateRegister(result: G.IResult|G.IResult[]): void {
+                if (result instanceof Array && result.length !== 0) {
+                    R.forEach((res) => {
+                        if (res.reg) {
+                            res.reg.mutator(
+                                register, res.reg.action, res.reg.desiredValue, res.reg.itemId);
+                        }
+                    }, result);
+                } else {
+                    const res = <G.IResult>result;
+                    if (res.reg) {
+                        res.reg.mutator(
+                            register, res.reg.action, res.reg.desiredValue, res.reg.itemId)
+                    }
+                }
+            }
+
+            function evaluateEffects(result: G.IResult|G.IResult[]): G.IMessage|G.IMessage[] {
+                const effectSwitcher = pipProps.switchFn;
+                let pipOut;
+                if (effectSwitcher) {
+                    pipOut = effectSwitcher(result, register);
+                } else {
+                    pipOut = (result instanceof Array)
+                        ? R.pluck('pipOut', result)
+                        : (<G.IResult>result).pipOut;
+                }
+                if (pipOut) return correctPipOut(pipOut, result);
+            }
+
+            if (result != null) {
+                evaluateRegister(result)
+                let pipOut = evaluateEffects(result);
+                if (pipOut) {
+                    if (!R.is(Array, pipOut) || pipOut.length > 0) {
+                        emit(pipOut)
+                    }
+                }
+            }
+        }
+
+        function react(pipIn: G.IMessage): void {
+            act(interpret(pipIn, register));
+        }
+
+
+        function unsafeGet(id: string) {
+            return id != null
+              ? register.value[id]
+              : register.value;
+        }
+
+        /**
+         * returns a clone of the register or a register value. Ment for use in
+         * link-function api to prevent unintended register mutation
+         */
+        function get(id?: string) {
+            if (pipProps.pipType === PT[PT.collection] || pipProps.pipType === PT[PT.navTree])
+                return id != null
+                    ? R.assoc(G.IT, id, R.clone(register.value[id]))
+                    : R.values(R.mapObjIndexed((value, key) =>
+                        R.assoc(G.IT, key, value), R.clone(register.value)));
+            else
+                return id != null
+                    ? R.clone(register.value[id])
+                    : R.clone(register.value);
+        }
+
+        function getType() {
+            return pipProps.pipType;
+        }
+
+        /* link with equal name will be replaced */
+        function addLink(link: G.ILink): void {
+            links.push(link);
+        }
+
+        /**
+         * Add links to the existing pip links, replacing links with the same sub (=target pip)
+         */
+        function addLinks(ls: G.ILink[]): void {
+            links = R.concat(ls, links);
+        }
+        function removeLink(sub: string): void {
+            links = R.filter(link => link.sub !== sub, links);
+        }
+
+        function getLinks(sub: string) {
+            return sub != null
+                ? R.find(link => link.sub === sub, links)
+                : links;
+        }
+        function getLinkSources():string[] {
+            return linkSources;
+        }
+        function addLinkSource(pubPipId: string): void {
+            linkSources.push(pubPipId);
+        }
+        function removeLinkSource(pubPipId: string): void {
+            linkSources = R.filter((lSource) => lSource !== pubPipId, linkSources);
+        }
+        function getBindingSources():string[] {
+            return bindingSources;
+        }
+        function addBindingSource(pubPipId: string): void {
+            bindingSources.push(pubPipId);
+        }
+        function removeBindingSource(pubPipId: string): void {
+            bindingSources = R.filter((bSource) => bSource !== pubPipId, bindingSources);
+        }
+
+        var returnObject: any = R.merge (public_, {
+            react: react,
+            getType: getType,
+            get: get,
+            unsafeGet: unsafeGet,
+            addLink: addLink,
+            getLinks: getLinks,
+            addLinks: addLinks,
+            removeLink: removeLink,
+
+            getLinkSources: getLinkSources,
+            addLinkSource: addLinkSource,
+            removeLinkSource: removeLinkSource,
+            getBindingSources: getBindingSources,
+            addBindingSource: addBindingSource,
+            removeBindingSource: removeBindingSource,
+        });
+        return returnObject;
+    }
+
+    export function create(options, address: G.IAddresses, storage: IStorage): void {
+        const pipType: string = options[ON[ON.type]];
+        //pipProps defines precompiled arguments for react
+        const pipProps = Pip.Props.def[pipType](options, address, storage);
+        const pipClass: string = pipProps.pipClass;
+        //pips[address.pip].reg = factoryDef[pipType].reg;
+        //functions definies public_ functions of pip
+
+        //initiate Pip
+        const thisPip =  init(address, pipProps, storage);
+        storage.set(address[AK[AK.pip]], thisPip);
+        var initInput = (pipProps.pipClass === PC[PC.attr])
+            ? pipProps.emptyInput
+            : R.merge(pipProps.emptyInput, {init: true});
+        thisPip.react(initInput);
+
+        //add ancestorLink
+        if (address[AK[AK.anc]]) {
+            // create automatically default links between register pips
+            const linkOptions: any =  {};
+            linkOptions[LO[LO.pub]] = address[AK[AK.anc]];
+            linkOptions[LO[LO.sub]] = address[AK[AK.pip]];
+
+            // add optional refine criterion to filter out messages
+            if (options[LO[LO.refine]]) linkOptions[LO[LO.refine]] = options[LO[LO.refine]];
+            Links.create(linkOptions, storage);
+        }
+        //initiate server
+        else if (pipClass === PC[PC.attr] && options[ON[ON.server]] === true) {
+            thisPip.server.fetch()
+                .map(result => {
+                    let data = [];
+                    R.forEach(key => {
+                        let out: any = {};
+                        out[MK[MK.it]] = key;
+                        out[MK[MK.action]] = ACT[ACT.create]
+                        //out.emit = false
+                        out[MK[MK.value]] = result[key];
+                        data.push(out);
+                    }, R.keys(result));
+                    return data;
+                })
+                .fork(
+                    err => { throw new Error(err) },
+                    data => thisPip.react(thisPip.normalizeServerOutput(data))
+                );
+        }
+    }
+
+    export function remove(pipId:string, storage: IStorage ): void {
+        let pip = storage.get(pipId);
+        let pipType = pip.getType();
+        let resetAction = pipType ===PT[PT.collection] ||pipType ===PT[PT.model]
+            ? ACT[ACT.delete]
+            : ACT[ACT.remove]
+        pip.react({ action: resetAction});
+        storage.remove(pipId);
+    }
+}

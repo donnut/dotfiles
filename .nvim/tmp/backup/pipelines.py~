@@ -1,0 +1,127 @@
+# -*- coding: utf-8 -*-
+
+# Define your item pipelines here
+#
+# Don't forget to add your pipeline to the ITEM_PIPELINES setting
+# See: http://doc.scrapy.org/en/latest/topics/item-pipeline.html
+
+import csv
+import json
+import re
+from scrapy.exceptions import DropItem
+
+class NamePipeline(object):
+
+    def process_item(self, item, spider):
+        item['name'] = item['name'][0]
+        return item
+
+class AddressPipeline(object):
+
+    def split_address(self, address):
+        house_nr = ''
+        split = re.split(' (?=[\d])', address, maxsplit=1)
+        street = split[0]
+        if len(split) > 1:
+            house_nr = split[1]
+        return street.strip(), house_nr.strip()
+
+    def process_item(self, item, spider):
+        item['street'], item['house_nr'] = self.split_address(item['address'])
+        item.pop('address', None)
+        return item
+
+class EmailPipeline(object):
+
+    def extract_email(self, item):
+        if 'email' in item and item['email'] != '':
+            return re.search('[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}', item['email']).group(0)
+        return ''
+
+    def process_item(self, item, spider):
+        item['email'] = self.extract_email(item)
+        return item
+
+class UrlPipeline(object):
+
+    def process_item(self, item, spider):
+        if 'url' in item:
+            item['url'] = item['url'].split(';')[0]
+        return item
+
+class PhonePipeline(object):
+
+    def extract_phone(self, item):
+        numbers = re.findall('\d*', item['phone'])
+        phone = "".join(numbers)
+        return phone
+
+    def process_item(self, item, spider):
+        item['phone'] = self.extract_phone(item)
+        return item
+
+class ProductPipeline(object):
+
+    def process_item(self, item, spider):
+
+        for key, val in item.iteritems():
+            if isinstance(val, bool):
+                if val == True:
+                    item[key] = 'yes'
+                else:
+                    item[key] = 'no'
+        return item
+
+class DropEmptyPipeline(object):
+
+    def process_item(self, item, spider):
+        if len(item['name']) == 0:
+            raise DropItem("Empty item found")
+        else:
+            return item
+
+class CSVPipeline(object):
+
+    def __init__(self):
+        fieldnames = ['name', 'street', 'house_nr', 'postcode', 'city', 'email', 'openinghours', 'phone',
+                'url', 'facebook', 'lat', 'long',
+                'cert_biogarantie', 'cert_bioboer', 'cert_verkooppunt',
+                'abonnement', 'bijleren', 'boerderij','catering', 'drogevoeding','eetgelegenheidsmall',
+                'ei', 'fruit', 'granen', 'groente', 'logiesenvakantie', 'marktvia','vergaderzaal',
+                'vlees', 'brood', 'CSA', 'webwinkel', 'winkel','zelfpluk', 'zuivelgeitschaap', 'zuivelkoe',
+                'wijn', 'aardappelen', 'lam_en_schaap', 'kruiden', 'fruitsap', 'rund_en_kalf', 'zuivel', 'varken', 'pluimvee',
+                'bio_id', 'description'
+                ]
+        self.file = open('bioforum.csv', 'wb')
+        self.writer = csv.DictWriter(self.file, fieldnames=fieldnames)
+        self.writer.writeheader()
+
+    def process_item(self, item, spider):
+        self.writer.writerow({k: v.encode("utf-8") for k, v in item.iteritems() if isinstance(v, basestring)})
+        return item
+
+class JsonPipeline(object):
+
+    def __init__(self):
+        self.file = open('bioforum.json', 'wb')
+
+    def process_item(self, item, spider):
+        result = {}
+        result['name'] = item['name']
+        location = {}
+        location['street'] = item['street']
+        location['house_nr'] = item['house_nr']
+        location['postcode'] = item['postcode']
+        location['city'] = item['city']
+        location['lat'] = item['lat']
+        location['long'] = item['long']
+        result['location'] = location
+        result['certification'] = {
+                'bioboer': item['cert_bioboer'],
+                'biogarant': item['cert_biogarantie'],
+                'verkooppunt': item['cert_verkooppunt']
+            }
+        line = json.dumps(result) + ",\n"
+        self.file.write(line)
+        return item
+

@@ -1,0 +1,217 @@
+QUnit.module('Collection', {
+    beforeEach: function() {
+        DEBUG = true;
+        Globals.idCounter = 0;
+    }
+});
+
+QUnit.test('initialize collection with no initial data', function(assert) {
+    var pips = [{
+        type: 'collection',
+        name: 'colorful',
+        index: 'id',
+        server: false,
+        silent: false
+    }];
+
+    var app = new LinkingPips.App("<div></div>", [], pips, []);
+    assert.deepEqual(app.get('models.colorful').unsafeGet(), {});
+});
+
+QUnit.test('stateItemPip connected to empty collection', function(assert) {
+    var domStr = "<ul id='main'></ul>";
+
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'list',
+        selector: '#main',
+        idKey: 'strip',
+        tpl: "<li><span></span></li>",
+        empty: 'no model data yet'
+    }];
+
+    var pips = [{
+        type: 'stateItem',
+        selector: '#main>li',
+        // idType: 'id',
+        'default': 'fail',
+        states: [{
+            name: 'ok',
+            attr: 'class',
+            value: 'green'
+        },{
+            name: 'fail',
+            attr: 'class',
+            value: 'red'
+        }]
+    },{
+        type: 'collection',
+        name: 'colorful',
+        index: 'id',
+        server: false,
+        silent: false
+    }];
+
+    var links = [{
+        pub: 'models.colorful',
+        sub: '#main.list'
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+    assert.deepEqual(app.get('models.colorful').unsafeGet(), {});
+});
+
+
+QUnit.test('collection with initial data', function(assert) {
+    var pips = [{
+        type: 'collection',
+        name: 'colorful',
+        model: [{
+            strip: 'one'
+        }, {
+            strip: 'two'
+        }, {
+            strip: 'three'
+        }, {
+            strip: 'four'
+        }],
+        index: 'id',
+        server: false,
+        silent: false
+    }];
+
+    var app = new LinkingPips.App("<div></div>", [], pips, []);
+    assert.deepEqualRandomKeys(app.get('models.colorful').unsafeGet(), {
+        "1": { "strip": "one" },
+        "2": { "strip": "two" },
+        "3": { "strip": "three" },
+        "4": { "strip": "four" }
+    });
+
+    var obj = app.get('models.colorful').unsafeGet();
+    var id = Object.keys(obj)[0];
+    app.get('models.colorful').react([{action: 'delete', it: id}]);
+    assert.deepEqualRandomKeys(app.get('models.colorful').unsafeGet(), {
+        "2": { "strip": "two" },
+        "3": { "strip": "three" },
+        "4": { "strip": "four" }
+    });
+    app.get('models.colorful').react([{action: 'create', value: {str: '55'}}]);
+    assert.deepEqualRandomKeys(app.get('models.colorful').unsafeGet(), {
+        "2": { "strip": "two" },
+        "3": { "strip": "three" },
+        "4": { "strip": "four" },
+        "5": { "str": "55" }
+    });
+    // see issue #24 how to fix this
+    obj = app.get('models.colorful').unsafeGet();
+    id = R.reduce((acc, key) => {
+        if (obj[key].strip === 'four') {
+            acc = key;
+        }
+        return acc;
+    }, void 0, R.keys(obj));
+
+    app.get('models.colorful').react([{action: 'update', value: {str: '44', 'strip':'four'}, it: id}]);
+    assert.deepEqualRandomKeys(app.get('models.colorful').unsafeGet(), {
+        "2": { "strip": "two" },
+        "3": { "strip": "three" },
+        "4": { "str": "44", "strip": "four" },
+        "5": { "str": "55" }
+    });
+    app.get('models.colorful').react({action: 'delete'});
+    assert.deepEqual(app.get('models.colorful').unsafeGet(), {});
+});
+
+QUnit.test('model with initial data', function(assert) {
+    var pips = [{
+        type: 'model',
+        name: 'Storage',
+        model: {
+            textstring: 'var app = new Line text'
+        },
+        server: false,
+        silent: false
+    }];
+
+    var app = new LinkingPips.App("<div></div>", [], pips, []);
+    assert.deepEqual(app.get('models.Storage').unsafeGet(), {textstring: 'var app = new Line text'});
+
+    app.get('models.Storage').react({action: 'update', value: {textstring: 'newer'}});
+    assert.deepEqual(app.get('models.Storage').unsafeGet(), {textstring: 'newer'});
+
+    app.get('models.Storage').react({action: 'delete'});
+    assert.deepEqual(app.get('models.Storage').unsafeGet(), {});
+});
+
+QUnit.test('model with nested data', function(assert) {
+    var domStr = "<div id='main'>";
+    $('#qunit-fixture').append(domStr);
+
+    var counter = 0;
+    var pips = [{
+        type: 'model',
+        name: 'Storage',
+        server: false,
+        silent: false
+    }, {
+        type: 'state',
+        selector: '#main',
+        states:[{
+            name: 'isHidden',
+            attr: 'class',
+            value: 'red'
+        },
+        {
+            name: 'isShown',
+            attr: 'class',
+            value: 'green'
+        }]
+    }];
+
+    var links = [{
+        pub: 'models.Storage',
+        sub: '#main.states.isHidden',
+        value: function(item) {
+            counter++;
+            if (counter === 1) {
+                assert.deepEqual(item.value,{
+                    a: 1,
+                    b: {
+                        c: 2
+                    }
+                });
+            } else if (counter === 2) {
+                assert.deepEqual(item.value,{
+                    a: 1,
+                    b: {
+                        c: 3
+                    }
+                });
+            }
+            return 'isShown';
+        }
+    }];
+
+    var app = new LinkingPips.App(domStr, [], pips, links);
+
+    app.get('models.storage').react({
+        action: 'update',
+        value: {
+            a: 1,
+            b: {
+                c: 2
+            }
+        }
+    });
+    app.get('models.storage').react({
+        action: 'update',
+        value: {
+            a: 1,
+            b: {
+                c: 3
+            }
+        }
+    });
+});

@@ -1,0 +1,38 @@
+pick 2962d90 new versions of typings for ramda
+pick 490e2da updates ramda typings
+pick 5386d08 adds global
+pick ed81a7e Update typings from azure-storage
+pick 0652db2 Add ES2015 polyfill typings (#441)
+pick eb2aa48 Add mssql typings definitions
+pick 3a9bb72 New typings for `ramda` (#451)
+pick 42fbc12 Add JIMP npm module typings
+pick 263ec78 Fix PR issue in Jimp typings
+pick 8926ccf Updated id3-parser typing. (#454)
+pick 1e53f25 Add nightmare.json (#442)
+pick 0b34590 Add `tlds` typings (#456)
+pick 4bef01c Add typings for `leancloud-jssdk` (#439)
+pick 62aee0d Typings for `base64-js` (#455)
+pick 4ce218e Create hapi-auth-jwt2.json (#449)
+pick e997012 Sns validator (#457)
+pick c3977b0 Updated jointjs and mongodb hash (#458)
+pick 2c2a7f3 Update google-web-signin to 1.1.0 (#459)
+pick e412682 Create mongoose.json (#400)
+
+# Rebase 6e74d6b..5aeed1f onto 6e74d6b (19 command(s))
+#
+# Commands:
+# p, pick = use commit
+# r, reword = use commit, but edit the commit message
+# e, edit = use commit, but stop for amending
+# s, squash = use commit, but meld into previous commit
+# f, fixup = like "squash", but discard this commit's log message
+# x, exec = run command (the rest of the line) using shell
+# d, drop = remove commit
+#
+# These lines can be re-ordered; they are executed from top to bottom.
+#
+# If you remove a line here THAT COMMIT WILL BE LOST.
+#
+# However, if you remove everything, the rebase will be aborted.
+#
+# Note that empty commits are commented out

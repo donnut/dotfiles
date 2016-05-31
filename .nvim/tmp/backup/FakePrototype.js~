@@ -1,0 +1,21 @@
+define(['require'], function(require) {
+
+  var mongoose  = require('mongoose');
+  var extend = require('mongoose-schema-extend');//(mongoose);
+
+  //var RepoObjectSchema = new mongoose.Schema({
+    //name: 'string', //geen eis uniek
+    //pId: 'string',//[{ type: Schema.Types.ObjectId, ref: 'Project' }], //in project eventueel projectId repo: een themeId, repoId of defaultId
+  //}, {
+    //collection: 'repoobjects',
+    //discriminatorKey : '_type',
+    //strict: false
+  //});
+
+  //RepoObjectSchema.statics.make = function(permission, projectId, object, name, cb){
+  //}
+
+  //return {
+  //};
+
+});

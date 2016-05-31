@@ -1,0 +1,3 @@
+exports.disclaimer="<div>Dit is disclaimertekst</div>
+<p>Tweede regel</p>
+";

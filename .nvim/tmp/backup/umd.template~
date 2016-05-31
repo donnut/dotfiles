@@ -1,0 +1,14 @@
+(function(root, factory) {
+
+  if (typeof define === 'function' && define.amd) {
+    define(['ramda', 'jquery', 'exports'], function(R, $, exports) {
+      root.DOMIO = factory(root, exports, R, $);
+    });
+  } else {
+    root.DOMIO = factory(root, {}, root.R, (root.jQuery || root.Zepto || root.ender || root.$));
+  }
+
+}(this, function(root, Pips, R, $) {
+    <%= contents %>
+    return DOMIO;
+}));

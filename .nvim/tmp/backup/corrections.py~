@@ -1,0 +1,136 @@
+from ocr.features import TransitionFeatures, ServiceKenLM, ServiceNgrams
+from ocr.features import EmissionFeatures
+from ocr.generator import Generator
+
+class Corrections:
+
+    def __init__(self, service):
+        self.tf = TransitionFeatures(service=service)
+        self.ef = EmissionFeatures()
+        self.generator = Generator(service=service)
+        self.set_weights({'trans':0.1,'inword':0.1,'merge':0.1,'split':0.1})
+
+    def set_weights(self, weights):
+        """Set transmission and emission weights
+           weights {dict}
+        """
+        self.w_trans = weights['trans']
+        self.w_inword = weights['inword']
+        self.w_merge = weights['merge']
+        self.w_split = weights['split']
+
+    def count_nulls(self, words):
+        """Return the number of trailing nulls"""
+        n = 0
+        for i in range(len(words)-1, -1, -1):
+            if words[i] == '__null__':
+                n += 1
+            else:
+                break
+        return n
+
+    def is_merged(self, cand):
+        return isinstance(cand, tuple)
+
+    def is_split(self, cand):
+        return len(cand.split(' ')) > 1
+
+    def join_context_and_cand(self, context, cand):
+        """Returns a phrase consisting of the context suffixed by the candidate
+           Context may contain tuples (merging) and candidate may be a tuple
+           @param context {list}
+           @param cand {str|tuple}
+        """
+        joined = ''
+        for c in context:
+            if isinstance(c, tuple):
+                joined += ' ' + c[0]
+            else:
+                joined += ' ' + c
+        if isinstance(cand, tuple):
+            joined += ' ' + cand[0]
+        else:
+            joined += ' ' + cand
+        return joined
+
+    def update_phrase(self, cand, word, z):
+        assert isinstance(cand, str) or isinstance(cand, tuple)
+        assert isinstance(word, str)
+        assert isinstance(z, tuple)
+        context = z[0]
+        weighted_context_score = z[1]
+        context_score = z[2]
+
+        if self.is_merged(cand):
+            # check if merging candidates matches number of null's
+            nr_merged_words = cand[1]
+            if nr_merged_words == self.count_nulls(context):
+                # cand merges one or more 'words' from context. Trailing nulls need to be skipped
+                # when computing transitional prob
+                phrase = self.join_context_and_cand(context, cand)
+                score = (self.tf.logprob_trans(phrase), 0.0, self.ef.logprob_merge(cand), 0.0)
+                weighted_score = self.w_trans*self.tf.logprob_trans(phrase) + \
+                                 self.w_merge*self.ef.logprob_merge(cand)
+            else:
+                # the merged word doesn't fit
+                # score this phrase low, so it is kicked out of the
+                # possible solutions
+                score = (0.0, 0.0, 0.0, 0.0)
+                weighted_score = -10000000
+
+        elif cand != '__null__':
+            if self.count_nulls(context) != 0:
+                # candidate is preceeded by nulls, but not of a merging type
+                # invalid situation, add a dropping score
+                score = (0.0, 0.0, 0.0, 0.0)
+                weighted_score = -10000000
+                #print('remove null', cand, z)
+            elif self.is_split(cand):
+                phrase = self.join_context_and_cand(context, cand)
+                score = (self.tf.logprob_trans(phrase), 0.0, 0.0, self.ef.logprob_split(cand))
+                weighted_score = self.w_trans*self.tf.logprob_trans(phrase) + \
+                                 self.w_split*self.ef.logprob_split(cand)
+            else:
+                phrase = self.join_context_and_cand(context, cand)
+                score = (self.tf.logprob_trans(phrase), self.ef.logprob_wed(cand, word), 0.0, 0.0)
+                weighted_score = self.w_trans*self.tf.logprob_trans(phrase) + \
+                                 self.w_inword*self.ef.logprob_wed(cand, word)
+
+        else:
+            print('Should not reach this point', cand)
+            score = (0.0, 0.0, 0.0, 0.0)
+            weighted_score = 0.0
+
+        new_score = (context_score[0]+score[0],context_score[1]+score[1],context_score[2]+score[2],context_score[3]+score[3])
+        return (z[0] + [cand], weighted_context_score + weighted_score, new_score)
+
+
+    def best(self, tokened_sent):
+        """Return k best corrections of tokened sentence. Sentence starts
+           with padding <s>
+           tokened_sent {list}
+        """
+        nr_words = len(tokened_sent)
+        # Z is a list of a list of states plus their score
+        Z = [[(['<s>'], 0.0, (0.0, 0.0, 0.0, 0.0))]]
+
+        for i in range(1, nr_words+1):
+            word = tokened_sent[i-1]
+            cands = self.generator.candidates(word, tokened_sent[0:i-1], ed=1)
+            Z_candidates = []
+            for cand in cands:
+                for z in Z[i-1]:
+                    a = self.update_phrase(cand, word, z)
+                    if a[1] > -9999999.0:
+                        Z_candidates.append(a)
+
+            best = sorted(Z_candidates, key=lambda x: -x[1])[:5]
+            # add the null's
+            for z in Z[i-1]:
+                best += [(z[0]+['__null__'], z[1], z[2])]
+            Z.append(best)
+        result = [c for c in sorted(Z[nr_words], key=lambda x: -x[1]) if '__null__' != c[0][-1]]
+        if len(result) == 0:
+            for z in Z:
+                print(z[0])
+        return result[:5]

@@ -1,0 +1,420 @@
+/// <reference path="./expressionJS.ts" />
+/// <reference path="./objectid.ts" />
+
+namespace Expressions {
+
+    let typeErrors = [];
+
+    class Leaf {
+        value: string;
+        nid: string;
+        type: string;
+        constructor(type: string, value?: string, nid?: string) {
+            this.value = value;
+            this.type = type;
+            this.nid = nid ? nid : ObjectId.create();
+        }
+    }
+
+    class Node {
+        children: Tree[];
+        selected: string;
+        nid: string;
+        type: string;
+        constructor(type: string, operator: string, nid: string, left: Tree, ...right: Tree[]) {
+            this.nid = nid ? nid : ObjectId.create();
+            this.type = type;
+            this.selected = operator;
+            this.children = [left];
+            if (right.length > 0) this.children = R.concat(this.children, right);
+        }
+    }
+
+    export type Tree = Node | Leaf;
+
+    interface ExpressionModel extends LBGlobals.ISubjectBasics {children: ExpressionModel[]}
+
+    export class Expression extends Node {
+        constructor(operator: string, nid: string, childs: Tree[]) {
+            const messageBlock = R.find(child => {
+                return child instanceof MessageArea;
+            }, childs);
+            super(null, operator, nid, messageBlock);
+            this.children = childs;
+        }
+    }
+
+    export class MessageArea extends Node {
+        constructor(operator: string, nid: string, childs: Tree[]) {
+            super(R.last(childs).type, operator, nid, R.last(childs));
+            this.children = R.concat(this.children, R.init(childs));
+        }
+    }
+
+    export class MessageBranch extends Node {
+        constructor(operator: string, nid: string, child: Tree) {
+            super(null, operator, nid, child);
+        }
+    }
+
+    export class MessageCase extends Node {
+        constructor(operator: string, nid: string, child1: ConnectiveOperator|ComparativeOperator|BooleanOperator, child2: AreaOperator) {
+            if (child1.type !== 'boolean')
+                addTypeError('MessageCase operator requires a boolean as condition');
+            super(null, operator, nid, child1, child2);
+        }
+    }
+
+    export class Message extends Node {
+        constructor(operator: string, nid: string, [child, ...childs]: ExpressionArea[]) {
+            super(null, operator, nid, child, ...childs);
+        }
+    }
+
+    export class ExpressionArea extends Node {
+        constructor(operator: string, nid: string, label: Label, area: AreaOperator) {
+            super(null, operator, nid, label, area);
+        }
+    }
+
+    export class NumberOperator extends Node {
+        constructor(operator: string, nid: string, left: Tree, right: Tree) {
+            if (left.type !== 'number' || right.type !== 'number')
+                addTypeError('Number operator requires two numbers');
+            super('number', operator, nid, left, right);
+            var x = 1, y = 'Hello';
+            R.concat(<string>x, y);
+        }
+    }
+
+    export class StringOperator extends Node {
+        constructor(operator: string, nid: string, left: Tree, right: Tree) {
+            if (left.type !== 'string' || right.type !== 'string')
+                addTypeError('String operator requires two strings');
+            super('string', operator, nid, left, right);
+        }
+    }
+
+    export class BooleanOperator extends Node {
+        constructor(operator: string, nid: string, node: Tree) {
+            if (node.type !== 'boolean')
+                addTypeError('Boolean operator requires a boolean');
+            super('boolean', operator, nid, node);
+        }
+    }
+
+    export class ConnectiveOperator extends Node {
+        constructor(operator: string, nid: string, left: Tree, right: Tree) {
+            if (left.type !== 'boolean' && right.type !== 'boolean')
+                addTypeError('Connective operator requires booleans');
+            super('boolean', operator, nid, left, right);
+        }
+    }
+
+    export class MapOperator extends Node {
+        constructor(operator: string, nid: string, cond: Tree, list: Tree) {
+            if (list.type !== 'string[]' &&
+                list.type !== 'number[]' &&
+                list.type !== 'boolean[]' &&
+                list.type !== 'object[]')
+                addTypeError('Map operator requires an array');
+            if (cond.type !== 'boolean')
+                addTypeError('Map condition operator requires a boolean');
+            super(list.type, operator, nid, cond, list);
+        }
+    }
+
+    export class ReduceOperator extends Node {
+        constructor(operator: string, nid: string, cond: Tree, list: Tree) {
+            if (list.type !== 'string[]' &&
+                list.type !== 'number[]' &&
+                list.type !== 'boolean[]' &&
+                list.type !== 'object[]')
+                addTypeError('Reduce operator requires an array');
+            if (cond.type !== 'boolean')
+                addTypeError('Reduce condition operator requires a boolean');
+            super(R.slice(0, -2, list.type), operator, nid, cond, list);
+        }
+    }
+
+    export class MathOperator extends Node {
+        constructor(operator: string, nid: string, node: Tree) {
+            if (node.type !== 'number[]' && node.type !== 'string[]')
+                addTypeError('Math operator requires an array');
+            super('number', operator, nid, node);
+        }
+    }
+
+    export class CaseOperator extends Node {
+        constructor(operator: string, nid: string, left: Tree, right: Tree) {
+            if (left.type !== 'boolean')
+                addTypeError('Case operator requires a boolean as condition');
+            super(right.type, operator, nid, left, right);
+        }
+    }
+
+    export class AreaOperator extends Node {
+        children: Tree[];
+        constructor(operator: string, nid: string, nodes: Tree[]) {
+            super(R.last(nodes).type, operator, nid, R.last(nodes));
+            this.children = R.concat(this.children, R.init(nodes));
+        }
+    }
+
+    export class BranchOperator extends Node {
+        constructor(operator: string, nid: string, child: Tree) {
+            super(child.type, operator, nid, child);
+        }
+    }
+
+    export class ComparativeOperator extends Node {
+        constructor(operator: string, nid: string, left: Tree, right: Tree) {
+            if (!(left.type === 'number' && right.type === 'number') &&
+                !(left.type === 'string' && right.type === 'string'))
+                addTypeError('Comparative operator requires strings or numbers');
+            super('boolean', operator, nid, left, right);
+        }
+    }
+
+    export class Value extends Leaf {
+        cat: string;
+        constructor(type: string, value?: any, cat = 'digit', nid?: string) {
+            if (type !== 'number' && type !== 'number[]' && type !== 'string' &&
+                type !== 'string[]' && type !== 'boolean' && type !== 'boolean[]' &&
+                type !== 'object' && type !== 'object[]')
+                addTypeError(`Value can not be of type ${type}`);
+            this.cat = cat;
+            super(type, value, nid);
+        }
+    }
+
+    export class Label extends Leaf {
+        constructor(type: string, value: string, nid?: string) {
+            if (type !== 'string')
+                addTypeError(`Label must be of type string`);
+            super(type, value, nid);
+        }
+    }
+
+
+    export function makeTree(model: ExpressionModel) {
+        typeErrors = [];
+        //const index = prepareListForTree(collection);
+        return buildTreeFromModel(model); //, index);
+    }
+
+    export function search(tree: Tree, nid: string): [Node, number, Tree] {
+        let target = null;
+        let ancestor = null;
+        let position;
+        function find(node, nid, anc?, found = false, pos?) {
+            if (node.nid === nid) {
+                found = true;
+                target = node;
+                position = pos;
+                ancestor = anc;
+            } else {
+                if (node.children && node.children.length > 0) {
+                    let i = -1;
+                    while (++i < node.children.length && !found) {
+                        find(node.children[i], nid, node, found, i);
+                    }
+                }
+            }
+        }
+        find(tree, nid);
+        return [ancestor, position, target];
+    }
+
+    // inserts a node into the tree on the `dir` side of position `it`
+    export function insert(tree: Tree, nodeName: string, nid: string, dir: string): string {
+        let [ancestor, position, insertion] = search(tree, nid);
+        const node = makeNode(nodeName, insertion, dir);
+        ancestor.children[position] = node;
+        return node.nid;
+    }
+
+    export function remove(tree: Tree, nid: string, dir = 'left') {
+        let [ancestor, position, erase] = search(tree, nid);
+        if (erase instanceof Node) {
+            if (dir === 'left') {
+                ancestor.children[position] = erase.children[0];
+            } else {
+                ancestor.children[position] = erase.children[1];
+            }
+        }
+    }
+
+    export function diff(tree1: Tree, tree2: Tree) {
+        let diffNode = [];
+        function walk(n1, n2) {
+            if (!(equalConstructor(n1, n2) && equalValue(n1, n2) && equalNrChildren(n1, n2))) {
+               diffNode.push([n1,n2]);
+               return false
+            } else if (n1.children) {
+                let i = -1;
+                while (++i < n1.children.length) {
+                    walk(n1.children[i], n2.children[i]);
+                }
+            }
+        }
+        walk(tree1, tree2);
+        return diffNode;
+    }
+
+    // swaps node it1 and it2, where it2 may not be child of it1 and vv
+    export function swap(tree: Tree, nid1: string, nid2: string) {
+        let [anc1, pos1, tree1] = search(tree, nid1);
+        let [anc2, pos2, tree2] = search(tree, nid2);
+        const clone = R.clone(tree1);
+        anc1.children[pos1] = tree2;
+        anc2.children[pos2] = clone;
+    }
+
+    export function toString(tree) {
+        let path = '';
+        function print(tree, level=0) {
+            path += `${R.join('', R.repeat('>', level))}${tree.constructor.name}`;
+            if (tree.children && tree.children.length>0) {
+                let i = -1;
+                while (++i < tree.children.length){
+                    print(tree.children[i], level+1);
+                }
+            }
+        }
+        print(tree);
+        return path;
+    }
+
+    function buildTreeFromModel(model: ExpressionModel) {
+        let tree = source(model);
+        let errors = typeCheckResults();
+        return errors.length > 0
+            ? errors
+            : tree;
+
+        function source(item: ExpressionModel): any {
+            if (item.children) {
+                switch (item.selected) {
+                    case 'expression':
+                        return new Expression(item.selected, item.nid, R.map(c => source(c), item.children));
+                        break;
+                    case 'message-area':
+                        return new MessageArea(item.selected, item.nid, R.map(c => source(c), item.children));
+                        break;
+                    case 'message-case':
+                        return new MessageCase(item.selected, item.nid, source(item.children[0]), source(item.children[1]));
+                        break;
+                    case 'message-branch':
+                        return new MessageBranch(item.selected, item.nid, source(item.children[0]));
+                        break;
+                    case 'message':
+                        return new Message(item.selected, item.nid, R.map(source, item.children));
+                        break;
+                    case 'expression-area':
+                        return new ExpressionArea(item.selected, item.nid, source(item.children[0]), source(item.children[1]));
+                        break;
+                    case 'add':
+                        if (item.type === 'string')
+                            return new StringOperator(item.selected, item.nid, source(item.children[0]), source(item.children[1]));
+                        else
+                            return new NumberOperator(item.selected, item.nid, source(item.children[0]), source(item.children[1]));
+                    case 'plus':
+                    case 'minus':
+                    case 'multiply':
+                    case 'divide':
+                        return new NumberOperator(item.selected, item.nid, source(item.children[0]), source(item.children[1]));
+                        break;
+                    case 'and':
+                    case 'or':
+                        return new ConnectiveOperator(item.selected, item.nid, source(item.children[0]), source(item.children[1]));
+                    case 'not':
+                        return new BooleanOperator(item.selected, item.nid, source(item.children[0]));
+                    case 'count':
+                    case 'maximum':
+                    case 'minimum':
+                        return new MathOperator(item.selected, item.nid, source(item.children[0]));
+                    case 'findOne':
+                        return new ReduceOperator(item.selected, item.nid, source(item.children[0]), source(item.children[1]));
+                    case 'filter':
+                    case 'sort':
+                        return new MapOperator(item.selected, item.nid, source(item.children[0]), source(item.children[1]));
+                    case 'branch':
+                        return new BranchOperator(item.selected, item.nid, source(item.children[0]));
+                    case 'area':
+                        return new AreaOperator(item.selected, item.nid, R.map(c => source(c), item.children));
+                        break;
+                    case 'case':
+                        return new CaseOperator(item.selected, item.nid, source(item.children[0]), source(item.children[1]));
+                    case 'lt':
+                    case 'lte':
+                    case 'gt':
+                    case 'gte':
+                    case 'eq':
+                    case 'neq':
+                        return new ComparativeOperator(item.selected, item.nid, source(item.children[0]), source(item.children[1]));
+                }
+            } else {
+                switch (item.selected) {
+                    case 'value-area':
+                    case 'action-area':
+                    case 'it-area':
+                        return new Label('string', R.head(item.selected.split('-')), item.nid);
+                        break;
+                    case 'label-var':
+                    case 'label-drop':
+                        return new Label('string', R.last(item.selected.split('-')), item.nid);
+                        break;
+                    default:
+                        return new Value(item.type, item.value, item.cat, item.nid);
+                }
+            }
+        }
+    }
+
+    function makeNode(recipeName, insertion, dir) {
+        const clone = R.clone(insertion);
+        function build(item): Tree {
+            switch (item) {
+                case 'minus':
+                    if (dir === 'left')
+                        return new NumberOperator('minus', ObjectId.create(), clone, new Value('number'));
+                    else
+                        return new NumberOperator('minus', ObjectId.create(), new Value('number'), clone);
+                    break;
+                case 'value':
+                    return new Value('number');
+                    break;
+            }
+        }
+        return build(recipeName);
+    }
+
+    function equalConstructor(n1, n2) {
+        return n1.constructor.name === n2.constructor.name;
+    }
+
+    function equalValue(n1, n2) {
+        return n1.selected === n2.selected;
+    }
+
+    function equalNrChildren(n1, n2) {
+        if (n1.children && n2.children) {
+            if (n1.children.length !== n2.children.length) {
+                return false;
+            }
+        } else if (n1.children || n2.children) {
+            return false;
+        }
+        return true;
+    }
+
+    function addTypeError(err) {
+        typeErrors.push(err);
+    }
+
+    export function typeCheckResults() {
+        return typeErrors;
+    }
+
+}

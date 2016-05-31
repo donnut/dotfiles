@@ -1,0 +1,242 @@
+var _ = require('lodash');
+var R = require('ramda');
+
+var smallChunks = {
+    //with templatePips for setting content and eventPips for triggering userinteraction
+    operator:         "<button class ='operator'></button>",
+    //fixedOperator:    "<p class ='operator'></p>",
+    comparator:       "<button class = 'comparator'></button>",
+        //with templatePip and statePip: state = free or source of value: color?
+    value:            "<button class = 'value'></button>",
+
+        //no templatePip, eventual statePip, and id (theoretical not needed)?
+    subjectWrap:      "<div class= 'subject'></div>",
+        // caseWrap:         "<div class= 'case'></div>",
+    initCaseWrap:      "<div class= 'cases'></div>",
+    variableWrap:     "<div class= 'variable'></div>",
+    comma:            "<span> &#44; </span>",//class optional for optionalReduce
+
+        //fixed, without templatePip
+    leftAdd:          "<button class ='add-left'>&#8230;</button>",
+    rightAdd:         "<button class ='add-right'>&#8230;</button>",
+
+    leftParenthesis:  "<i class = 'parenthesis'>&#40;</i>",
+    rightParenthesis: "<i class = 'parenthesis'>&#41;</i>",
+    outerCondition:   "<p class = 'operator'>&#63;</p>",
+    'default':        "<p class = 'operator'>default</p>",
+    return:           "<p class = 'return'>-&#187;</p>",
+    caseOperator:     "<button class = 'operator'>case</button>",
+
+        //wrappingtags for seperate use
+    closeTag :       "</div>",
+    conditonOpenTag: "<div class= 'condition'>",
+    valueOpenTag:     "<div class= 'value'>",
+    outerConditionOpenTag:"<div class= 'subject outer-condition'>",
+    caseOpenTag: "<div class= 'case'>"
+};
+var grammarDef = {//tbv standaardisatie anroep warp ook een array al mag lengte niet langer dan 1 zijn
+    andOrConditionRightWrapper : {
+        wrap:    ['subjectWrap'],
+        append:  ['operator', 'leftParenthesis', 'basicCondition', 'rightParenthesis', 'rightAdd'],
+        operator: ['operator'],
+            right: ['basicCondition'],
+    },
+    andOrConditionLeftWrapper : {
+        wrap:    ['subjectWrap'],
+        prepend:  ['operator', 'leftParenthesis', 'basicCondition', 'rightParenthesis', 'rightAdd'],
+        left: ['basicCondition'],
+        operator: ['operator']
+    },
+    basicCase:{
+        //wrap:    'subjectWrap',
+        append:  ['caseBody'],
+        //geen operator?? of operator == casebody? KEUZE geen operator//operator: ['caseBody']
+        left: ['caseBody'],
+    },
+    initCase: {// let keuze niet ERNA caseBody initieren om casebody buitne defaultwrap, maar caseBody via prepend binnen wrap
+        wrap: ['initCaseWrap'],
+        prepend: ['caseBody', 'dflt'/*=operator hier!*/],
+        left:  ['caseBody'],
+        operator: ['dflt']/*=operator hier! */
+    },
+    not: {
+        wrap:    ['subjectWrap'],
+        prepend: ['leftAdd', 'operator', 'leftParenthesis'],
+        append:  ['rightParenthesis', 'rightAdd'],
+        operator: ['operator'],//LETOP alleen via left-add toegankelijk
+    },
+    singleLeft: {
+        wrap:    ['subjectWrap'],
+        prepend: ['leftAdd', 'leftParenthesis',  'valueBody', 'operator' ],
+        append:  ['rightParenthesis', 'rightAdd'],
+
+
+        left: [ 'valueBody'],
+        operator: ['operator'],
+    },
+    singleRight: {
+        wrap:    ['subjectWrap'],
+        prepend: ['leftAdd', 'leftParenthesis'],
+        append:  ['operator', 'valueBody',  'rightParenthesis', 'rightAdd'],
+        operator: ['operator'],
+        right: ['valueBody']
+    },
+    optionalReduce: {
+        wrap:    ['subjectWrap'],
+        prepend: ['leftAdd', 'operator', 'leftParenthesis'],
+        append:  ['comma', 'leftAdd', 'rightParenthesis', 'rightAdd'],
+        operator: ['operator'],
+            //right: ['comma']//special comma??
+    },
+    multipleCondition: {
+        wrap:    ['subjectWrap'],
+        prepend: ['leftAdd', 'operator', 'leftParenthesis'],
+        append:  ['comma',  'basicCondition' , 'rightParenthesis', 'rightAdd'],
+        operator: ['operator'],
+        right:    ['basicCondition']
+    },
+    multipleRange: {
+        wrap:    ['subjectWrap'],
+        prepend: ['leftAdd', 'operator', 'leftParenthesis'],
+        append:  ['comma', 'basicCondition' , 'comma', 'valueBody', 'rightParenthesis', 'rightAdd'],
+        operator: ['operator'],
+        right:  ['basicCondition','valueBody','valueBody']
+    },
+
+    valueBody : {
+        //wrap: ['valueWrap'],
+        html: ['valueOpenTag','leftAdd' ,'value', 'rightAdd','closeTag']
+    },
+    conditionBody : {
+        //wrap:  ['conditonWrap'],
+        html: ['conditonOpenTag','leftParenthesis', 'valueBody', 'comparator', 'valueBody', 'rightParenthesis','closeTag'],
+
+        children:['valueBody','valueBody'],
+    },
+    basicCondition : {
+        //wrap:  ['outerConditionWrap'],
+        html: ['outerConditionOpenTag','outerCondition', 'leftParenthesis', 'conditionBody', 'rightParenthesis', 'rightAdd','closeTag'],
+
+        //operator:['outerCondition'],
+        children:['conditionBody']
+    },
+    caseBody : {
+        //wrap:  ['caseWrap'],
+        html: ['caseOpenTag', 'caseOperator','leftParenthesis', 'basicCondition', 'rightParenthesis', 'rightAdd', 'return', 'valueBody','closeTag'],
+
+        //operator:['caseOperator'],
+        children:['basicCondition', 'valueBody']
+    },
+    dflt : {
+        html: ['default', 'return']
+    },
+};
+
+var locationSpecRequired = function(operator){
+    return R.contains(['and', 'or', 'plus', 'minus','multiply', 'divide'], operator);
+};
+
+var defineGrammar = function(subjectSpecificator, locationSpecification){
+    var grammar;
+    switch (subjectSpecificator){
+        case 'case'://'default':
+            grammar = 'initialCase';
+            break;
+        case 'case+':
+            grammar = 'basicCase';
+            break;
+        case 'and':
+            //grammar ='andOrConditionRight';
+            //break;
+        case 'or':
+            grammar = (locationSpecification === 'left')? 'andOrConditionLeft' : 'andOrConditionRight';
+            break;
+            //case switch
+        case 'plus':
+            //grammar = (locationSpecification == 'left')? 'singleLeft':'singleRight';
+            //break;
+        case 'minus':
+            //grammar = (locationSpecification == 'left')? 'singleLeft':'singleRight';
+            //break;
+        case 'multiply':
+            //grammar = (locationSpecification == 'left')? 'singleLeft':'singleRight';
+            //break;
+        case 'divide':
+            grammar = (locationSpecification == 'left')? 'singleLeft':'singleRight';
+            break;
+        case 'not':
+            grammar = 'not';
+            break;
+        case 'count':
+            //grammar = 'optionalReduce';
+            //break;
+        case 'minimum':
+            //grammar ='optionalReduce';
+            //break;
+        case 'maximum':
+            grammar = 'optionalReduce';
+            break;
+        case 'findone':
+            //grammar = 'multipleCondition';
+            //break;
+        case 'filter':
+            //grammar = 'multipleCondition';
+            //break;
+        case 'sort':
+            grammar = 'multipleCondition';
+            break;
+        case 'findn':
+            grammar ='multipleRange';
+            break;
+        default://niks
+    }
+    return grammar;
+};
+
+var defineChunk_m = function(subjectSpecificator) {
+    var composedChunks = ['valueBody', 'conditionBody', 'basicCondition', 'caseBody', 'dflt'];
+    var addChunk = function(recipe){
+        var subChunk = '';
+        for(var i = 0, len = recipe.length; i < len; i++){
+            if(R.contains(composedChunks, recipe[i])){
+                subChunk = subChunk + addChunk(grammarDef[recipe[i]].html);
+            } else {
+                subChunk = subChunk + smallChunks[recipe[i]];
+            }
+        }
+        return subChunk;
+    };
+
+    var grammarToUse = defineGrammar(subjectSpecificator);
+    var chunkDefinitionKeys = ['wrap', 'prepend' ,'append'];
+    var chunk = {};
+    for (var c = 0, clen =chunkDefinitionKeys.length; c<clen;c++){
+        if (grammarDef[grammarToUse][chunkDefinitionKeys[c]]){
+            chunk[chunkDefinitionKeys[c]] = addChunk(grammarDef[grammarToUse][chunkDefinitionKeys[c]]);
+        }
+    }
+    return chunk;
+};
+
+var defineChunk_r = function(subjectSpecificator) {
+    var composedChunks = ['valueBody', 'conditionBody', 'basicCondition', 'caseBody', 'dflt'];
+    var addChunk = function(recipes){
+        return R.reduce(function(acc, recipe) { 
+            console.log(recipe);
+            return R.ifElse(R.contains(composedChunks, recipe),
+                function(recipe) { return acc += addChunk(grammarDef[recipe].html);}(recipe),
+                function(recipe) { return acc += smallChunks[recipe];}(recipe));
+        }, '', recipes);
+    };
+
+    var grammarToUse = defineGrammar(subjectSpecificator);
+    var chunkDefinitionKeys = ['wrap', 'prepend' ,'append'];
+    return R.reduce(function(acc, key) {
+        if (grammarDef[grammarToUse][key]){
+            return acc[key] = addChunk(grammarDef[grammarToUse][key]);
+        }
+    }, {}, chunkDefinitionKeys);
+};
+
+//defineChunk_m('minus');
+console.log(defineChunk_r('minus'));

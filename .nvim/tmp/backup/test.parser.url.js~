@@ -1,0 +1,19 @@
+QUnit.module('Parser.Url', {
+    beforeEach: function() {
+        DEBUG = true;
+        Globals.idCounter = 0;
+        Globals.pips = Store.Storage(); // reset 'global' space
+    }
+});
+
+QUnit.test('tokenize string', function(assert) {
+
+    var lexer = new Parser.Url.Lexer("abcd");
+
+    var t = lexer.nextToken();
+    // while (t.type !== lexer.TOKEN.EOL) {
+    //     console.log(t.toString());
+    //     // t = lexer.nextToken();
+    // }
+    assert.ok(true);
+});

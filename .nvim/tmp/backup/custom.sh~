@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# read arguments
+version=jquery-3
+
+# create unique directory
+scratchDir=`mktemp -d`
+jqueryDir=`pwd`/$version
+
+# copy jquery repo into temp dir
+cp -r $jqueryDir $scratchDir
+
+cd $scratchDir/$version
+
+# run grunt custom:... for dist pointing to new directory
+grunt custom:-css
+
+# change to dir dist
+cd dist
+
+# add readme to directory
+
+# zip the js files
+find . -name '*.js' | zip -@ jquery-config.zip
+
+ls -l
+# send files to user
+mail -s "Your configured jQuery" -a jquery-config.zip -Snoreply@jqueryconfig.com erwin@poeze.nl < /dev/null
+
+# cleanup directory
+rm -rf $scratchDir

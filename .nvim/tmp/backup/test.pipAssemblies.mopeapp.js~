@@ -1,0 +1,1576 @@
+QUnit.module('Assemblies of Pips', {
+    beforeEach: function() {
+        DEBUG = true;
+        Globals.idCounter = 0;
+    }
+});
+
+QUnit.test('list pip', function(assert) {
+    var domStr = "<ul id='list'></ul>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'list',
+        selector: '#list',
+        idKey: 'strip',
+        tpl: "<li></li>",
+        empty: '<span>no model data yet</span>'
+    }];
+
+    var pips = [{
+        type: 'collection',
+        name: 'colorful',
+        model: [{
+            strip: 'one'
+        }, {
+            strip: 'two'
+        }, {
+            strip: 'three'
+        }, {
+            strip: 'four'
+        }],
+        index: 'id',
+        server: false,
+        silent: false
+    }];
+
+    var links = [{
+        pub: 'models.colorful',
+        sub: '#list.list',
+        options: {
+            value: ['map', function(i) {
+                return i.value;
+            }],
+            action: ['map', function(i) {
+                return i.action;
+            }],
+            it: ['map', function(i) {
+                return i.it;
+            }]
+        }
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+    assert.equal($('#list>li').length, 4);
+    assert.ok(app.get('#list').get().fn().is($('#list')));
+    assert.deepEqual(app.get('#list.list').get(),
+                     ["1%%one", "2%%two", "3%%three", "4%%four"]);
+});
+
+QUnit.test('list and listItem pips', function(assert) {
+    var domStr = "<ul id='list'></ul>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'list',
+        selector: '#list',
+        idKey: 'strip',
+        tpl: "<li></li>",
+        empty: 'no model data yet'
+    }];
+
+    var pips = [{
+        type: 'collection',
+        name: 'colorful',
+        model: [{
+            strip: 'one'
+        }, {
+            strip: 'two'
+        }, {
+            strip: 'three'
+        }, {
+            strip: 'four'
+        }],
+        index: 'id',
+        server: false,
+        silent: false
+    },{
+        type: 'templateItem',
+        selector: '#list>li',
+        method: 'html',
+        attr: 'id'
+    }];
+
+    var links = [{
+        pub: 'models.colorful',
+        sub: '#list.list',
+        value: function(i) {
+            return i.value;
+        },
+        action: function(i) {
+            return i.action;
+        },
+        it: function(i) {
+            return i.it;
+        }
+    },{
+        pub: 'models.colorful',
+        sub: '#list>li.id',
+        value: function(i) {
+            return i.value.strip;
+        },
+        action: function(i) {
+            return i.action;
+        },
+        it: function(i) {
+            return i.it;
+        }
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+    assert.equal($('#list>li').length, 4);
+    assert.ok(app.get('#list').get().fn().is($('#list')));
+    assert.deepEqual(app.get('#list.list').get(),
+                     ["1%%one", "2%%two", "3%%three", "4%%four"]);
+    assert.deepEqual(R.keys(app.get('#list>li').get()),
+                     ["1%%one", "2%%two", "3%%three", "4%%four"]);
+    assert.equal($('#list>li').eq(1).attr('id'), 'two');
+});
+
+QUnit.test('statePip', function(assert) {
+    var domStr = "" +
+        "<div id='main'>" +
+        "<div id='page1'>" +
+        "  <div id='section1'></div>" +
+        "</div>" +
+        "<div id='page2'>" +
+        "  <div id='section2'></div>" +
+        "</div>"+
+        "</div>";
+
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        selector: '#main',
+        'default' :'isHidden',
+        type:'state',
+        states:[{
+            name: 'isHidden',
+            attr: 'display',
+            value: 'none'
+        },
+        {
+            name: 'isShown',
+            attr: 'display',
+            value: ''
+        }]
+    }];
+    var app = new LinkingPips.App(domStr, [], pips, []);
+
+    assert.equal($('#main').css('display'), 'none');
+});
+
+QUnit.test('statePip and eventPip, without link', function(assert) {
+    var domStr = "" +
+        "<div id='main'>" +
+        "  <div id='page1'>" +
+        "    <div id='section1'></div>" +
+        "  </div>" +
+        "  <div id='page2'>" +
+        "    <div id='section2'></div>" +
+        "  </div>"+
+        "</div>";
+
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        selector: '#main',
+        'default' :'isHidden',
+        type: 'state',
+        states:[{
+            name: 'isHidden',
+            attr: 'display',
+            value: 'none'
+        },
+        {
+            name: 'isShown',
+            attr: 'display',
+            value: ''
+        }]
+    },{
+        selector: '#main',
+        type: 'event',
+        events: 'click',
+        enable: true,
+        delegation: false
+    }];
+    var app = new LinkingPips.App(domStr, [], pips, []);
+
+    assert.equal($('#main').css('display'), 'none');
+    $('#main').trigger('click');
+    assert.equal($('#main').css('display'), 'none');
+});
+
+QUnit.test('statePip and eventPip sharing one element, linked', function(assert) {
+    var domStr = "<div id='main'></div>";
+
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        type: 'state',
+        selector: '#main',
+        'default': 'isHidden',
+        states:[{
+            name: 'isHidden',
+            attr: 'display',
+            value: 'none'
+        },
+        {
+            name: 'isShown',
+            attr: 'display',
+            value: ''
+        }]
+    },{
+        type: 'event',
+        selector: '#main',
+        events: 'click',
+        enable: true
+    }];
+
+    var links = [{
+        pub: '#main.events.click',
+        sub: '#main.states.isHidden',
+        binding: true,
+        value: function(linkIn) {
+            return 'isShown';
+        },
+        action: 'update'
+    }];
+    var app = new LinkingPips.App(domStr, [], pips, links);
+
+    assert.equal($('#main').css('display'), 'none');
+    $('#main').trigger('click');
+    assert.equal($('#main').css('display'), 'block');
+    $('#main').trigger('click');
+    assert.equal($('#main').css('display'), 'block');
+
+});
+
+QUnit.test('statePip and eventPip attached to element pip', function(assert) {
+    var domStr = "" +
+        "<div id='body'>" +
+        "  <div id='main'></div>" +
+        "</div>";
+
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        selector: '#main',
+        'default' :'isHidden',
+        type: 'state',
+        states:[{
+            name: 'isHidden',
+            attr: 'class',
+            value: 'red'
+        },
+        {
+            name: 'isShown',
+            attr: 'class',
+            value: 'green'
+        }]
+    },{
+        selector: '#main',
+        type: 'event',
+        events: 'click',
+        enable: true
+    }];
+
+    var links = [{
+        pub: '#main.events.click',
+        sub: '#main.states.isHidden',
+        binding: true,
+        value: function(linkIn) {
+            return 'isShown';
+        },
+        action: 'update'
+    }];
+
+    var app = new LinkingPips.App(domStr, [], pips, links);
+
+    assert.equal($('#main').attr('class'), 'red');
+    $('#main').trigger('click');
+    assert.equal($('#main').attr('class'), 'green');
+    $('#main').trigger('click');
+    assert.equal($('#main').attr('class'), 'green');
+});
+
+QUnit.test('statePip and eventPip attached to shadow element pip', function(assert) {
+    var domStr = "" +
+        "<ul id='body'>" +
+        "  <li id='one'><span></span></li>" +
+        "  <li></li>" +
+        "</ul>";
+
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        selector: '#one',
+        'default' :'isHidden',
+        type: 'state',
+        states:[{
+            name: 'isHidden',
+            attr: 'class',
+            value: 'red'
+        },
+        {
+            name: 'isShown',
+            attr: 'class',
+            value: 'green'
+        }]
+    },{
+        selector: '#one',
+        type: 'event',
+        events: 'click',
+        enable: true
+    }];
+
+    var links = [{
+        pub: '#one.events.click',
+        sub: '#one.states.isHidden',
+        binding: true,
+        value: function(linkIn) {
+            return 'isShown';
+        },
+        action: 'update'
+    }];
+
+    var app = new LinkingPips.App(domStr, [], pips, links);
+
+    assert.equal($('#one').attr('class'), 'red');
+    $('#one').trigger('click');
+    assert.equal($('#one').attr('class'), 'green');
+    $('#one').trigger('click');
+    assert.equal($('#one').attr('class'), 'green');
+});
+
+QUnit.test('stateItemPip, selectPip and eventPip, linked', function(assert) {
+    var domStr = "" +
+        "<div id='body'>" +
+        "  <div id='header'></div>" +
+        "  <div id='main'>" +
+        "    <div id='page1'>" +
+        "      <div id='section1'></div>" +
+        "    </div>" +
+        "    <div id='page2'>" +
+        "      <div id='section2'></div>" +
+        "    </div>" +
+        "  </div>" +
+        "</body>";
+
+    $('#qunit-fixture').append(domStr);
+
+    var nodes =[{
+        selector: '#main>div',
+        type: 'listItem',
+        idType: 'id'
+     }];
+    var pips = [{
+        selector: '#main',
+        type: 'select',
+        required: true,
+        one: true,
+        states:[{
+            name: 'IS_SELECTED',
+            attr: 'display',
+            value: ''
+        },
+        {
+            name: 'IS_UNSELECTED',
+            attr: 'display',
+            value: 'none'
+        }]
+    },{
+        selector: '#header',
+        type: 'event',
+        events: 'click',
+        enable: true
+    }];
+
+    var links = [{
+        pub: '#header.events.click',
+        sub: '#main.select',
+        binding: true,
+        //  pre: function(i){
+        //     return {
+        //         value: true,
+        //         action: 'update',
+        //         it:  'page2' // force page2 to `isHidden`
+        //     };
+        // },
+        value: function(i) {
+            return true;
+        },
+        action: 'update',
+        it: function(i) {//bijzonder dit kan hier zo simpel worden geexpand!!linkin heeft geen it out wel!
+            return 'page2'; // force page2 to `isHidden`
+        }
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+
+    assert.equal($('#page1').css('display'), 'block');
+    assert.equal($('#page2').css('display'), 'none');
+    $('#header').trigger('click');
+    assert.equal($('#page1').css('display'), 'none');
+    assert.equal($('#page2').css('display'), 'block');
+});
+
+QUnit.test('Fill DOM with default empty text', function(assert) {
+    var domStr = "" +
+        "<div id='header'></div>";
+
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        selector: '#header',
+        type: 'template',
+        attr: 'html',
+        empty: 'Regular text'
+    }];
+    var app = new LinkingPips.App(domStr, [], pips, []);
+    assert.equal($('#header').html(), 'Regular text');
+});
+
+QUnit.test('Change DOM text on click', function(assert) {
+    var domStr = "" +
+        "<div id='header'></div>";
+
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        selector: '#header',
+        type: 'template',
+        attr: 'html',
+        empty: 'Regular text'
+    },{
+        selector: '#header',
+        type: 'event',
+        events: 'klik',
+        enable: true
+    }];
+    var links = [{
+        pub: '#header.events.klik',
+        sub: '#header.html',
+        value: 'new text',
+        action: 'update'
+    }];
+
+    var app = new LinkingPips.App(domStr, [], pips, links);
+    $('#header').trigger('klik');
+    assert.equal($('#header').html(), 'new text');
+    $('#header').trigger('klik');
+    assert.equal($('#header').html(), 'new text');
+});
+
+QUnit.test('Fill DOM with text from model, predefined link function', function(assert) {
+    var domStr = "" +
+        "<div id='header'></div>";
+
+    $('#qunit-fixture').append(domStr);
+    var pips = [{
+        selector: '#header',
+        type: 'template',
+        attr: 'html',
+        empty: 'Default text'
+    }, {
+        type: 'model',
+        name: 'Storage',
+        model: {
+            textstring: 'var app = new Line text'
+        },
+        server: false,
+        silent: false
+    }];
+
+    var links = [{
+        pub: 'models.Storage',
+        sub: '#header.html',
+        value: function(i) {
+            return i.value.textstring;
+        },
+        action: function(i) {
+            return i.action;
+        }
+    }];
+    var app = new LinkingPips.App(domStr, [], pips, links);
+    assert.equal($('#header').html(), 'var app = new Line text');
+
+});
+
+QUnit.test('Fill DOM with text from model, complex link function, string value', function(assert) {
+    var domStr = "" +
+        "<div id='header'></div>";
+
+    $('#qunit-fixture').append(domStr);
+    var pips = [{
+        selector: '#header',
+        type: 'template',
+        attr: 'html',
+        empty: 'Default text'
+    }, {
+        type: 'model',
+        name: 'Storage',
+        model: {
+            textstring: 'var app = new Line text'
+        },
+        server: false,
+        silent: false
+    }];
+
+    var links = [{
+        pub: 'models.Storage',
+        sub: '#header.html',
+        value: function(i) {
+            return 'Some text string';
+        }
+    }];
+    var app = new LinkingPips.App(domStr, [], pips, links);
+    assert.equal($('#header').html(), 'Some text string');
+});
+
+QUnit.test('Fill DOM with text from model, complex link function, function value', function(assert) {
+    var domStr = "" +
+        "<div id='header'></div>";
+
+    $('#qunit-fixture').append(domStr);
+    var pips = [{
+        selector: '#header',
+        type: 'template',
+        attr: 'html',
+        empty: 'Default text'
+    }, {
+        type: 'model',
+        name: 'Storage',
+        model: {
+            textstring: 'var app = new Line text'
+        },
+        server: false,
+        silent: false
+    }];
+
+    var links = [{
+        pub: 'models.Storage',
+        sub: '#header.html',
+        value: function(i) {
+            return i.value.textstring;
+        }
+    }];
+    var app = new LinkingPips.App(domStr, [], pips, links);
+    assert.equal($('#header').html(), 'var app = new Line text');
+
+});
+
+QUnit.test('keypress to model', function(assert) {
+    var domStr = "" +
+    "<div id='footer'><input id='day' value='Enter day'/></div>";
+
+    $('#qunit-fixture').append(domStr);
+
+    function trim(str) {
+        return str.replace(/^\s+|\s+$/g, '');
+    }
+
+    function getVal($elem) {
+        return trim($elem.val());
+    }
+
+    var pips = [{
+        selector: '#day',
+        events: 'keyup',
+        type: 'event'
+    }, {
+        type: 'model',
+        name: 'Storage',
+        keys: ['title', 'completed'],
+        silent: false,
+        server: false
+    }];
+    var links = [{
+        pub: '#day.events.keyup',
+        sub: 'models.Storage',
+        binding: true,
+        value: function(i) {
+            return {title: i.el.map(getVal).runIO()};
+        },
+        action: 'create'
+    }];
+    var app = new LinkingPips.App(domStr, [], pips, links);
+    $('#day').val('ingetypt');
+    $('#day').trigger('keyup');
+    deepEqual(app.get('models.Storage').get(), {title: 'ingetypt'});
+});
+
+// This test fails because the collection expects an array of new model(s). The current
+// link function implementation can only return an array is linkIn is an array to. TODO.
+QUnit.test('keypress to collection, using link function', function(assert) {
+    var domStr = "" +
+    "<div id='footer'><input id='day' value='Enter day'/></div>";
+
+    $('#qunit-fixture').append(domStr);
+
+    function trim(str) {
+        return str.replace(/^\s+|\s+$/g, '');
+    }
+
+    function getVal($elem) {
+        return trim($elem.val());
+    }
+
+    var pips = [{
+        selector: '#day',
+        events: 'keyup',
+        type: 'event'
+    }, {
+        type: 'collection',
+        name: 'Storage',
+        keys: ['title', 'completed'],
+        silent: false,
+        server: false
+    }];
+
+    var links = [{
+        pub: '#day.events.keyup',
+        sub: 'models.Storage',
+        binding: true,
+        value: function(i) {
+            return {title: i.el.map(getVal).runIO()};
+        },
+        action: 'create',
+        it: function(i) {
+            return 'mid1';
+        }
+    }];
+    var app = new LinkingPips.App(domStr, [], pips, links);
+    $('#day').val('ingetypt');
+    $('#day').trigger('keyup');
+    deepEqual(app.get('models.Storage').get(), [{"__it": "mid1" , "title": 'ingetypt'}]);
+});
+
+QUnit.test('set default states on listElements', function(assert) {
+    var domStr = "" +
+        "<ul id='list'>" +
+        "<li id='i1'><span></span></li>" +
+        "<li id='i2'><span></span></li>" +
+        "<li id='i3'><span></span></li>" +
+        "<li id='i4'><span></span></li>" +
+        "</ul>";
+
+    $('#qunit-fixture').append(domStr);
+    var pips = [{
+        type: 'stateItem',
+        selector: '#list>li>span',
+        idType: 'id',
+        states: [{
+            name: 'ok',
+            attr: 'class',
+            value: 'green'
+        },{
+            name: 'fail',
+            attr: 'class',
+            value: 'red'
+        }]
+    }];
+    var app = new LinkingPips.App(domStr, [], pips, []);
+    assert.ok($('#i1>span').hasClass('green'));
+    assert.ok($('#i2>span').hasClass('green'));
+    assert.ok($('#i3>span').hasClass('green'));
+    assert.ok($('#i4>span').hasClass('green'));
+});
+
+QUnit.test('set default states on listElements using select', function(assert) {
+    var domStr = "" +
+        "<ul id='list'>" +
+        "<li id='i1'><span></span></li>" +
+        "<li id='i2'><span></span></li>" +
+        "<li id='i3'><span></span></li>" +
+        "<li id='i4'><span></span></li>" +
+        "</ul>";
+
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        selector: '#list',
+        type: 'select',
+        name: 'menu',
+        required: true,
+        one: true,
+        it: 'span',
+        states: [{
+            name: 'IS_SELECTED',
+            attr: 'class',
+            value: 'red'
+        },{
+            name: 'IS_UNSELECTED',
+            attr: 'class',
+            value: 'green'
+        }]
+    }];
+    var links = [];
+    var app = new LinkingPips.App(domStr, [], pips, links);
+    assert.ok($('#i1>span').hasClass('red'));
+    assert.ok($('#i2>span').hasClass('green'));
+    assert.ok($('#i3>span').hasClass('green'));
+    assert.ok($('#i4>span').hasClass('green'));
+});
+
+QUnit.test('set default states on listElements using select, reverse definition', function(assert) {
+    var domStr = "" +
+        "<ul id='list'>" +
+        "  <li id='i1'><span></span></li>" +
+        "  <li id='i2'><span></span></li>" +
+        "  <li id='i3'><span></span></li>" +
+        "  <li id='i4'><span></span></li>" +
+        "</ul>";
+
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        selector: '#list',
+        type: 'select',
+        name: 'menu',
+        required: true,
+        one: true,
+        it: 'span',
+        states: [{
+            name: 'IS_UNSELECTED',
+            attr: 'class',
+            value: 'green'
+        },{
+            name: 'IS_SELECTED',
+            attr: 'class',
+            value: 'red'
+        }]
+    }];
+    var links = [];
+    var app = new LinkingPips.App(domStr, [], pips, links);
+    assert.ok($('#i1>span').hasClass('red'));
+    assert.ok($('#i2>span').hasClass('green'));
+    assert.ok($('#i3>span').hasClass('green'));
+    assert.ok($('#i4>span').hasClass('green'));
+});
+
+QUnit.test('set default states on listElements with href using select', function(assert) {
+    var domStr = "" +
+        "<ul id='list'>" +
+        "  <li><a href='i1'></a></li>" +
+        "  <li><a href='i2'></a></li>" +
+        "  <li><a href='i3'></a></li>" +
+        "  <li><a href='i4'></a></li>" +
+        "</ul>";
+        $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        selector: "#list>li",
+        type: "listItem",
+        idType: "href"
+    }];
+
+    var pips = [{
+        selector: '#list',
+        type: 'select',
+        required: true,
+        one: true,
+        states: [{
+            name: 'IS_UNSELECTED',
+            attr: 'class',
+            value: 'green'
+        },{
+            name: 'IS_SELECTED',
+            attr: 'class',
+            value: 'red'
+        }]
+    }];
+    var links = [];
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+    assert.ok($('a[href=i1]').parent().hasClass('red'));
+    assert.ok($('a[href=i2]').parent().hasClass('green'));
+    assert.ok($('a[href=i3]').parent().hasClass('green'));
+    assert.ok($('a[href=i4]').parent().hasClass('green'));
+});
+
+// QUnit.test('issue #18: set default states on listElements with href using select', function(assert) {
+//     var domStr = "" +
+//         "<ul id='list'>" +
+//         "  <li><a href='i1'></a><span></span></li>" +
+//         "  <li><a href='i2'></a><span></span></li>" +
+//         "  <li><a href='i3'></a><span></span></li>" +
+//         "  <li><a href='i4'></a><span></span></li>" +
+//         "</ul>";
+//         $('#qunit-fixture').append(domStr);
+//
+//     var nodes = [{
+//         selector: "#list>li",
+//         type: "listItem",
+//         idType: "href"
+//     }];
+//
+//     var pips = [{
+//         selector: '#list',
+//         type: 'select',
+//         it: 'span',
+//         required: true,
+//         one: true,
+//         states: [{
+//             name: 'IS_UNSELECTED',
+//             attr: 'class',
+//             value: 'green'
+//         },{
+//             name: 'IS_SELECTED',
+//             attr: 'class',
+//             value: 'red'
+//         }]
+//     }];
+//     var links = [];
+//     var app = new LinkingPips.App(domStr, nodes, pips, links);
+//     assert.ok($('a[href=i1]').parent().find('span').hasClass('red'));
+//     assert.ok($('a[href=i2]').parent().find('span').hasClass('green'));
+//     assert.ok($('a[href=i3]').parent().find('span').hasClass('green'));
+//     assert.ok($('a[href=i4]').parent().find('span').hasClass('green'));
+// });
+
+QUnit.test('templateItem connected to a collection, setting up a list', function(assert) {
+    var domStr = "" +
+        "<ul id='list'>" + "</ul>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'list',
+        selector: '#list',
+        //it: 'li', // <-- necessary!
+        idKey: 'strip',
+        tpl: "<li><a></a><span></span></li>",
+        empty: '<span>no model data yet</span>'
+    }];
+
+    var pips = [{
+        type: 'templateItem',
+        selector: '#list>li>a',
+        method: 'html',
+        attr: 'href'
+    },{
+        type: 'collection',
+        name: 'colorful',
+        model: [{
+            strip: 'one'
+        }, {
+            strip: 'two'
+        }, {
+            strip: 'three'
+        }, {
+            strip: 'four'
+        }],
+        index: 'id',
+        server: false,
+        silent: false
+    }];
+
+    var links = [{
+        pub: 'models.colorful',
+        sub: '#list.list'
+    },{
+        pub: 'models.colorful',
+        sub: '#list>li>a.href',
+        value: function(i) {
+            return i.value.strip;
+        }
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+    assert.equal($('a[href="one"]').length, 1);
+    assert.equal($('a[href="two"]').length, 1);
+    assert.equal($('a[href="three"]').length, 1);
+    assert.equal($('a[href="four"]').length, 1);
+});
+
+QUnit.test('delegated eventItem on itemElement', function(assert) {
+    var domStr = "" +
+        "<ul id='list'>" +
+        "  <li><a href='i1'></a><span></span></li>" +
+        "  <li><a href='i2'></a><span></span></li>" +
+        "  <li><a href='i3'></a><span></span></li>" +
+        "  <li><a href='i4'></a><span></span></li>" +
+        "</ul>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        selector: '#list>li',
+        type: "listItem",
+        idType: "href"
+    }];
+
+    var pips = [{
+        type: 'eventItem',
+        selector: '#list>li>a',
+        events: 'click',
+        delegation: false,
+
+    },{
+        type: 'stateItem',
+        selector: '#list>li>span',
+        states: [{
+            name: 'ok',
+            attr: 'class',
+            value: 'green'
+        },{
+            name: 'fail',
+            attr: 'class',
+            value: 'red'
+        }]
+    }];
+
+    var links = [{
+        pub: '#list>li>a.events.click',
+        sub: '#list>li>span.states.ok',
+        binding: true,
+        value: function(i) {
+            return 'fail';
+        },
+        action: 'update',
+        it: function(i) {
+            // return i.it;
+            return i.item.map(DOMIO.getDOMItemId('href')).runIO();
+        }
+    }];
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+
+    assert.deepEqual(app.get('#list>li>span.states.ok').get(), {
+        "i1": "ok",
+        "i2": "ok",
+        "i3": "ok",
+        "i4": "ok"
+    });
+    $('a[href=i3]').trigger('click');
+    assert.ok($('a[href=i3]').parent().find('span').hasClass('red'));
+    assert.deepEqual(app.get('#list>li>span.states.ok').get(), {
+        "i1": "ok",
+        "i2": "ok",
+        "i3": "fail",
+        "i4": "ok"
+    });
+});
+
+QUnit.test('unDelegated eventItem on itemElement', function(assert) {
+    var domStr = "" +
+        "<ul id='list'>" +
+        "<li><a href='i1'></a><span></span></li>" +
+        "<li><a href='i2'></a><span></span></li>" +
+        "<li><a href='i3'></a><span></span></li>" +
+        "<li><a href='i4'></a><span></span></li>" +
+        "</ul>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        selector: '#list>li',
+        type: "listItem",
+        idType: "href"
+    }];
+
+    var pips = [{
+        type: 'eventItem',
+        selector: '#list>li>a',
+        events: 'click',
+        delegation: false,
+
+    },{
+        type: 'stateItem',
+        selector: '#list>li>span',
+        // defaultState: 'fail',
+        states: [{
+            name: 'ok',
+            attr: 'class',
+            value: 'green'
+        },{
+            name: 'fail',
+            attr: 'class',
+            value: 'red'
+        }]
+    },
+    ];
+
+    var links = [{
+        pub: '#list>li>a.events.click',
+        sub: '#list>li>span.states.ok',
+        binding: true,
+        value: function(i) {
+            return 'fail';
+        },
+        action: 'update',
+        it: function(i) {
+            return i.item.map(DOMIO.getAttr('href')).runIO();
+        }
+    }];
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+    $('a[href=i3]').trigger('click');
+    assert.ok($('a[href=i3]').parent().find('span').hasClass('red'));
+});
+
+QUnit.test('eventItem on listItem, delegation is false', function(assert) {
+    var domStr = "" +
+        "<ul id='list'>" +
+        "  <li id='i1'></li>" +
+        "  <li id='i2'></li>" +
+        "  <li id='i3'></li>" +
+        "  <li id='i4'></li>" +
+        "</ul>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        selector: '#list>li',
+        type: "listItem",
+        idType: "id"
+    }];
+
+    var pips = [{
+        type: 'eventItem',
+        selector: '#list>li',
+        events: 'click',
+        delegation: false,
+
+    },{
+        type: 'stateItem',
+        selector: '#list>li',
+        states: [{
+            name: 'ok',
+            attr: 'class',
+            value: 'green'
+        },{
+            name: 'fail',
+            attr: 'class',
+            value: 'red'
+        }]
+    },
+    ];
+
+    var links = [{
+        pub: '#list>li.events.click',
+        sub: '#list>li.states.ok',
+        binding: true,
+        value: function(i) {
+            return 'fail';
+        },
+        action: 'update'
+    }];
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+    assert.deepEqual(app.get('#list>li.states.ok').get(), {
+        "i1": "ok",
+        "i2": "ok",
+        "i3": "ok",
+        "i4": "ok"
+    });
+    $('#i3').trigger('click');
+    assert.deepEqual(app.get('#list>li.states.ok').get(), {
+        "i1": "ok",
+        "i2": "ok",
+        "i3": "fail",
+        "i4": "ok"
+    });
+    assert.ok($('#i3').hasClass('red'));
+});
+
+QUnit.test('delegated eventItem on listItem', function(assert) {
+    var domStr = "" +
+        "<ul id='list'>" +
+        "  <li id='i1'></li>" +
+        "  <li id='i2'></li>" +
+        "  <li id='i3'></li>" +
+        "  <li id='i4'></li>" +
+        "</ul>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        selector: '#list>li',
+        type: "listItem",
+        idType: "id"
+    }];
+
+    var pips = [{
+        type: 'eventItem',
+        selector: '#list>li',
+        events: 'click',
+        delegation: true,
+
+    },{
+        type: 'stateItem',
+        selector: '#list>li',
+        // defaultState: 'fail',
+        states: [{
+            name: 'ok',
+            attr: 'class',
+            value: 'green'
+        },{
+            name: 'fail',
+            attr: 'class',
+            value: 'red'
+        }]
+    }];
+
+    var links = [{
+        pub: '#list>li.events.click',
+        sub: '#list>li.states.ok',
+        binding: true,
+        value: function(i) {
+            return 'fail';
+        },
+        action: 'update'
+    }];
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+    $('#i3').trigger('click');
+    assert.ok($('#i3').hasClass('red'));
+});
+
+QUnit.test('event, no delegation', function(assert) {
+    var domStr = "" +
+        "<div id='button'>" +
+        " <div></div>" +
+        "</div>";
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        type: 'event',
+        selector: '#button',
+        events: 'click',
+        delegation: false
+    },{
+        type: 'state',
+        selector: '#button',
+        states: [{
+            name: 'ok',
+            attr: 'class',
+            value: 'green'
+        },{
+            name: 'fail',
+            attr: 'class',
+            value: 'red'
+        }]
+    }];
+
+    var links = [{
+        pub: '#button.events.click',
+        sub: '#button.states.ok',
+        binding: true,
+        value: function(i) {
+            return 'fail';
+        },
+        action: 'update'
+    },
+    ];
+    var app = new LinkingPips.App(domStr, [], pips, links);
+    $('#button>div').trigger('click');
+    assert.ok($('#button').hasClass('red'));
+});
+
+QUnit.test('event on child with delegation', function(assert) {
+    var domStr = "" +
+        "<div id='outside'>" +
+        " <div></div>" +
+        "</div>";
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        type: 'event',
+        selector: '#outside>div',
+        events: 'click',
+        delegation: true
+    },{
+        type: 'state',
+        selector: '#outside',
+        states: [{
+            name: 'ok',
+            attr: 'class',
+            value: 'green'
+        },{
+            name: 'fail',
+            attr: 'class',
+            value: 'red'
+        }]
+    }];
+
+    var links = [{
+        pub: '#outside>div.events.click',
+        sub: '#outside.states.ok',
+        binding: true,
+        value: function(i) {
+            return 'fail';
+        },
+        action: 'update'
+    }];
+    var app = new LinkingPips.App(domStr, [], pips, links);
+    $('#outside>div').trigger('click');
+    assert.ok($('#outside').hasClass('red'));
+});
+
+QUnit.test('event on child without delegation', function(assert) {
+    var domStr = "" +
+        "<div id='outside'>" +
+        " <div></div>" +
+        "</div>";
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        type: 'event',
+        selector: '#outside>div',
+        events: 'click',
+        delegation: false
+    },{
+        type: 'state',
+        selector: '#outside',
+        states: [{
+            name: 'ok',
+            attr: 'class',
+            value: 'green'
+        },{
+            name: 'fail',
+            attr: 'class',
+            value: 'red'
+        }]
+    }];
+
+    var links = [{
+        pub: '#outside>div.events.click',
+        sub: '#outside.states.ok',
+        binding: true,
+        value: function(i) {
+            return 'fail';
+        },
+        action: 'update'
+    }];
+    var app = new LinkingPips.App(domStr, [], pips, links);
+    $('#outside>div').trigger('click');
+    assert.ok($('#outside').hasClass('red'));
+});
+
+QUnit.test('sub view with no model attached', function(assert) {
+    var domStr = "" +
+        "<div id='modal'></div>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+       type: 'sub',
+       selector: '#modal',
+       tpl: '<h1></h1>',
+       method: 'append',
+       empty: '<p>not filled yet</p>'
+    }];
+    var app = new LinkingPips.App(domStr, nodes, [], []);
+    assert.equal($('#modal>h1').length, 0);
+    assert.equal($('#modal').html(), '<p>not filled yet</p>');
+});
+
+QUnit.test('sub view linked to model', function(assert) {
+    // added extra h1 to test that template pip uses the one inside #modal
+    var domStr = "" +
+        "<div id='modal'></div>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+       type: 'sub',
+       selector: '#modal',
+       tpl: '<h1></h1>',
+       method: 'html',
+       empty: '<p>not filled yet</p>'
+    }];
+
+    var pips = [{
+        selector: '#modal>h1',
+        type: 'template',
+        attr: 'html',
+        empty: 'Default text'
+    }, {
+        type: 'model',
+        name: 'Storage',
+        model: {
+            textstring: 'var app = new Line text'
+        },
+        server: false,
+        silent: false
+    }];
+
+    var links = [{
+        pub: 'models.Storage',
+        sub: '#modal.sub',
+        action: 'create'
+    },{
+        pub: 'models.Storage',
+        sub: '#modal>h1.html',
+        value: function(i) {
+            return i.value.textstring;
+        },
+        action: function(i) {
+            return 'create';
+        }
+    }];
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+    assert.equal($('#modal>h1').html(), 'var app = new Line text');
+});
+
+QUnit.test('sub view  with delegated event', function(assert) {
+    // added extra h1 to test that template pip uses the one inside #modal
+    var domStr = "" +
+        "<div id='modal'></div>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+       type: 'sub',
+       selector: '#modal',
+       tpl: '<h1></h1>',
+       method: 'html',
+       empty: 'not filled yet'
+    }];
+
+    var pips = [{
+        selector: '#modal>h1',
+        type: 'template',
+        attr: 'html',
+        empty: 'Default text'
+    },
+    {
+        type: 'model',
+        name: 'Storage',
+        model: {
+            textstring: 'var app = new Line text'
+        },
+        server: false,
+        silent: false
+    },
+    {
+        type: 'event',
+        selector: '#modal>h1',
+        events: 'click',
+        delegation: true
+    },
+    {
+        type: 'state',
+        selector: '#modal>h1',
+        states: [{
+            name: 'ok',
+            attr: 'class',
+            value: 'green'
+        },{
+            name: 'fail',
+            attr: 'class',
+            value: 'red'
+        }]
+    }];
+
+    var links = [{
+        pub: 'models.Storage',
+        sub: '#modal.sub',
+        action: 'create'
+    },{
+        pub: 'models.Storage',
+        sub: '#modal>h1.html',
+        value: function(i) {
+            return i.value.textstring;
+        },
+        action:'create'
+    },
+    {
+        pub: '#modal>h1.events.click',
+        sub: '#modal>h1.states.ok',
+        binding: true,
+        value: function(i) {
+            return 'fail';
+        },
+        action: 'update'
+    }];
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+    $('#modal>h1').trigger('click');
+    assert.ok($('#modal>h1').hasClass('red'));
+});
+
+QUnit.test('sub view  with undelegated event', function(assert) {
+    // added extra h1 to test that template pip uses the one inside #modal
+    var domStr = "" +
+        "<div id='modal'></div>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+       type: 'sub',
+       selector: '#modal',
+       tpl: '<h1></h1>',
+       method: 'html',
+       empty: 'not filled yet'
+    }];
+
+    var pips = [{
+        selector: '#modal>h1',
+        type: 'template',
+        attr: 'html',
+        empty: 'Default text'
+    }, {
+        type: 'model',
+        name: 'Storage',
+        model: {
+            textstring: 'var app = new Line text'
+        },
+        server: false,
+        silent: false
+    },
+    {
+        type: 'event',
+        selector: '#modal>h1',
+        events: 'click',
+        delegation: false
+    },{
+        type: 'state',
+        selector: '#modal>h1',
+        states: [{
+            name: 'ok',
+            attr: 'class',
+            value: 'green'
+        },{
+            name: 'fail',
+            attr: 'class',
+            value: 'red'
+        }]
+    }];
+
+    var links = [{
+        pub: 'models.Storage',
+        sub: '#modal.sub',
+        action:'create'
+    },{
+        pub: 'models.Storage',
+        sub: '#modal>h1.html',
+        value:  function(i) {
+            return i.value.textstring;
+        },
+        action: 'create'
+    },
+    {
+        pub: '#modal>h1.events.click',
+        sub: '#modal>h1.states.ok',
+        binding: true,
+        value: function(i) {
+            return 'fail';
+        },
+        action:'update'
+    }];
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+    assert.equal($('#modal>h1').html(), 'var app = new Line text');
+    assert.ok($('#modal>h1').hasClass('green'));
+    $('#modal>h1').trigger('click');
+    assert.ok($('#modal>h1').hasClass('red'));
+});
+
+QUnit.test('collection setting stateItem using monitoring', function(assert) {
+    var domStr = "" +
+        "<ul id='list'>" +
+            "<li id='s1'><input type=checkbox/></li>" +
+            "<li id='s2'><input type=checkbox/></li>" +
+            "<li id='s3'><input type=checkbox/></li>" +
+            "<li id='s4'><input type=checkbox/></li>" +
+        "</ul>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        selector: "#list>li",
+        type: "listItem",
+        idType: "id"
+    }];
+
+    var pips = [{
+        type: 'collection',
+        name: 'bucket',
+        model:[{
+            mid: '1',
+            size: 1
+        }, {
+            mid: '2',
+            size: 10
+        }, {
+            mid: '3',
+            size: 25
+        }, {
+            mid: '4',
+            size: 5
+        }],
+        index: 'id',
+        server: false,
+        silent: false
+    }, {
+        type: 'stateItem',
+        selector: '#list>li>input',
+        states: [{
+            name: 'ok',
+            attr: 'checked',
+            value: true
+        },{
+            name: 'fail',
+            attr: 'checked',
+            value: false
+        }]
+    }];
+
+    var links = [{
+        pub: 'models.bucket',
+        sub: '#list>li>input.states.ok',
+        value: function(i) {
+            //key: 'size',
+            return i.value.size <= 10
+                ? 'ok'
+                : 'fail';
+        },
+        action: function(i) {
+            return i.action;
+        },
+        it: function(i) {
+            return 's'+i.value.mid;
+        }
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links);
+    assert.ok($('#s1>input').prop('checked'));
+    assert.ok($('#s2>input').prop('checked'));
+    assert.ok(!$('#s3>input').prop('checked'));
+    assert.ok($('#s4>input').prop('checked'));
+});
+
+QUnit.test('collection setting state using reduce', function(assert) {
+    var domStr = "" +
+        "<div id='main' style='display:none'></div>";
+    $('#qunit-fixture').append(domStr);
+
+    var pips = [{
+        type:'state',
+        selector: '#main',
+        'default': 'isHidden',
+        states:[{
+            name: 'isHidden',
+            attr: 'display',
+            value: 'none'
+        },
+        {
+            name: 'isShown',
+            attr: 'display',
+            value: ''
+        }]
+    },{
+        type: 'collection',
+        name: 'todoList',
+        model: [{
+            completed: true,
+            title: 'Create a TodoMVC template'
+        }, {
+            completed: false,
+            title: 'Rule the web'
+        }],
+        index: 'id',
+        server: false,
+        silent: false
+    }];
+
+    var links = [{
+        pub: 'models.todoList',
+        sub: '#main.states.isHidden',
+        options: {
+            value: ['reduce', function(i, acc) {
+                return 'isShown';
+            }, 'isHidden'],
+            action: ['always', 'update']
+        }
+    }];
+
+    var app = new LinkingPips.App(domStr, [], pips, links);
+    assert.ok($('#main').css('display'));
+});

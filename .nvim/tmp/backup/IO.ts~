@@ -1,0 +1,81 @@
+/// <reference path="../dts/ramda.d.ts" />
+
+module Monads {
+    export interface Mapper {
+        map(fn: Function): any;
+    }
+
+    export interface IOStatic {
+        runIO(): IOInstance;
+        of(fn: Function): IOInstance;
+    }
+
+    export interface IOInstance {
+        new(fn: Function): void;
+        chain(fn: (...args: any[]) => IOInstance): IOInstance;
+        map(fn: Function): IOInstance;
+        ap<T extends Mapper>(io: T): IOInstance;
+        runIO(): IOInstance;
+        of(fn: Function): IOInstance;
+        equals(io: IOInstance): boolean;
+        get(): any;
+    }
+
+    export class IO {
+
+        fn: Function;
+
+        static runIO = function(io) {
+            return io.runIO.apply(io, [].slice.call(arguments, 1));
+        }
+
+        static of = IO.prototype.of;
+
+        constructor(fn: Function) {
+            this.fn = fn;
+        }
+
+        // `f` must return an IO
+        chain(f) {
+            var io = this;
+            return new IO(function() {
+                return f(io.fn()).fn();
+            });
+        }
+
+        map(f) {
+            var io = this;
+            return new IO(R.compose(f, io.fn));
+        }
+
+        // `this` IO must wrap a function `f` that takes an IO (`m`) as input
+        // `f` must return an IO
+        ap(m) {
+            return this.chain(function(f) {
+                return m.map(f);
+            });
+        }
+
+        runIO() {
+            return this.fn.apply(this, arguments);
+        }
+
+        of(x) {
+            return new IO(function() {
+                return x;
+            });
+        }
+
+        get() {
+            return this.fn();
+        }
+
+        // this is really only to accommodate testing ....
+        equals(that) {
+            // return this === that ||
+            //   this.fn === that.fn ||
+            //   IO.runIO(this) === IO.runIO(that);
+            return IO.runIO(this).is( IO.runIO(that));
+        }
+    }
+}

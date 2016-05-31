@@ -1,0 +1,42 @@
+const add2 = (a:number, b:number) => a + b
+const add3 = (a:number, b:number, c:number) => a + b + c
+
+function doit<T>(fn: (a:T, b:T) => T): (a:T, b:T) => T;
+function doit<T>(fn: (a:T, b:T, c:T) => T): (a:T, b:T, c:T) => T;
+function doit(fn) {
+    return fn;
+}
+
+const a2 = doit(add2)
+const a3 = doit(add3)
+
+interface CurriedFunction2<T1, T2, R> {
+    (t1: T1): (t2: T2) => R;
+    (t1: T1, t2: T2): R;
+}
+
+interface CurriedFunction3<T1, T2, T3, R> {
+    (t1: T1): CurriedFunction2<T2, T3, R>;
+    (t1: T1, t2: T2): (t3: T3) => R;
+    (t1: T1, t2: T2, t3: T3): R;
+}
+
+//function addIndex<T, U>(fn: (f: (item: T) => U, list: T[]) => U[]): CurriedFunction2<(item: T, idx: number, list?: T[]) => U, T[], U[]>;
+//function addIndex<T, U>(fn: (f: (acc: U, item: T) => U, aci: U, list: T[]) => U[]): CurriedFunction3<(acc: U, item: T, idx: number, list?: T[]) => U, U, T[], U[]>;
+function addIndex<T,U,R>(fn: (f: (item: T) => U, list: T[]) => R[]): <T,U,R>(fn: (item: T, idx: number, list?: U[]) => any, list: T[]) => R[];
+//function addIndex<T, U>(fn: (f: (acc: U, item: T) => U, aci: U, list: T[]) => U[]): (t1: T, t2: T, t3: T) => U;
+function addIndex(fn) {
+    return fn
+}
+
+// filter:: (a -> boolean) -> a[] -> any
+function filter<T>(fn: (value: T) => boolean, list: T[]): T[];
+function filter(fn, list) {
+    return [];
+}
+
+// filterIndexed:: (a -> number -> [a] -> boolean) -> a[] -> any
+const filterIndexed = addIndex(filter);
+
+//const lastTwo = (val: number, idx: number, list: number[]) => list.length - idx <= 2;
+//filterIndexed(lastTwo, [8, 6, 7, 5, 3, 0, 9]); //=> [0, 9]

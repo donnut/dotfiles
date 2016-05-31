@@ -1,0 +1,74 @@
+import csv, getpass, json, os, time, twitter
+from pymongo import MongoClient
+import pandas as pd
+
+ckey =  'cWN3UpsbOqG7jn0m8EmvoqtSV'
+csecret = 'e5Ep2oM1FRVHXgXKiEJwGEZasytAuNDv6h69XS0nPLGmDLx3gz'
+atoken = '15123362-RkHEznCU2x8RhIhu4vWNEzb5BETha2nsLIp7M0vXf'
+asecret = 't9GeqpH4ufn2fix14BEdM5EKrrOHGGYUDVVbVFkeENsYy'
+
+auth = twitter.oauth.OAuth(atoken, asecret,
+                           ckey, csecret)
+
+twitter_api = twitter.Twitter(auth=auth, retry=True)
+max_tweets_per_hr  = 1200
+download_pause_sec = 3600 / max_tweets_per_hr
+
+client = MongoClient('localhost', 27017)
+db = client.steenbergen
+db_tweets = db.tweets
+db_users = db.users
+
+users = pd.read_csv('./data/selected_users.csv', header=None)
+
+users = users[users[2] != '']
+
+users_ids = users.loc[:,1]
+
+for id_str in users_ids[2:]:
+    print("process user %s" % id_str)
+    user_docs = db_users.find_one({'id_str': id_str.astype(str)})
+    if user_docs == None:
+        try:
+            print("get timeline of user %s" % id_str)
+            tweets = twitter_api.statuses.user_timeline(user_id = id_str, count=200)
+            time_line = {}
+            time_line['id_str'] = id_str.astype(str)
+            time_line['tweets'] = tweets
+            db_users.insert(time_line)
+
+            # stay in Twitter API rate limits
+            print('pausing %d sec to obey Twitter API rate limits' % download_pause_sec)
+            time.sleep( download_pause_sec )
+        except:
+            print('processing %s failed' % id_str)
+
+
+    else:
+        stats = db_users.aggregate([
+            {'$match': {'id_str':str(id_str)}},
+            {'$unwind': "$tweets"},
+            {'$group': {'_id':"$_id", 'nr_tweets': {'$sum': 1}}}])
+        nr_tweets = stats['nr_tweets']
+
+        if nr_tweets < 300:
+            curr_tweets = user_docs['tweets']
+            last_tweet = curr_tweets[-1:][0]
+            max_id = int(last_tweet['id_str'])-1
+            print(max_id)
+            try:
+                print("get addition timeline of user %s" % id_str)
+                tweets = twitter_api.statuses.user_timeline(user_id = id_str, count=200, max_id=max_id)
+            except:
+                print('twitter processing %s failed' % id_str)
+            try:
+                print("update user's doc")
+                db_users.update({'id_str': id_str.astype(str)}, {'$push': {'tweets': {'$each': tweets}}})
+            except:
+                print('mongo processing %s failed' % id_str)
+
+            # stay in Twitter API rate limits
+            print('pausing %d sec to obey Twitter API rate limits' % download_pause_sec)
+            time.sleep( download_pause_sec )
+        else:
+            print("User %s is skipped because of sufficient number of tweets" % id_str)

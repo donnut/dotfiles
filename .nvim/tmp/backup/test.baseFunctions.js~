@@ -1,0 +1,249 @@
+QUnit.module('BaseFunctions', {
+    beforeEach: function() {
+        DEBUG = true;
+        Globals.idCounter = 0;
+    }
+});
+
+QUnit.test('mapItemId: empty input and register', function(assert) {
+    var itemInput = {it: ''};
+    var current = {value: {}};
+
+    var result = Pip.ItemId.map(itemInput, current);
+    assert.equal(result, '');
+});
+
+QUnit.test('mapItemId: empty register', function(assert) {
+    var itemInput = {it: 'item1'};
+    var current = {value: {}};
+
+    var result = Pip.ItemId.map(itemInput, current);
+    assert.equal(result, 'item1');
+});
+
+QUnit.test('mapItemId: matching register item', function(assert) {
+    var itemInput = {it: 'item1'};
+    var current = {value: {item1: 'fake', item3: 'fake'}};
+
+    var result = Pip.ItemId.map(itemInput, current);
+    assert.equal(result, 'item1');
+});
+
+QUnit.test('mapItemId: input does not match register items', function(assert) {
+    var itemInput = {it: 'item1'};
+    var current = {value: {item2: 'fake', item3: 'fake'}};
+
+    var result = Pip.ItemId.map(itemInput, current);
+    assert.equal(result, 'item1');
+});
+
+QUnit.test('mapItemId: input without %% matches register item', function(assert) {
+    var itemInput = {it: 'mid1'};
+    var register = {value: {'mid1%%item1': 'fake', 'mid3%%item3': 'fake'}};
+
+    var result = Pip.ItemId.map(itemInput, register);
+    assert.equal(result, 'mid1%%item1');
+    assert.deepEqual(register.value, {'mid1%%item1': 'fake', 'mid3%%item3': 'fake'});
+});
+
+QUnit.test('mapItemId: input with %% matches last register item', function(assert) {
+    var itemInput = {it: 'mid3%%item3'};
+    var register = {value: {'mid1': 'fake', 'mid3': 'fake'}};
+
+    var result = Pip.ItemId.map(itemInput, register);
+    assert.equal(result, 'mid3%%item3');
+    assert.deepEqual(register.value, {'mid1': 'fake', 'mid3%%item3': 'fake'});
+});
+
+QUnit.test('mapItemId: input with %% does not match register items', function(assert) {
+    var itemInput = {it: 'mid2%%item2'};
+    var register = {value: {'mid1%%item1': 'fake', 'mid3%%item3': 'fake'}};
+
+    var result = Pip.ItemId.map(itemInput, register);
+    assert.equal(result, 'mid2%%item2');
+    assert.deepEqual(register.value, {'mid1%%item1': 'fake', 'mid3%%item3': 'fake'});
+});
+
+QUnit.test('mapItemId: register modified with %%', function(assert) {
+    var itemInput = {it: 'mid1%%item1'};
+    var register = {value: {'mid1': 'fake', 'mid3': 'fake'}};
+
+    var result = Pip.ItemId.map(itemInput, register);
+    assert.equal(result, 'mid1%%item1');
+    assert.equal(R.difference(R.keys(register.value), ['mid1%%item1', 'mid3']).length, 0);
+});
+
+QUnit.test('getMid: empty input', function(assert) {
+    assert.equal(Pip.ItemId.getMid(), '1');
+});
+
+QUnit.test('getMid: input with it', function(assert) {
+    assert.equal(Pip.ItemId.getMid({it: '3'}), '3');
+});
+
+QUnit.test('nodeDefineItemId: options without idKey', function(assert) {
+    var result = Pip.ItemId.node({
+        type: 'list',
+        root: 'fake',
+        method:'fake',
+        tpl: 'fake',
+        empty: 'fake'
+    });
+    assert.equal(result({it: 'item'}), 'item');
+    assert.equal(result({it: 'item', attr: {name: 'Joe'}}), 'item');
+});
+
+QUnit.test('nodeDefineItemId: options with idKey', function(assert) {
+    var result = Pip.ItemId.node({
+        type: 'list',
+        root: 'fake',
+        method:'fake',
+        tpl: 'fake',
+        empty: 'fake',
+        idKey: 'name'
+    });
+    assert.equal(result({it: 'item', value: {name: 'Joe'}}), 'item%%Joe');
+});
+
+QUnit.test('objectDiffTest - singleobject', function(assert) {
+    assert.ok(Pip.Tests.objectDiff('ok', {value: 'fake'}));
+    assert.ok(!Pip.Tests.objectDiff('ok', {value: 'ok'}));
+});
+
+QUnit.test('objectDiffTest - multi', function(assert) {
+    assert.ok(Pip.Tests.objectDiff('ok', {value: {item1: 'fake'}}, 'item1'));
+    assert.ok(!Pip.Tests.objectDiff('ok', {value: {item1: 'ok'}}, 'item1'));
+});
+
+QUnit.test('elDiffTest - single', function(assert) {
+    $('#qunit-fixture').append("<div id='header'></div>" +
+        "<ul id='list'>" +
+        "<li id='i1'><span></span></li>" +
+        "<li id='i2'><span></span></li>" +
+        "<li id='i3'><span></span></li>" +
+        "<li id='i4'><span></span></li>" +
+        "</ul>");
+
+    var $header = DOMIO.create('#header');
+    var $list = DOMIO.create('#list');
+    assert.ok(!Pip.Tests.elDiff($header, {value: $header}));
+    assert.ok(Pip.Tests.elDiff($list, {value: $header}));
+});
+
+QUnit.test('elDiffTest - multi', function(assert) {
+        $('#qunit-fixture').append("<div id='header'></div>" +
+        "<ul id='list'>" +
+        "<li id='i1'><span></span></li>" +
+        "<li id='i2'><span></span></li>" +
+        "<li id='i3'><span></span></li>" +
+        "<li id='i4'><span></span></li>" +
+        "</ul>");
+
+    var $header = DOMIO.create('#header');
+    var $list = DOMIO.create('#list');
+    assert.ok(!Pip.Tests.elDiff($header, {value: {item2: $header}}, 'item2'));
+    assert.ok(Pip.Tests.elDiff($header, {value: {item2: $list}}, 'item2'));
+});
+
+QUnit.test('arrayDiffTest - single', function(assert) {
+    assert.ok(!Pip.Tests.arrayDiff(['it1', 'it2'], {value: ['it1', 'it2']}));
+    assert.ok(Pip.Tests.arrayDiff(['it1', 'it3'], {value: ['it1', 'it2']}));
+    assert.ok(Pip.Tests.arrayDiff(['it1', 'it3'], {value: []}));
+});
+
+QUnit.test('arrayDiffTest - multi', function(assert) {
+    assert.ok(Pip.Tests.arrayDiff(false, {value: ['item1', 'item2']}, 'item1'));
+    assert.ok(!Pip.Tests.arrayDiff(false, {value: ['item1', 'item2']}, 'item3'));
+});
+
+QUnit.test('modelDiffTest - single', function(assert) {
+    var model = {name: 'Joe', age: 33};
+    assert.ok(!Pip.Tests.modelDiff(model, {value: model}));
+    assert.ok(Pip.Tests.modelDiff(model, {value: {name: "joe"}}));
+    assert.ok(Pip.Tests.modelDiff(model, {value: {name: "joe", age: 33, date: 'now'}}));
+    assert.ok(Pip.Tests.modelDiff(model, {value: {}}));
+});
+
+QUnit.test('modelDiffTest - multi', function(assert) {
+    var model = {name: 'Joe', age: 33};
+    assert.ok(!Pip.Tests.modelDiff(model, {value: {i1: model}}, 'i1'));
+    assert.ok(Pip.Tests.modelDiff(model, {value: {i1: {name: "joe"}}}, 'i1'));
+    assert.ok(Pip.Tests.modelDiff(model, {value: {i1: {name: "joe", age: 33, date: 'now'}}}, 'i1'));
+    assert.ok(Pip.Tests.modelDiff(model, {value: {i1: {}}}, 'i1'));
+    assert.ok(Pip.Tests.modelDiff(model, {value: {i1: {}}}, 'i2'));
+});
+
+QUnit.module('BaseFunctions - Register', {
+    beforeEach: function() {
+        DEBUG = true;
+        Globals.idCounter = 0;
+    }
+});
+
+QUnit.test('basicSetReg', function(assert) {
+    var register = {value: null};
+    Pip.SetReg.basic(register, 'update', 'ok');
+    assert.equal(register.value, 'ok');
+});
+
+QUnit.test('itemSetReg - single', function(assert) {
+    var register = {value: {}};
+    Pip.SetReg.item(register, 'update', 'ok', 'it1');
+    assert.deepEqual(register.value.it1, 'ok');
+});
+
+QUnit.test('arraySetReg - single', function(assert) {
+    var register = {value: []};
+    Pip.SetReg.array(register, 'create', true, 'it1');
+    assert.equal(register.value[0], 'it1');
+    Pip.SetReg.array(register, 'update', false, 'it1');
+    assert.equal(register.value[0], void 0);
+    Pip.SetReg.array(register, 'delete', false, 'it1');
+    assert.equal(register.value[0], void 0);
+    Pip.SetReg.array(register, 'create', true, 'it1');
+    assert.equal(register.value[0], 'it1');
+    Pip.SetReg.array(register, 'delete', false);
+    assert.equal(register.value[0], void 0);
+});
+
+QUnit.test('selectValues - create/update', function(assert) {
+    var pipIn = {
+        action: 'create',
+        value: true
+    };
+    var register = {value: []};
+    assert.equal(Pip.Values.select.update(pipIn), true);
+});
+
+QUnit.test('selectValues - insert', function(assert) {
+    var pipIn = {
+        action: 'insert',
+        value: true
+    };
+    var register = {value: ['it1']};
+    assert.equal(Pip.Values.select.insert(pipIn, register, Pip.Values.select.defaultValue, 'it1'), true);
+});
+
+QUnit.test('modelValues: options contain defaults', function(assert) {
+    var opts = {
+        model: {name: 'Joe', age: 33}
+    };
+    var register = {value: {name: 'Joe', age: 33}};
+    var result = Pip.Values.model(opts, false);
+
+    // see issue #24 for a permanent fix
+    //var result2 = result.update({action: 'update', value: {name: 'Doe'}}, register);
+    var result2 = result.update({action: 'update', value: {name: 'Doe', age: 33}}, register);
+    assert.deepEqual(result2, {name: 'Doe', age: 33});
+});
+
+QUnit.test('modelValues: options are empty', function(assert) {
+    var opts = {};
+    var register = {value: {name: 'Joe', age: 33}};
+    var result = Pip.Values.model(opts, false);
+
+    // see issue #24 for a permanent fix
+    //var result2 = result.update({action: 'update', value: {name: 'Doe'}}, register);
+    var result2 = result.update({action: 'update', value: {name: 'Doe', age: 33}}, register);
+    assert.deepEqual(result2, {name: 'Doe', age: 33});
+});

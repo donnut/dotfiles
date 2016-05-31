@@ -1,0 +1,28 @@
+# -*- coding: utf-8 -*-
+
+import scrapy
+import re
+
+class Persoonlijkheden(scrapy.Spider):
+    name = "persoonlijkheden"
+    allowed_domains = ["resources.huygens.knaw.nl"]
+    start = 1
+    end = 4
+    f = open('persoonlijkheden.txt', 'w')
+
+    def start_requests(self):
+
+        for page in range(self.start, self.end):
+            self.logger.info("Verwerken pagina: %s" % page)
+            print "page %s" % page
+            yield scrapy.Request(
+                "http://resources.huygens.knaw.nl/retroboeken/persoonlijkheden/html_page?page=%s&source=1" % page,
+                callback=self.parse
+            )
+
+    def parse(self, response):
+        content = response.xpath("body/p").extract_first()
+        self.f.write(content.encode('utf-8')+"\n")
+
+    def closed(self, reason):
+        self.f.close()

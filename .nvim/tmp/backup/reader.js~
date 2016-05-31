@@ -1,0 +1,17 @@
+var PDFParser = require('pdf2json/pdfparser');
+var fs = require('fs');
+
+var pdfParser = new PDFParser();
+
+pdfParser.on("pdfParser_dataError", function(e) {
+    console.log("%j", e);
+});
+
+pdfParser.on("pdfParser_dataReady", function(e) {
+    fs.writeSync("sample.out", e.data);
+});
+
+pdf = fs.readFileSync("sample.pdf");
+//pdfParser.parseBuffer(pdf);
+pdfParser.loadPDF(pdf);
+

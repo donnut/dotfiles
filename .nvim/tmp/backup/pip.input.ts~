@@ -1,0 +1,377 @@
+/// <reference path="../dts/ramda.d.ts" />
+/// <reference path="globals.ts" />
+/// <reference path="objectid.ts" />
+/// <reference path="DOMIO.ts" />
+
+namespace Pip.Input {
+    import G = Globals;
+    import ACT = G.Action;
+    import MK = G.MessageKey;
+    import ELM = G.Element;
+    import ON = G.OptionName;
+    import AK = G.AddressKey;
+    import PC = G.PipClass;
+    import PT = G.PipType;
+    import DIR = G.Direction;
+
+    import IStorage = Store.IStorage;
+
+    /**
+     * Filters the pipIn (array) from the listItem so only IMessage for shadowElement is passed
+     */
+    export function filterShadow(options, address: G.IAddresses) {
+        let lastItemId: string; // wat is dit?
+        const selector: string = address[AK[AK.sel]];
+        let itemNr = parseInt(R.slice(1, Infinity, selector), 10);
+
+        return function(pipIn: G.IMessage[]) {
+            let $shadowEl: DOMIO.Instance, message: G.IMessage = null;
+
+            if (pipIn[itemNr][MK[MK.action]] === ACT[ACT.remove] ){
+                //throw new Error('not correclty implemented yet');
+                console.log('not correctly implemented yet');
+                if (lastItemId === pipIn[itemNr][MK[MK.it]]){
+                    // message = {};
+                    message[MK[MK.action]] = pipIn[itemNr][MK[MK.action]];
+                }
+            }
+            else {
+                $shadowEl = pipIn[itemNr][MK[MK.value]];
+                if ($shadowEl){
+                    message = pipIn[itemNr];
+                    //lastItemId = G[nameSpace].get(address[AK[AK.anc]]).getItemId($shadowEl);
+                }
+            }
+            return message ? message : null;
+        }
+    }
+
+
+    export function defineInit(action: string) {
+        var message = {};
+        message[MK[MK.action]] = action;
+        return <G.IMessage>message;
+    }
+
+    export function defineModelInit(options: G.IModelPipOptions) {
+        let message = {};
+        message[MK[MK.action]] = ACT[ACT.delete];//door hier kunne twee elsen worden verwijders
+        var initModel = {};
+
+        if (options[ON[ON.model]]) {
+            var model = options[ON[ON.model]];
+            for (let key in model) {
+                if(model[key] !== undefined){
+                    initModel[key] = model[key];
+                }
+            }
+            if (R.keys(initModel).length !==0) {
+                message[MK[MK.action]] = ACT[ACT.create];//overschrijven van default modelInitMessage
+                message[MK[MK.value]] = initModel;
+            }
+            // else {
+            //   message[MK[MK.action]] = ACT[ACT.delete];
+            // }
+        }
+        // else {
+        //     //message[MK[MK.emit]] = false;
+        // }
+        if (!message) {
+            message[MK[MK.action]] = ACT[ACT.delete];
+        }
+
+        return <G.IMessage>message;
+    }
+
+    export function defineCollectionInit(options: G.ICollectionPipOptions) {
+        let message,
+        initCollection = [];
+
+        if (options[ON[ON.model]]) {
+            let models = R.is(Array, options[ON[ON.model]])
+                ? options[ON[ON.model]]
+                : [options[ON[ON.model]]];
+
+            //gelijktrekken itTypes: en zo hoeft option[ON[ON.model]] hoeft geen array te zijn voor itType
+            for (var i = 0, len = models.length; i < len; i++) {
+                let model = models[i];
+                let initModel = {};
+                for (let key in model) {
+                    if(model[key] !== undefined){
+                        initModel[key] = model[key];
+                    }
+                }
+                if (R.keys(initModel).length !== 0) {
+                    message = message || [];
+                    let obj = {};
+                    obj[MK[MK.action]] = ACT[ACT.create];//overschrijven van default modelInitMessage
+                    obj[MK[MK.value]] = initModel;
+                    obj[MK[MK.it]] = ObjectId.create();
+                    message.push(obj)
+                }
+            }
+        }
+        if (!message){
+            message = {};
+            message[MK[MK.action]] = ACT[ACT.delete];//door hier kunne twee elsen worden verwijderd
+        }
+        return <G.IMessage>message;
+    }
+
+    /*special pipType-dependent extra functions*/
+    //TODO wordt er hier effivicent met io-instance omgeggaan?
+
+
+    //TODO natuurlijk depreciated: allang opgelost gedefinieerd bij inlezen html!
+    // nee blijft nodig voor manual code van Fred!!!
+    export function initDOMList(options: G.IListItemPipOptions, address: G.IAddresses, storage: IStorage) { //tbv nodes met tpl
+        return function(pipIn): G.IMessage[] {
+            //hier lekker met $root en even geen $anc
+            var $root: DOMIO.Instance = pipIn[MK[MK.value]] || storage.get(address[AK[AK.anc]]).get();
+
+
+            var it: string = address[AK[AK.sel]]; // || 'li'; niet meer relevant bij inlezen DOM
+            var $items: DOMIO.Instance = DOMIO.createScoped($root, it);
+            return DOMIO.mapItems(function(elem: DOMIO.IElement) {
+                var itemId: string = options[ON[ON.idType]]
+                    // ? DOMIO.getAttr(options[ON[ON.idType]], elem)
+                    ? DOMIO.getDOMItemId(options[ON[ON.idType]], elem)
+                    : ObjectId.create();
+                return {
+                    it: itemId,
+                    action: ACT[ACT.insert],
+                    value: DOMIO.create(elem)
+                };
+            }, $items);
+        };
+    }
+
+    //function interprets filtered or sorted pipIn with register to reconstruct input for desired result
+    export function correctList(options: G.IListPipOptions) {
+        //TODO nog nalopen hoe sort conditionopstellen
+        function sortOnPipCondition(pipIn: G.IMessage[]): G.IMessage[] {
+            let sort = options.sort;
+            let sortCriteria = R.is(Array, sort)
+                ? <G.Sort[]>sort
+                : <G.Sort[]>[sort];
+
+            let sortFunction = function(sortCriterion) {
+                return !sortCriterion.dir || sortCriterion.dir.toUpperCase() === DIR[DIR.ASC]
+                ? function(a,b) {
+                    return a.value[sortCriterion.key] <= b.value[sortCriterion.key] ? -1 : 1;
+                }
+                : function(a,b) {
+                    return a.value[sortCriterion.key] > b.value[sortCriterion.key] ? -1 : 1;
+                };
+            }
+            var sortedInput = R.clone(pipIn);
+            // TODO: gaat dit goed? Kan Clone weg?
+            R.forEach(function(criterion) {
+                sortedInput = R.sort(sortFunction(criterion), sortedInput);
+            }, sortCriteria);
+            return sortedInput;
+        }
+
+        function redefineSortedInput(input: G.IMessage[]): G.IMessage[] {//gaat correctedInput in
+            // eventueel slim: replaceSome of evt replace. Alle gevolgd door create
+            // voorlopig gewoon afhandelen per stuk
+            // dit blijkt helemaal perfect te gaan in combi met diffTest en arraySetreg!
+            let desiredIndex = 0,
+            addedDesiredIndex = R.map(function(inp) {
+
+                //20.4 forse wijziging versimpeling tov 17.4 nav aanbrengen publieke functie tbv filtering in link
+                if (inp[MK[MK.action]] !== ACT[ACT.delete]) {
+                    if (!R.contains(G.POS, R.keys(inp[MK[MK.value]]))) {
+                        //op hoop van zegen dat zo een enkele positiewisseling via value kan worden doorgegeven
+                        //eigenlijk syntax eis nodig :  typeof inp[MK[MK.value]] === 'number' dan mag input.length alleen maar 1 zijn!
+                        inp[MK[MK.value]][G.POS] = desiredIndex;
+                        desiredIndex++;
+                    }
+                }
+                return inp;
+            }, input);
+
+            let deletedFirst = [];
+            R.forEach((item) => {
+                if (item[MK[MK.action]] === ACT[ACT.delete]) {
+                    deletedFirst.unshift(item);
+                } else {
+                    deletedFirst.push(item);
+                }
+            }, addedDesiredIndex);
+            return deletedFirst;
+        }
+
+        function testFilterConditions(value): boolean {
+            var
+                conditions = options.filter,
+                allConditionsAreMet = true;
+            for (var key in conditions) {
+                if (value[key] !== conditions[key]) {
+                    allConditionsAreMet = false;
+                }
+            }
+            return allConditionsAreMet;
+        }
+
+        return function(pipIn: G.IMessage[]) {//, register: G.IRegister<string[]>, defineItemId: Function
+            let correctedInput: G.IMessage[] = [],
+            redefinitionNeeded = false;
+
+            if (options[ON[ON.filter]]) {//als eerste scheelt sorteerwerk
+                correctedInput = R.filter((inp) => testFilterConditions(inp[MK[MK.value]]), pipIn);
+            } else {
+                correctedInput = pipIn;
+            }
+
+            //dan sorteer of filterwerk uit link (filtering mag niet tot extra add leiden! linkfunctie moet niet onnodig complex worden)
+            if (R.find( (inp) => inp[MK[MK.action]] === ACT[ACT.update], pipIn )) {
+                // && ! R.pluck((inp) => typeof inp.value === 'number'))
+                //zoek Tot een is minst kostbar: er is minimaal een met action update
+                //niet elke update (van collectiondata) is sort!!!
+                //maar, als slechts update zal er geen pipFn resulteren omdat index gelijk is?
+                redefinitionNeeded = true;
+            }
+
+            //uiteindelijk eventueel sorteerwerk volgens vaste sorteercondition van pip
+            if (options[ON[ON.sort]]) {
+                correctedInput = sortOnPipCondition(correctedInput);
+                redefinitionNeeded = true;
+            }
+
+            if (redefinitionNeeded) {
+                correctedInput = redefineSortedInput(correctedInput);//, register
+            }
+            return correctedInput;
+        }
+    }
+
+    // function enforces constraints to selected items
+    export function correctSelection(options: G.ISelectPipOptions) {
+
+        let one: boolean          = options[ON[ON.one]] === undefined ? true : options[ON[ON.one]],
+            required: boolean     = options[ON[ON.required]] === undefined ? false : options[ON[ON.required]],
+            reselectable: boolean = options[ON[ON.reselectable]] === undefined ? false : options[ON[ON.reselectable]];
+
+        // get items with truthy value that are set in register too
+        function getDups(pipIn: G.IMessage[], selected: string[]): string[] {
+            //TODO soms it !== getItemId(it)
+            return R.intersection(selected, R.pluck( MK[MK.it], R.filter((inp) => inp[MK[MK.value]] === true, pipIn)));
+        }
+
+        function getTruthies(pipIn: G.IMessage[]): string[] {
+            //TODO soms it !== getItemId(it)
+            return R.pluck( MK[MK.it], R.filter((inp) => inp[MK[MK.value]] === true, pipIn));
+        }
+
+        function getFalsies(pipIn: G.IMessage[]): string[] {
+            //TODO soms it !== getItemId(it)
+            return R.pluck( MK[MK.it], R.filter((inp) => inp[MK[MK.value]] === false, pipIn));
+        }
+
+        /**
+         * Returns the adjusted `pipIn`. If id's are set to false or if id's are set to true that were already true
+         * then the property `emit` is set to `true` to enforce the emit. This overrules the result of `regDiff`.
+         */
+        function constructOut(ids: string[], active: boolean, originalTruthies: string[]): G.IMessage[] {
+            return R.map((inp) => {
+                if ((active === true && !R.contains(inp, originalTruthies)) ||
+                    (active === false && R.contains(inp, originalTruthies))) {
+                    return R.assoc(MK[MK.emit], true, { action: ACT[ACT.update], value: active, it: inp })
+                } else {
+                    return { action: ACT[ACT.update], value: active, it: inp };
+                }
+            }, ids);
+        }
+
+        return function(pipIn: G.IMessage[], register: G.IRegister<string[]>, defineItemId: Function) {
+
+            //TODO soms it !== getItemId(it)
+
+            // get requested setting
+            var dups = getDups(pipIn, register.value);
+            var originalTruthies = getTruthies(pipIn);
+            var truthies = R.union(register.value, originalTruthies);
+            var falsies = getFalsies(pipIn);
+
+            // apply constraints
+            if (dups.length > 0) {
+                // correction
+                if (reselectable === true) {
+                    truthies = R.union(truthies, dups);
+                    falsies = R.difference(falsies, dups);
+                } else {
+                    truthies = R.difference(truthies, dups);
+                    falsies = R.union(falsies, dups);
+                }
+            }
+
+            if (one === true) {
+                // zero or one item selected
+                if (truthies.length > 1){
+                    // correction
+                    var solo = [R.head(originalTruthies) || R.head(truthies)];
+                    var moreFalsies = R.difference(truthies, solo);
+                    falsies = R.union(moreFalsies, falsies);
+                    truthies = solo;
+                }
+            }
+
+            if (required === true) {
+                // this might yield an empty result; next pass from stateItemPip hopefully resolves this
+                if (truthies.length === 0) {
+                    // correction
+                    truthies = register.value.length > 0
+                        ? [R.head(register.value)]
+                        : falsies.length > 0
+                            ? [R.head(falsies)]
+                            : [];
+                    falsies = R.difference(falsies, truthies);
+                }
+            }
+
+            // make sure existing register is changed correctly
+            falsies = R.difference(falsies, truthies);
+            return R.union(constructOut(truthies, true, originalTruthies), constructOut(falsies, false, originalTruthies));
+        };
+    }
+
+    // function uses recipe from navtree in options to adjust more models reacting on insert or remove
+    export function correctNavTree(options: G.INavTreePipOptions) {
+        var navTree = options.navTree;
+        return function(pipIn: G.IMessage[], register: G.IRegister<string[]>, defineItemId: Function): G.IMessage[] {
+            var messages = [];
+            R.forEach((input) => {
+                messages.push(input);
+                var parentId = input[MK[MK.value]].anc
+                    ? navTree[input[MK[MK.value]].anc]
+                    : navTree[ input[MK[MK.it]] ];
+
+                messages.push({
+                    it: parentId,
+                    action: input[MK[MK.action]] === ACT[ACT.insert]
+                        ? ACT[ACT.create]//is push value on children
+                        : ACT[ACT.update],//has to remove value from children, not ACT.'delete': because that doesnt pass navTreeValues!
+                    value: input[MK[MK.it]]
+                });
+            }, pipIn)
+            return messages;
+        };
+    }
+
+    export function trueTest(action) {
+        return true;
+    }
+    export function falseTest(action) {
+        return false;
+    }
+    export function insertTest(action) {
+        return action === ACT[ACT.insert];
+    }
+    export function DOMTest(action) {
+        return action === ACT[ACT.insert] || action === ACT[ACT.remove];
+    }
+    export function destructTest(action) {
+        return action === ACT[ACT.delete] || action === ACT[ACT.remove];
+    }
+}

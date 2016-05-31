@@ -1,0 +1,145 @@
+#
+# Sanders-Twitter Sentiment Corpus Install Script
+# Version 0.1
+#
+# Pulls tweet data from Twitter because ToS prevents distributing it directly.
+#
+# Right now we use unauthenticated requests, which are rate-limited to 150/hr.
+# We use 125/hr to stay safe.
+#
+# We could more than double the download speed by using authentication with
+# OAuth logins.  But for now, this is too much of a PITA to implement.  Just let
+# the script run over a weekend and you'll have all the data.
+#
+#   - Niek Sanders
+#     njs@sananalytics.com
+#     October 20, 2011
+#
+#
+# Excuse the ugly code.  I threw this together as quickly as possible and I
+# don't normally code in Python.
+#
+import csv, getpass, json, os, time, urllib2, twitter
+from pymongo import MongoClient
+
+def init():
+    ckey =  'cWN3UpsbOqG7jn0m8EmvoqtSV'
+    csecret = 'e5Ep2oM1FRVHXgXKiEJwGEZasytAuNDv6h69XS0nPLGmDLx3gz'
+    atoken = '15123362-RkHEznCU2x8RhIhu4vWNEzb5BETha2nsLIp7M0vXf'
+    asecret = 't9GeqpH4ufn2fix14BEdM5EKrrOHGGYUDVVbVFkeENsYy'
+
+    auth = twitter.oauth.OAuth(atoken, asecret,
+                               ckey, csecret)
+
+    return twitter.Twitter(auth=auth, retry=True)
+
+def get_user_params():
+
+    user_params = {}
+
+    # get user input params
+    user_params['user_out']  = input( '\noutput file [./data/users.csv]: ' )
+
+    # apply defaults
+    if user_params['user_out']  == '':
+        user_params['user_out'] = './data/users.csv'
+
+    return user_params
+
+
+def write_user_features( in_filename ):
+
+    # read total fetch list csv
+    fp = open( in_filename, 'rb' )
+    reader = csv.reader( fp, delimiter='\t', quotechar='"' )
+
+    total_list = []
+    for row in reader:
+        total_list.append( row )
+
+    return total_list
+
+
+def download_tweets( fetch_list, twitter_api, collection ):
+
+    # stay within rate limits
+    max_tweets_per_hr  = 700
+    download_pause_sec = 3600 / max_tweets_per_hr
+
+    # download tweets
+    for idx in range(0,len(fetch_list)):
+
+        # current item
+        item = fetch_list[idx]
+
+        # print status
+        trem = get_time_left_str( idx, fetch_list, download_pause_sec )
+        print '--> downloading tweet #%s (%d of %d) (%s left)' % \
+              (item[1], idx+1, len(fetch_list), trem)
+
+        try:
+            tweet = twitter_api.statuses.show(_id=item[1])
+            collection.insert_one(tweet)
+        except:
+            print "id %s bestaat niet" % item[1]
+
+        # stay in Twitter API rate limits
+        print '    pausing %d sec to obey Twitter API rate limits' % \
+              (download_pause_sec)
+        time.sleep( download_pause_sec )
+
+    return
+
+def get_users( collection ):
+
+    unique_users = collection.distinct('user.id_str')
+    tweet = twitter_api.statuses.show(_id=item[1])
+
+def parse_tweet_json( filename ):
+
+    # read tweet
+    print 'opening: ' + filename
+    fp = open( filename, 'rb' )
+
+    # parse json
+    try:
+        tweet_json = json.load( fp )
+    except ValueError:
+        raise RuntimeError('error parsing json')
+
+    # look for twitter api error msgs
+    if 'error' in tweet_json:
+        raise RuntimeError('error in downloaded tweet')
+
+    # extract creation date and tweet text
+    return [ tweet_json['created_at'], tweet_json['text'] ]
+
+
+def main():
+
+    twitter_api = init()
+    client = MongoClient('localhost', 27017)
+
+    db = client.steenbergen
+    collection = db.tweets
+
+    # get user parameters
+    user_params = get_user_params()
+
+    get_users(collection)
+    total_list = read_total_list( user_params['inList'] )
+    fetch_list = purge_already_fetched( total_list, collection )
+
+    # start fetching data from twitter
+    download_tweets( fetch_list, twitter_api, collection )
+
+    # second pass for any failed downloads
+    print '\nStarting second pass to retry any failed downloads';
+    fetch_list = purge_already_fetched( total_list, collection )
+    download_tweets( fetch_list, twitter_api, collection )
+
+    return
+
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,66 @@
+"use strict";
+
+var R = require('ramda');
+
+/*
+ * Create a config name based on the version and clusters of options.
+ * The rules used:
+ * Group 0
+ * - deferred: 1
+ * - ready: 2
+ * - ajax: 4
+ * - xhr: 8
+ * - script: 16
+ * - jsonp: 32
+ *
+ * Group 1
+ * - css: 1
+ * - effects: 2
+ * - dimensions: 4
+ * - offset: 8
+ *
+ * Group 2
+ * - wrap: 1
+ * - deprecated: 2
+ * - AMD: 4
+ * - globals: 8
+ *
+ * Group 3
+ * - event: 1
+ */
+
+var groups = {
+    deferred:   [0, 1],
+    ready:      [0, 2],
+    ajax:       [0, 4],
+    xhr:        [0, 8],
+    script:     [0, 16],
+    jsonp:      [0, 32],
+    css:        [1, 1],
+    effects:    [1, 2],
+    dimensions: [1, 4],
+    offset:     [1, 8],
+    wrap:       [2, 1],
+    deprecated: [2, 2],
+    AMD:        [2, 4],
+    globals:    [2, 8],
+    event:      [3, 1]
+};
+
+function generate(version, options) {
+
+    function transformer(options) {
+        return R.map(function(option) {
+            return groups[option];
+        }, options);
+    }
+
+    var results = R.transduce(transformer, function(acc, i) {
+        acc[i[0]] = acc[i[0]] + i[1];
+        return acc;
+    }, [0,0,0,0], options);
+
+    return R.join('-', [version].concat(results));
+}
+
+exports.generate = generate;

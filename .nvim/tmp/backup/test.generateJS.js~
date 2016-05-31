@@ -1,0 +1,490 @@
+QUnit.module('Generate Javascript', {
+    beforeEach: function() {
+        LBGlobals.idCounter = 0;
+    }
+});
+
+QUnit.test('create multiply', function(assert) {
+    var model = {
+        nid: '1',
+        selected: 'message-area',
+        children: [{
+            nid: '2',
+            selected: 'message-branch',
+            children: [{
+                nid: '3',
+                selected: 'message',
+                children: [{
+                    selected: 'expression-area',
+                    children: [{
+                        selected: 'value-area'
+                    },{
+                        selected: 'area',
+                        children: [{
+                            selected: 'branch',
+                            children: [{
+                                selected: 'multiply',
+                                children: [{
+                                    nid: 'val1',
+                                    type: 'number'
+                                },{
+                                    nid: 'val2',
+                                    type: 'number'
+                                }]
+                            }]
+                        }]
+                    }],
+                },{
+                    selected: 'expression-area',
+                    children: [{
+                        selected: 'action-area'
+                    },{
+                        value: 'create',
+                        type: 'string'
+                    }]
+                }]
+            }]
+        }]
+    };
+
+    var tree = Expression.makeTree(model);
+    assert.deepEqual(Expression.writeJS(tree), "return (val2*val1)");
+});
+
+QUnit.test('minus', function(assert) {
+    var collection = [{
+        cat: 'subject',
+        nid: 'p1',
+        children: ['val2', 'val1'],
+        selected: 'minus'
+    },{
+        cat: 'value',
+        nid: 'val1',
+        selected: 3
+    }, {
+        cat: 'value',
+        nid: 'val2',
+        selected: 5
+    }];
+
+    var linkOptions = {
+        drop: ['models.something']
+    }
+
+    var tree = Expression.makeTree(collection);
+    var result = Expression.writeJS(tree, linkOptions);
+    assert.equal(result, '(5-3)');
+});
+
+QUnit.test('minus with drop variable and variable', function(assert) {
+    var collection = [{
+        cat: 'subject',
+        nid: 'p1',
+        children: ['val2', 'val1'],
+        selected: 'minus'
+    }, {
+        cat: 'value',
+        nid: 'val1',
+        selected: 'this[\'models.something\']'
+    }, {
+        cat: 'value',
+        nid: 'val2',
+    }];
+
+    var tree = Expression.makeTree(collection);
+    var result = Expression.writeJS(tree);
+    assert.equal(result, "(val2-this['models.something'])");
+});
+
+// x - ( y * z )
+QUnit.test('make expression x - ( y * z )', function(assert) {
+    var collection = [{
+        cat: 'subject',
+        nid: 'p1',
+        children: ['val2', 'tim1'],
+        selected: 'minus'
+    }, {
+        cat: 'value',
+        nid: 'val3',
+    },{
+        cat: 'subject',
+        nid: 'tim1',
+        children: ['val1', 'val3'],
+        selected: 'multiply'
+    }, {
+        cat: 'value',
+        nid: 'val2',
+    },{
+        cat: 'value',
+        nid: 'val1',
+    }];
+
+    var tree = Expression.makeTree(collection);
+    var result = Expression.writeJS(tree);
+    assert.equal(result, '(val2-(val1*val3))');
+});
+
+QUnit.test('create filter', function(assert) {
+    var collection = [{
+        cat: 'subject',
+        nid: 'root',
+        children: ['p1'],
+        selected: 'branch'
+    },{
+        cat: 'subject',
+        nid: 'p1',
+        children: ['cond1', 'val1'],
+        selected: 'filter',
+        areaName: 'action'
+    },{
+        cat: 'value',
+        nid: 'val1',
+        areaName: 'action'
+    },{
+        cat: 'subject',
+        nid: 'cond1',
+        areaName: 'action',
+        selected: 'not',
+        children: ['comp1']
+    },{
+        cat: 'subject',
+        nid: 'comp1',
+        areaName: 'action',
+        selected: 'gte',
+        children: ['val2', 'val3']
+    },{
+        cat: 'value',
+        nid: 'val2',
+        areaName: 'action'
+    },{
+        cat: 'value',
+        nid: 'val3',
+        areaName: 'action'
+    }];
+
+    var tree = Expression.makeTree(collection);
+    assert.deepEqual(Expression.writeJS(tree), "return filter(!(val2 >= val3), val1)");
+});
+
+QUnit.test('create value', function(assert) {
+    var subjects = [{
+        cat: 'value',
+        nid: 'val1',
+        areaName: 'action'
+    }];
+
+    var tree = Expression.makeTree(subjects);
+    assert.deepEqual(Expression.writeJS(tree), "val1");
+});
+
+QUnit.test('create negate of value', function(assert) {
+    var subjects = [{
+        cat: 'subject',
+        nid: 'not1',
+        areaName: 'action',
+        selected: 'not',
+        children: ['val1']
+    },{
+        cat: 'value',
+        nid: 'val1',
+        areaName: 'action'
+    }];
+
+    var tree = Expression.makeTree(subjects);
+    assert.deepEqual(Expression.writeJS(tree), "!val1");
+});
+
+QUnit.test('create sum of values', function(assert) {
+    var subjects = [{
+        cat: 'subject',
+        nid: 'sum',
+        areaName: 'action',
+        selected: 'plus',
+        children: ['val1', 'val2']
+    },{
+        cat: 'value',
+        nid: 'val1',
+        areaName: 'action'
+    },{
+        cat: 'value',
+        nid: 'val2',
+        areaName: 'action'
+    }];
+
+    var tree = Expression.makeTree(subjects);
+    assert.deepEqual(Expression.writeJS(tree), "(val1+val2)");
+});
+
+QUnit.test('create division of values', function(assert) {
+    var subjects = [{
+        cat: 'subject',
+        nid: 'sum',
+        areaName: 'action',
+        selected: 'divide',
+        children: ['val1', 'val2']
+    },{
+        cat: 'value',
+        nid: 'val1',
+        areaName: 'action'
+    },{
+        cat: 'value',
+        nid: 'val2',
+        areaName: 'action'
+    }];
+
+    var tree = Expression.makeTree(subjects);
+    assert.deepEqual(Expression.writeJS(tree), "(val1/val2)");
+});
+
+QUnit.test('count number of values', function(assert) {
+    var subjects = [{
+        cat: 'subject',
+        nid: 'sum',
+        areaName: 'action',
+        selected: 'count',
+        children: ['val1']
+    },{
+        cat: 'value',
+        nid: 'val1',
+        areaName: 'action'
+    }];
+
+    var tree = Expression.makeTree(subjects);
+    assert.deepEqual(Expression.writeJS(tree), "length(val1)");
+});
+
+QUnit.test('create a case into an existing expression area', function(assert) {
+    var subjects = [{
+        cat: 'subject',
+        selected: 'branch',
+        nid: 'b1',
+        areaName: 'myArea',
+        children: ['val1']
+    },{
+        cat: 'value',
+        nid: 'val1',
+        areaName: 'myArea'
+    }];
+
+    var tree = Expression.makeTree(subjects);
+    assert.deepEqual(Expression.writeJS(tree), "return val1");
+});
+
+QUnit.test('basic condition: eq', function(assert) {
+    var collection = [{
+        cat: 'subject',
+        nid: 'c1',
+        children: ['val1', 'val2'],
+        selected: 'eq'
+    }, {
+        cat: 'value',
+        nid: 'val1',
+    }, {
+        cat: 'value',
+        nid: 'val2',
+        selected: '\'#ff431d\''
+    }];
+
+    var tree = Expression.makeTree(collection);
+    var result = Expression.writeJS(tree);
+    assert.equal(result, "(val1 === '#ff431d')");
+});
+
+QUnit.test('basic condition: lt', function(assert) {
+    var collection = [{
+        cat: 'subject',
+        nid: 'c1',
+        children: ['val1', 'val2'],
+        selected: 'lt'
+    }, {
+        cat: 'value',
+        nid: 'val1',
+    }, {
+        cat: 'value',
+        nid: 'val2',
+    }];
+
+    var tree = Expression.makeTree(collection);
+    var result = Expression.writeJS(tree);
+    assert.equal(result, "(val1 < val2)");
+});
+
+QUnit.test('complex condition', function(assert) {
+    var collection = [{
+        cat: 'subject',
+        nid: 'c3',
+        children: ['val1', 'c2'],
+        selected: 'and'
+    }, {
+        cat: 'value',
+        nid: 'val1',
+    }, {
+        cat: 'value',
+        nid: 'val2',
+    }, {
+        cat: 'value',
+        nid: 'val3',
+    }, {
+        cat: 'value',
+        nid: 'val4',
+    }, {
+        cat: 'subject',
+        nid: 'c1',
+        children: ['val2', 'val4'],
+        selected: 'lt'
+    }, {
+        cat: 'subject',
+        nid: 'c2',
+        children: ['val3', 'c1'],
+        selected: 'or'
+    }];
+
+    var tree = Expression.makeTree(collection);
+    var result = Expression.writeJS(tree);
+    assert.equal(result, "(val1 && (val3 || (val2 < val4)))");
+});
+
+QUnit.test('create case with one condition', function(assert) {
+    var subjects = [{
+        nid: 'b1',
+        cat: 'subject',
+        selected: 'branch',
+        children: ['case1', 'val2']
+    },{
+        nid: 'case1',
+        cat: 'subject',
+        children: ['cond1', 'b3'],
+        selected: 'case'
+    },{
+        nid: 'b3',
+        cat: 'subject',
+        selected: 'branch',
+        children: ['val3']
+    },{
+        nid: 'cond1',
+        cat: 'subject',
+        selected: 'not',
+        children: ['val1'],
+    },{
+        nid: 'val1',
+        cat: 'value',
+    },{
+        nid: 'val2',
+        cat: 'value',
+    },{
+        nid: 'val3',
+        cat: 'value',
+    }];
+
+    var tree = Expression.makeTree(subjects);
+    assert.deepEqual(Expression.writeJS(tree), "if (!val1) return val3 else return val2");
+});
+
+QUnit.test('create branch with two cases', function(assert) {
+    var subjects = [{
+        nid: 'b1',
+        cat: 'subject',
+        selected: 'branch',
+        children: ['case1', 'case2', 'val5']
+    },{
+        nid: 'case1',
+        cat: 'subject',
+        children: ['comp1', 'b2'],
+        selected: 'case'
+    },{
+        nid: 'case2',
+        cat: 'subject',
+        children: ['comp2', 'b3'],
+        selected: 'case'
+    },{
+        nid: 'b2',
+        cat: 'subject',
+        selected: 'branch',
+        children: ['val2']
+    },{
+        nid: 'b3',
+        cat: 'subject',
+        selected: 'branch',
+        children: ['val3']
+    },{
+        nid: 'comp1',
+        cat: 'subject',
+        selected: 'gte',
+        children: ['val1', 'val4'],
+    },{
+        nid: 'comp2',
+        cat: 'subject',
+        selected: 'eq',
+        children: ['val1', 'val4'],
+    },{
+        nid: 'val1',
+        cat: 'value',
+    },{
+        nid: 'val2',
+        cat: 'value',
+    },{
+        nid: 'val3',
+        cat: 'value',
+    },{
+        nid: 'val4',
+        cat: 'value',
+    },{
+        nid: 'val5',
+        cat: 'value',
+    }];
+
+
+    var tree = Expression.makeTree(subjects);
+    assert.deepEqual(Expression.writeJS(tree), "if ((val1 >= val4)) return val2 else if ((val1 === val4)) return val3 else return val5");
+});
+
+QUnit.module('complete linkOptions');
+
+QUnit.module('example', function(assert) {
+    var result = {
+
+        //pub: 'sfsdf',
+        //sub: 'sdfsdfsdf',
+        //drop: ['models.value'],
+        //swap: 'models.different', // alternatieve invoer
+        vars: {
+            'var0': function() {
+                if (!this['models.value']) {
+                    return R.length(this['models.value'].unsafeGet());
+                } else {
+                    return 0;
+                }
+            }
+        },
+        filter: function(i) {
+            return i.value.status === 'allright';
+        },
+        pre: function(i) {
+            var message = [];
+            message.push({
+                action: 'create',
+                value: i.value,
+                it: i.action
+            });
+            message.push({
+                action: 'create',
+                value: i.value,
+                it: i.action
+            });
+            if (vars.var0() !== '3') {
+                message.push({
+                    action: 'create',
+                    value: i.value,
+                    it: i.action
+                });
+            } else {
+                message.push({
+                    action: 'create',
+                    value: i.value,
+                    it: i.action
+                });
+            }
+            return message;
+        }
+    };
+});

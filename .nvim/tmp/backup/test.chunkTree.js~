@@ -1,0 +1,274 @@
+QUnit.module('ChunkTree');
+
+QUnit.test('minus', function(assert) {
+    var model = {
+        selected: 'expression',
+        children: [{
+            nid: '1',
+            selected: 'message-area',
+            children: [{
+                nid: '2',
+                selected: 'message-branch',
+                children: [{
+                    nid: '3',
+                    selected: 'message',
+                    children: [{
+                        selected: 'expression-area',
+                        children: [{
+                            selected: 'value-area'
+                        },{
+                            selected: 'area',
+                            children: [{
+                                selected: 'branch',
+                                children: [{
+                                    selected: 'multiply',
+                                    children: [{
+                                        nid: 'val1',
+                                        type: 'number'
+                                    },{
+                                        nid: 'val2',
+                                        type: 'number'
+                                    }]
+                                }]
+                            }]
+                        }],
+                    },{
+                        selected: 'expression-area',
+                        children: [{
+                            selected: 'action-area'
+                        },{
+                            value: 'create',
+                            type: 'string'
+                        }]
+                    }]
+                }]
+            }]
+        }]
+    };
+
+    var tree = Expressions.makeTree(model);
+
+    var domStr = "<div id='expressions'></div>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'tree',
+        empty: '<p>empty view</p>',
+        idKey: 'nid',
+        contentKey: 'tpl',
+        childKey: 'children',
+        selector: '#expressions'
+    }];
+
+    var pips = [{
+        type: 'model',
+        name: 'expression',
+        server: false
+    }];
+
+    var links =[{
+        pub: 'models.expression',
+        sub: '#expressions.tree',
+        value: function(i) {
+            return Chunk.makeTree(i.value);
+        }
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links, 'pips', [{
+        name: 'tree',
+        options: function(opts, address, ns) {
+            return TreePip.props.tree.call(this, opts, address, this.storage);
+        }
+    }]);
+
+    app.get('models.expression').react({
+        action: 'create',
+        value: tree
+    });
+
+    assert.equal($('div.part.value').length, 3);
+    assert.equal($('input.number').length, 2);
+
+});
+
+
+QUnit.test('compare', function(assert) {
+    var model = {
+        selected: 'expression',
+        children: [{
+            nid: '1',
+            selected: 'message-area',
+            children: [{
+                nid: '2',
+                selected: 'message-branch',
+                children: [{
+                    nid: '3',
+                    selected: 'message',
+                    children: [{
+                        nid: '4',
+                        selected: 'expression-area',
+                        children: [{
+                            nid: '62',
+                            selected: 'value-area'
+                        },{
+                            nid: '5',
+                            selected: 'area',
+                            children: [{
+                                nid: '6',
+                                selected: 'branch',
+                                children: [{
+                                    nid: 'p1',
+                                    selected: 'lt',
+                                    children: [{
+                                        nid: 'val2',
+                                        type: 'number'
+                                    },{
+                                        nid: 'val1',
+                                        type: 'number'
+                                    }]
+                                }]
+                            }]
+                        }]
+                    }]
+                }]
+            }]
+        }]
+    };
+
+    var tree = Expressions.makeTree(model);
+
+
+    var domStr = "<div id='expressions'></div>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'tree',
+        empty: '<p>empty view</p>',
+        idKey: 'nid',
+        contentKey: 'tpl',
+        childKey: 'children',
+        selector: '#expressions'
+    }];
+
+    var pips = [{
+        type: 'model',
+        name: 'expression',
+        server: false
+    }];
+
+    var links =[{
+        pub: 'models.expression',
+        sub: '#expressions.tree',
+        value: function(i) {
+            return Chunk.makeTree(i.value);
+        }
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links, 'pips', [{
+        name: 'tree',
+        options: function(opts, address, ns) {
+            return TreePip.props.tree.call(this, opts, address, this.storage);
+        }
+    }]);
+
+    app.get('models.expression').react({
+        action: 'create',
+        value: tree
+    });
+
+    assert.equal($('div.part.value').length, 2);
+    assert.equal($('input.number').length, 2);
+});
+
+QUnit.test('findOne', function(assert) {
+    var model = {
+        selected: 'expression',
+        children: [{
+            nid: '1',
+            selected: 'message-area',
+            children: [{
+                nid: '2',
+                selected: 'message-branch',
+                children: [{
+                    nid: '3',
+                    selected: 'message',
+                    children: [{
+                        nid: '4',
+                        selected: 'expression-area',
+                        children: [{
+                            nid: '62',
+                            selected: 'value-area'
+                        },{
+                            nid: '5',
+                            selected: 'area',
+                            children: [{
+                                nid: '6',
+                                selected: 'branch',
+                                children: [{
+                                    nid: 'p1',
+                                    selected: 'findOne',
+                                    children: [{
+                                        selected: 'lte',
+                                        children: [{
+                                            nid: 'val2',
+                                            type: 'number'
+                                        },{
+                                            nid: 'val1',
+                                            type: 'number'
+                                        }]
+                                    }, {
+                                        type: 'number[]'
+                                    }]
+                                }]
+                            }]
+                        }]
+                    }]
+                }]
+            }]
+        }]
+    };
+
+    var tree = Expressions.makeTree(model);
+
+    var domStr = "<div id='expressions'></div>";
+    $('#qunit-fixture').append(domStr);
+
+    var nodes = [{
+        type: 'tree',
+        empty: '<p>empty view</p>',
+        idKey: 'nid',
+        contentKey: 'tpl',
+        childKey: 'children',
+        selector: '#expressions'
+    }];
+
+    var pips = [{
+        type: 'model',
+        name: 'expression',
+        server: false
+    }];
+
+    var links =[{
+        pub: 'models.expression',
+        sub: '#expressions.tree',
+        value: function(i) {
+            return Chunk.makeTree(i.value);
+        }
+    }];
+
+    var app = new LinkingPips.App(domStr, nodes, pips, links, 'pips', [{
+        name: 'tree',
+        options: function(opts, address, ns) {
+            return TreePip.props.tree.call(this, opts, address, this.storage);
+        }
+    }]);
+
+    app.get('models.expression').react({
+        action: 'create',
+        value: tree
+    });
+    assert.equal($('div.part.value').length, 3);
+    assert.equal($('input.number').length, 2);
+});
+
+});

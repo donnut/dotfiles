@@ -1,0 +1,259 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML+RDFa 1.0//EN" "http://www.w3.org/MarkUp/DTD/xhtml-rdfa-1.dtd">
+<html lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <!-- <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"> -->
+
+    <link rel='shortcut icon' type='image/x-icon' href='favicon.ico' >
+    <title>mope</title>
+    <link href="css/basic.css" rel="stylesheet" type="text/css">
+    <link href="css/mini.css" rel="stylesheet" type="text/css">
+    <!-- <script src="lib/modernizr.full.js"></script>-->
+    <script src="lib/modernizr.custom.08358.min.js"></script>
+    <!--[if IE ]>
+      <script src="lib/sizzle.min.js"></script>
+    <![endif]-->
+    <!--[if lte IE 8]>
+      <style>.pointer,.pointerborder{display:none!important}
+        .features,.mailform{background-color:#fff!important}
+      </style>
+    <![endif]-->
+    <!--[if lt IE 8]>
+      <link href="css/ie7.css" rel="stylesheet" type="text/css">
+    <![endif]-->
+    <script src="src/start.min.js"></script>
+<script type='text/javascript' src='lib/require.js' data-main='src/mope.js'></script>
+  </head>
+  <body id='mainmaster'>
+    <!-- <div id = 'log' style = "background-color:#fff;position:absolute;z-index:1000"></div> -->
+    <img id = 'load' class= 'hide' src='img/loading.gif'>
+    <img id = 'bg' src='img/dblspotgrad.jpg'>
+    <ul class = 'menu' id = 'menu'>
+      <li class = 'nth1'><a href = '#mope'>
+        <span class = 'logopoint'>
+        <span class = 'icon logo'></span></span>
+        <h1></h1>
+      </a></li
+      >
+<li class = 'nth2'><a href = '#what'>
+<h1><span class = 'point'></span><span>what</span></h1></a></li
+>
+      <li class = 'nth3'><a href = '#people'>
+      <h1><span class = 'point'></span><span>people</span></h1></a></li
+      ><li class = 'last'><a href = '#intouch'>
+      <h1><span class = 'point'></span><span>in touch</span></h1></a></li>
+    </ul>
+    <div id = 'mope' class = 'page strtch'>
+      <div class ='scope'>
+        <div id = 'start' class='container'>
+          <img alt = 'desk' src='img/mob/desk.jpg'>
+        </div>
+      </div>
+      <img id = 'anim' src='img/animation.gif'>
+      <div id= 'cube' class='hide'>
+        <ul class="cube">
+          <li class="face one">
+            <span class = 'tblwrp circle'><span class = 'itbl'>
+              <h2 class= 'inner'>think<br/>&amp;<br/>act</h2>
+            </span></span>
+          </li>
+          <li class="face two">
+            <span class = 'tblwrp'><span class = 'itbl'><span class= 'inner'>
+              <img src='img/mope-logo-play.png'/>
+            </span></span></span>
+          </li>
+          <li class="face three">
+            <span class = 'tblwrp circle'><span class = 'itbl'>
+              <h2 class= 'inner'>knowledge<br/>&amp;<br/>expertise</h2>
+            </span></span>
+          </li>
+          <li class="face four">
+            <span class = 'tblwrp circle'><span class = 'itbl'>
+              <h2 class= 'inner'>code<br/>&amp;<br/>data</h2>
+            </span></span>
+          </li>
+          <li class="face five">
+            <span class = 'tblwrp circle'><span class = 'itbl'>
+              <h2 class= 'inner'>design<br/>&amp;<br/>develop</h2>
+            </span></span>
+          </li>
+          <li class="face six">
+            <span class = 'tblwrp circle'><span class = 'itbl'>
+              <h2 class= 'inner'>form<br/>&amp;<br/>function</h2>
+            </span></span>
+          </li>
+        </ul>
+      </div>
+      <div class = 'link' id = 'whatlink'>
+        <span class = 'triborder'></span>
+        <a class = 'level' href = '#what'>
+          <span class = 'tblwrp'><span class = 'itbl'><span class = 'inner'>
+            <span class = 'icon idea'></span>
+            <h6>what</h6>
+          </span></span></span>
+        </a>
+        <span class = 'tri'></span>
+      </div>
+    </div>
+    <div id = 'what' class = 'page strtch'>
+      <h2 class = 'title'>What</h2>
+
+<div class= 'what-wrap'>
+  <h4 class= 'fred'>
+    <span class = 'ubuntu'>mope</span> is an innovative company developing tools to make the live of front-end developers more productive.<br/>
+    Do you ever wonder why several simple front-end development tasks turn out so frustrating and time consuming in the fast, digital era we live in?<br/>
+    <span class = 'ubuntu'>mope</span> develops tools that make these tasks what they should be --  <span class = 'ubuntu'>smart</span>.
+  </h4>
+  
+    <img class= 'what' alt = 'smart web development tools' src='img/what/what.png'>
+
+
+</div>
+
+      <div class = 'link' id = 'peoplelink'>
+        <span class = 'triborder'></span>
+        <a class = 'level' href = '#people'>
+          <span class = 'tblwrp'><span class = 'itbl'><span class = 'inner'>
+            <span class = 'icon iteam'></span>
+            <h6>people</h6>
+          </span></span></span>
+        </a>
+        <span class = 'tri'></span>
+      </div>
+    </div>
+    <div id = 'people' class = 'page strtch'>
+      <h2 class = 'title'>People</h2>
+      <div class = 'team tl'>
+        <h4>The team of <span class = 'ubuntu'>mope</span> is a blending of disciplines. Their love for web development makes working for <span class = 'ubuntu'>mope</span> like play at work.</br>
+          <span class= 'extra'>
+          The founders of <span class = 'ubuntu'>mope</span> are Pauline and Erwin Poeze</span></h4>
+      </div>
+      <img class = 'epo' alt = 'erwin' src='img/mob/erwin.png'>
+      <div id = 'erwin' class = 'erwin tr circle'>
+        <a class = 'tblwrp trigger' href='erwin'>
+          <span class = 'itbl'><span class= 'inner'>
+            <h3>Erwin Poeze</h3>
+            <h4>pragmatic actor</h4>
+            <p>His core competences of the <q lang = 'en-us'>trying out new stuff</q> and <q lang = 'en-us'>making things work</q>, enables <span class = 'ubuntu'>mope</span> to develop solutions that are soundly based on the latest state of technology.
+            </p>
+          </span></span>
+        </a>
+      </div>
+      <img class = 'mpe' alt = 'pauline' src='img/mob/pauline.png'>
+      <div id = 'pauline' class = 'pauline bl circle'>
+        <a class = 'tblwrp trigger' href='pauline'>
+          <span class = 'itbl'><span class= 'inner'>
+            <h3>Pauline Poeze</h3>
+            <h4>conceptual thinker</h4>
+            <p>With her education in design methodology and core-competence of <q lang = 'en-us'>creating order in chaos</q>, she brings expertise of css, project management information and database architecture.</p>
+          </span></span>
+        </a>
+      </div>
+      <div class = 'link' id = 'touchlink'>
+        <span class = 'triborder'></span>
+        <a class = 'level' href = '#intouch'>
+          <span class = 'tblwrp'><span class = 'itbl'><span class= 'inner'>
+            <span class = 'icon meet'></span>
+            <h6>in touch</h6>
+          </span></span></span>
+        </a>
+        <span class = 'tri'></span>
+      </div>
+    </div>
+    <div id = 'intouch' class = 'page strtch'>
+      <h2 class = 'title'>In touch</h2>
+      <div class = 'tel  circle'>
+        <div class = 'tblwrp'><div class = 'itbl'><div class= 'inner'>
+          <p>You can reach us at</p>
+          <h3>+31 (0)23 - 53 11 561</h3>
+          <p>from monday till friday<br/>between 9am - 5pm<br/>
+          (GMT+1:00) Amsterdam</p>
+        </div></div></div>
+      </div>
+      <div class ='scope'>
+        <div class='container'>
+          <img alt = 'haarlem' src='img/mob/haarlem.jpg'>
+          <div class= 'strtch'>
+            <div id = 'address' class = 'address'>
+              <span class = 'pointerborder'></span>
+              <div  class = 'addresscircle'>
+                <div class = 'tblwrp'><div class = 'itbl'><div class= 'inner'>
+                  <h3>Our address</h3>
+                   <h4 class = 'pane'>
+                    <span class= 'ubuntu'>mope</span><small> VOF</small>
+                  </h4>
+                  <p class = 'pane'>
+                    Eerste Emmastraat 5<br/>
+                    2012 GG Haarlem<br/>
+                    The Netherlands
+                  </p>
+                  <div class = 'toggle' id = 'addresslink'>
+                    <a class = 'less' href = 'false'>&lt;</a>
+                    <a class = 'more' href = 'true'>&gt;</a>
+                  </div>
+                </div></div></div>
+              </div>
+              <span class = 'pointer'></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class = 'maillink circle' id = 'maillink'>
+         <div class = 'tblwrp mail'><div class = 'itbl'><div class= 'inner'>
+          <h3>get in touch</h3>
+          <span class = 'mailicon'></span>
+          <p>mail to <span class= 'ubuntu'>mope</span></p>
+          <a class = 'toggle' href = '#mail'>
+            <span class = 'more'>&gt;</span>
+          </a>
+        </div></div></div>
+      </div>
+      <div class = 'link circle' id = 'homelink'>
+        <a class = 'tblwrp' href = '#mope'>
+          <span class = 'itbl'><span class = 'inner'>
+            <span class = 'icon logo'></span>
+            <h6>home</h6>
+          </span></span>
+        </a>
+        <p class = 'block'><span id='log' class= 'ubuntu'>mope &copy;'09-'15</span></p>
+      </div>
+      <div id = 'mailform' class = 'mailform'><!--  tr -->
+        <span class = "clog">X</span>
+        <div id = 'form' class = 'form strtch'></div>
+        <a class = 'submit' id= 'send'><h2>get in touch</h2></a>
+      </div>
+      <div id = 'modal' class = 'modal circle'>
+        <div class = 'tblwrp'><span class = 'clog'>X</span>
+          <div class = 'itbl'>
+            <div id = 'message' class = 'inner'>
+              <div id = "react"></div>
+              <div id = "error"></div>
+              <div id = "missing"></div>
+              <div id = "wrong"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+   <script type ='text/javascript'>
+      document.getElementById('bg').className = 'ontop';
+      document.getElementById('anim').className = 'hide';
+      var className = document.getElementById('load').className;
+      document.getElementById('load').className = className.replace(/hide/, '');
+      if (window.Sizzle) {
+        var pages = Sizzle('.page');
+        var menu = Sizzle('#menu');
+      } else {
+        var pages = document.getElementsByClassName('page');
+        var menu =document.getElementById('menu');
+      }
+      menu.className += ' hide';
+      for(var i = 0, len = pages.length; i < len; i++) {
+        var page = pages[i];
+        page.className += ' hide';
+      }
+    </script>
+  </body>
+</html>

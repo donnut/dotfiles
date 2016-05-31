@@ -1,0 +1,93 @@
+var assert = require('assert');
+var superagent = require('superagent')
+
+
+describe('Rest API', function() {
+
+    it('valid option request', function(done) {
+
+        superagent.post('http://localhost:3000/config')
+            .send({
+                email: "erwin@wbbit.com",
+                version: "2.1.4",
+                ajax: "on",
+                deferred: 'on',
+                css: "on"
+            })
+            .end(function(err, res) {
+                assert.deepEqual(err, null);
+                done();
+            });
+    });
+
+    it('invalid option request', function(done) {
+
+        superagent.post('http://localhost:3000/config')
+            .send({
+                email: "erwin@wbbit.com",
+                version: "2.1.4",
+                script: "on",
+                deferred: 'on',
+                css: "on"
+            })
+            .end(function(err, res) {
+                assert.deepEqual(JSON.parse(res.text), {
+                });
+                done();
+            });
+    });
+
+    it('invalid email address', function(done) {
+
+        superagent.post('http://localhost:3000/config')
+            .send({
+                email: "",
+                version: "2.1.4",
+                ajax: "on",
+                deferred: 'on',
+                css: "on"
+            })
+            .end(function(err, res) {
+                assert.deepEqual(JSON.parse(res.text), {
+                    type: 'email',
+                    text: 'Email address \"\" is not correct'
+                });
+                done();
+            });
+    });
+
+    it('missing version string', function(done) {
+
+        superagent.post('http://localhost:3000/config')
+            .send({
+                email: "erwin@wbbit.com",
+                script: "on",
+                css: "on"
+            })
+            .end(function(err, res) {
+                assert.deepEqual(JSON.parse(res.text), {
+                    type: 'version',
+                    text: 'Version number is required'
+                });
+                done();
+            });
+    });
+
+    it('invalid version string format', function(done) {
+
+        superagent.post('http://localhost:3000/config')
+            .send({
+                email: "erwin@wbbit.com",
+                script: "on",
+                css: "on",
+                version: "1.8"
+            })
+            .end(function(err, res) {
+                assert.deepEqual(JSON.parse(res.text), {
+                    type: 'version',
+                    text: 'Version number "1.8" is not correct'
+                });
+                done();
+            });
+    });
+});

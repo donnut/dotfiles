@@ -1,0 +1,39 @@
+var gulp = require('gulp'),
+    sourcemaps = require('gulp-sourcemaps'),
+    uglify = require('gulp-uglify'),
+    rename = require('gulp-rename'),
+    jshint = require('gulp-jshint'),
+    sass = require('gulp-ruby-sass');
+
+/**
+ * Compile SASS files
+ */
+gulp.task('compile-scss', function() {
+    return sass('./public/**/*.scss')
+    	.on('error', sass.logError)
+        .pipe(sourcemaps.init())
+        //.pipe(sass())
+        .pipe(sourcemaps.write())
+        .pipe(gulp.dest(function(file) { return file.base; }));
+});
+
+/**
+ * Compile typescript and SASS files
+ */
+gulp.task('compile', ['compile-scss']);
+
+gulp.task('minify', function() {
+    return gulp.src('./public/js/form.js')
+        .pipe(jshint())
+        .pipe(jshint.reporter('default')
+        .pipe(uglify())
+        .pipe(rename('./public/js/form.min.js'))
+        .pipe(gulp.dest('./'));
+});
+
+/**
+ * Watch for changes in ts and scss file and compile those
+ */
+gulp.task('watch-compile', ['compile-scss'], function() {
+    gulp.watch('./public/**/*.scss', ['compile-scss']);
+});

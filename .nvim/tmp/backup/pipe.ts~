@@ -1,0 +1,48 @@
+import * as R from '../typescript-ramda/ramda';
+
+function pipe<V0, T1, T2>(fn0: (x0: V0) => T1, fn1: (x: T1) => T2): (x0: V0) => T2;
+function pipe(fn0, fn1) { return fn1;}
+
+const inc = (a: number) => a + 1;
+const dub = (a: number) => 2*a;
+const split = (a: string) => a.split('');
+const len = (a: string[]) => a.length;
+class OO {
+    a: number;
+}
+const keys = (a: OO) => {
+    if (a instanceof OO) {
+        let res: string[] = [];
+        for (let l in a) res.push(a[l]);
+        return res;
+    } else {
+        return null;
+    }
+}
+
+const sum = pipe(keys, len);
+const a = sum('hello');
+
+interface Foo {
+  build: string,
+  package: string
+}
+
+const build = 'dev';
+let mapPackages = R.map((test: Foo) => test.package);
+let filterBuild = R.filter((test: Foo) => test.build === build);
+let getPackages = R.compose(R.uniq, mapPackages);
+
+let foos = [{
+  build: 'dev',
+  package: 'devPackage'
+}, {
+  build: 'prod',
+  package: 'prodPackage'
+}, {
+  build: 'dev',
+  package: 'devPackage'
+}];
+
+let foosFiltered = getPackages(foos);
+console.log('foosFiltered: ' , foosFiltered);

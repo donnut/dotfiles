@@ -1,0 +1,110 @@
+/// <reference path="../dts/ramda.d.ts" />
+/// <reference path="../dts/objectid.ts" />
+/// <reference path="globals.ts" />
+
+namespace Pip.ItemId {
+    import G = Globals;
+    import MK = G.MessageKey;
+    import ON = G.OptionName;
+    function splitId(id: string): string[] {
+        return id.split(G.MERGETOKEN);
+    }
+
+    function extractMid(splitId: string[]): string {
+        return splitId[0];
+        // && splitId.length > 0
+        //   ? splitId[1]
+        //   : splitId[0];
+    }
+
+    // getMid is alleen nodig binnen collection??
+    //export function getMid(itemInput?: IItemMessage): string {
+    export function getMid(itemInput?: G.IMessage): string {
+        var it = itemInput
+            ? itemInput[MK[MK.it]]
+            : null;
+        if (it) {
+            return extractMid(splitId(it));
+        } else {
+            //nieuw, bijvoorbeeld vanuit event?
+            //TODO straks nalopen of neiuw goed gaat
+            return ObjectId.create();
+        }
+    }
+
+    //TODo wat meegeven als argument : pipaddress of current?
+    export function map(itemInput: G.IMessage, register: G.IRegister<any>): string {
+        var idIn: string = itemInput[MK[MK.it]],
+        registerIds: string[] = R.is(Array, register.value)
+            ? register.value
+            : R.keys(register.value),
+        nrRegisterIds: number = registerIds.length,
+        dualIdIn: string[] = splitId(idIn),
+        itemId: string,
+        mid: string;
+
+        if (nrRegisterIds !== 0) {
+            var i = 0;
+            while (!itemId && i < nrRegisterIds) {
+                if (idIn === registerIds[i]) {
+                    itemId = idIn;
+                } else {
+                    var dualRegisterId = splitId(registerIds[i]);
+                    if (dualRegisterId.length > 1) {
+
+                        // node has caused that registerId contains both mid and itemIs
+                        // and idIn is from a model and consists of mid only
+                        // lookup correct `mid%%itemId`
+                        mid = extractMid(dualRegisterId);
+                        if (mid === idIn) {
+                            itemId = registerIds[i];
+                        }
+                    } else if (dualIdIn.length > 1) {
+                        //nieuwe mid van model eerder dan nieuwe nodeIt
+                        // idIn originates from itNode
+                        // maybe reset needed if model was earlier than itNode or itElement
+                        // and keys need to be reset!!
+                        mid = extractMid(dualIdIn);
+                        if (register.value[mid]) {
+                            var registerValue = register.value[mid];
+                            //LET OP register moet "verbouwd"
+                            if(R.is(Array, register.value)){
+                                var index = R.indexOf(mid, register.value);
+                                register.value.slice(index, index + 1);
+                                register.value.push(itemId);//of op dezelfde plek arin als dit belangrijk is voor volgorde!!
+                            }
+                            else {
+                                delete register.value[mid];
+                                register.value[idIn] = registerValue;
+                            }
+                        }
+                        itemId = idIn;
+                    }
+                }
+                i++;
+            }
+        }
+        return itemId || idIn;
+    }
+
+    /**
+     * Returns a function that transforms a itemInput, depending on the attribute
+     * of itemInput. If an attribute exists, it is appended to the itemInput's it.
+     * @param {G.IListOptions} options
+     * @return {Function}
+     */
+    export function node(options: G.IListPipOptions) {
+        return options[ON[ON.idKey]]
+            ? function(itemInput: G.IMessage, register: G.IRegister<any>): string {
+                var idKey: string = itemInput[MK[MK.value]]
+                    ? itemInput[MK[MK.value]][options[ON[ON.idKey]]]
+                    : void 0;
+                return idKey
+                    ? itemInput[MK[MK.it]] + G.MERGETOKEN + idKey
+                    : map(itemInput, register);
+            }
+        : function(itemInput: G.IMessage): string {
+            return itemInput[MK[MK.it]];
+        };
+    }
+}

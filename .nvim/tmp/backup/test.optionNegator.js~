@@ -1,0 +1,73 @@
+var assert = require('assert');
+
+var negator = require('../logic/optionNegator');
+
+describe('Negate the options', function() {
+
+    it('flips', function() {
+        var requested = [
+            'exports/global', 
+            'core/ready',
+            'event',
+            'dimensions',
+            'offset',
+            'ajax',
+            'ajax/xhr'];
+        var options = [
+            'ajax/script',
+            'ajax/jsonp',
+            'deprecated',
+            'effects',
+            'wrap',
+            'deferred',
+            'css',
+            'exports/amd'
+        ];
+        assert.deepEqual(negator.negate(requested), options);
+    });
+
+    it('empty', function() {
+
+        var options = [
+            'ajax',
+            'ajax/xhr',
+            'ajax/script',
+            'ajax/jsonp',
+            'core/ready',
+            'deprecated',
+            'dimensions',
+            'effects',
+            'event',
+            'offset',
+            'wrap',
+            'deferred',
+            'css',
+            'exports/amd',
+            'exports/global'
+        ];
+        assert.deepEqual(negator.negate([]), options);
+    });
+
+    it('full house', function() {
+
+        var requested = [
+            'ajax',
+            'ajax/xhr',
+            'ajax/script',
+            'ajax/jsonp',
+            'core/ready',
+            'deprecated',
+            'dimensions',
+            'effects',
+            'event',
+            'offset',
+            'wrap',
+            'deferred',
+            'css',
+            'exports/amd',
+            'exports/global'
+        ];
+        assert.deepEqual(negator.negate(requested), []);
+    });
+});
+

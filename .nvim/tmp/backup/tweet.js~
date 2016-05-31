@@ -1,0 +1,15 @@
+var mongoose = require('mongoose');
+var Schema = mongoose.Schema;
+
+var Tweet = new Schema({
+    text: {
+        type: String
+    },
+    id_str: String,
+    check_deleted: String,
+    created_at: String,
+    user: Schema.Types.Mixed
+}, {strict: false});
+
+
+mongoose.model('Tweet', Tweet);

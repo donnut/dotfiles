@@ -1,0 +1,100 @@
+// main file for loading Requirejs necessary stuff
+
+// QUnit.config.autostart = false;
+QUnit.assert.include = function(haystack, needle, message) {
+    var found = false, i = 0;
+    if (typeof haystack === 'string') {
+        haystack = haystack.split(' ');
+    }
+    while (!found && i < haystack.length) {
+        found = needle === haystack
+        i++;
+    }
+    this.push(found, found, needle, message);
+};
+
+QUnit.assert.sameMembers = function(haystack, needle, message) {
+    var gMatch = true, i = 0, j = 0, match = true;
+    var sameLength = haystack.length === needle.length;
+    while (gMatch && sameLength && i < haystack.length) {
+        j = 0;
+        match = false;
+        while(!match && j < needle.length) {
+            match = needle[j] === haystack[i];
+            j++;
+        }
+        gMatch = gMatch && match;
+        i++;
+    }
+    gMatch = gMatch && sameLength;
+    this.push(gMatch, gMatch, needle, message);
+};
+
+QUnit.done(function() {
+    if (window.socket) {
+        window.socket.disconnect();
+    }
+});
+
+QUnit.begin(function() {
+    spyAjax = sinon.spy($, 'ajax');
+});
+
+QUnit.assert.deepEqualRandomKeys = function(actual, expected, token, message) {
+    var actualValues = [];
+    var expectedValues = [];
+
+    if (actual instanceof Object) {
+        Object.keys(actual).forEach(function(key) {
+            actualValues.push(actual[key]);
+        });
+        Object.keys(expected).forEach(function(key) {
+            expectedValues.push(expected[key]);
+        });
+    }
+    var match = QUnit.equiv(actualValues, expectedValues);
+    this.push(match, actualValues, expectedValues, message);
+}
+
+QUnit.assert.deepEqualSplitKeys = function(actual, expected, token, message) {
+    var strippedActual, strippedExpected;
+    if (!token) token = '%%';
+
+    function stripArray(result) {
+        var stripped = [];
+        result.forEach(function(item) {
+            var chunks = item.split(token);
+            if (chunks.length > 1) {
+                stripped.push(chunks[1]);
+            } else {
+                stripped.push(chunks[0])
+            }
+        });
+        return stripped;
+    }
+
+    function stripObject(result) {
+        var keys = Object.keys(result);
+        var stripped = {};
+        keys.forEach(function(key) {
+            var chunks = key.split(token);
+            if (chunks.length > 1) {
+                stripped[chunks[1]] = result[key];
+            } else {
+                stripped[key] = result[key];
+            }
+        });
+    }
+
+    if (actual instanceof Object) {
+        if (actual.length) {
+            strippedActual = stripArray(actual);
+            strippedExpected = stripArray(expected);
+        } else {
+            strippedActual = stripObject(actual);
+            strippedExpected = stripObject(expected);
+        }
+    }
+    var match = QUnit.equiv(strippedActual, strippedExpected);
+    this.push(match, strippedActual, strippedExpected, message);
+};

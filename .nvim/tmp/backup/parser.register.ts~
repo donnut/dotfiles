@@ -1,0 +1,84 @@
+module Parser.Register {
+
+    const ID = '__it';
+
+    export interface NavNode {
+        __it: string;
+        children: string[];
+    }
+
+    export class RouterRegister {
+        private register: any[];
+        constructor(register) {
+            this.register = register;
+        }
+
+        isActive(id: string) {
+            return this.register[id] && this.register[id].active === true;
+        }
+    }
+
+    class Node {
+        __it: string;
+        constructor(item: string) {
+            this[ID] = item;
+        }
+    }
+
+    class AST {
+        root: Node;
+        children: AST[] = [];
+
+        constructor(rootItem: string) {
+            this.root = new Node(rootItem);
+        }
+
+        addChild(child: AST) {
+            this.children.push(child);
+        }
+
+        toString() {
+            return this.root !== void 0 ? this.root[ID]: void 0;
+        }
+
+        createUrl() {
+            if (this.children.length === 0) return this.toString();
+            var buf = '';
+            if (this.root[ID]) {
+                buf = buf + this.toString() + '/';
+            }
+            const childStrings = R.map(child => child.createUrl(), this.children);
+            buf += childStrings.length === 1
+                ? R.head(childStrings)
+                : '(' + childStrings.join('&') + ')';
+            return buf;
+        }
+    }
+
+    export class Parser {
+        private register: RouterRegister;
+        constructor(register: RouterRegister) {
+            this.register = register;
+        }
+        read(navTree: NavNode[]): AST {
+            let root = R.find(item => item.__it === 'body', navTree);
+            let tree = new AST(root[ID])
+            R.forEach(child => this.readItem(child, navTree, tree), root.children);
+            return tree;
+        }
+
+        readItem(subTreeRoot: string, navTree: NavNode[], tree) {
+            if (this.register.isActive(subTreeRoot)) {
+                let subRoot = new AST(subTreeRoot);
+                tree.addChild(subRoot);
+                var children = this.getChildren(subTreeRoot, navTree);
+                R.forEach(child => this.readItem(child, navTree, subRoot), children);
+            }
+        }
+
+        getChildren(item: string, navTree: NavNode[]) {
+            let node = R.find(it => it[ID] === item, navTree)
+            return node.children;
+        }
+    }
+}

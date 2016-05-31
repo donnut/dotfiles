@@ -1,0 +1,100 @@
+import smtplib
+import os
+import sys
+import logging
+
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email.mime.text import MIMEText
+from email.encoders import encode_base64
+
+log = logging.getLogger("custom.sendmail")
+
+def build_body(options, build_name):
+    # strip prefixes to get module names used in UI
+    options = [opt.split('/')[-1] for opt in options]
+    content = """
+Hello,
+
+The attachment of this email contains the jQuery build "%s" as you
+configured it on jqueryconfig.com.
+
+In addition to the jQuery core, the modules you included are:
+""" % build_name
+
+    if len(options) == 0:
+        content = content + "- None"
+    else:
+        content = content + "".join([ "+ %s\n" % option for option in options])
+
+    content = content + """
+
+If you want to build another jQuery configuration, just visit jqueryconfig.com again.
+
+Please, test your jQuery build before using it.
+
+Best Regards,
+
+The jQueryConfig team
+
+
+The MIT License (MIT)
+
+Copyright © 2015 The jQuery Foundation
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+"""
+
+    return content
+
+def send(destination, filename, options):
+
+    log.info('starting sendmail script, sending to %s' % destination)
+    build_name = os.path.split(filename)[1][0:-4]
+    msg  = MIMEMultipart('mixed')
+    user = 'AKIAJ6ZF4OJCSYGXUEWQ'
+    pw   = 'An9EdNhO2C84UHjXAV4g/bH7F5VBBjyW5wnsWJsQEYrS'
+    host = 'email-smtp.eu-west-1.amazonaws.com'
+    port = 25
+    me   = u'info@jqueryconfig.com'
+    msg['From'] = me
+    msg['To'] = destination
+    msg['Subject'] = 'Your jQuery build: %s' % build_name
+
+    body = build_body(options, build_name)
+    msg.attach(MIMEText(body))
+
+    #attachment
+    attach = MIMEBase('application', 'octet-stream')
+    attach.set_payload(open(filename, 'rb').read())
+    encode_base64(attach)
+    attach.add_header('Content-Disposition', 'attachment; filename="%s"' % os.path.basename(filename))
+    msg.attach(attach)
+
+    s = smtplib.SMTP(host, port, 'jqueryconfig.com')
+    s.starttls()
+    s.login(user, pw)
+
+    try:
+        s.sendmail(me, destination, msg.as_string())
+        log.info('Email sent to %s' % destination)
+    except:
+        log.exception('200: Failed to send mail to %s' % destination)
+        sys.exit("200")
+

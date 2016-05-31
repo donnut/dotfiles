@@ -1,0 +1,116 @@
+{{!< default}}
+
+{{! The comment above "< default" means - insert everything in this file into
+    the {body} of the default.hbs template, which contains our header/footer. }}
+
+{{! Everything inside the #post tags pulls data from the post }}
+{{#post}}
+
+<header class="main-header post-head">
+    <nav class="main-nav clearfix">
+        <a class="blog-logo" href="{{@blog.url}}"><img src="{{asset "images/nav-logo.png"}}" alt="{{@blog.title}}" /></a>
+        {{navigation}}
+    </nav>
+    {{> contact}}
+</header>
+
+<main class="content" role="main">
+    <article class="{{post_class}}">
+
+        <header class="post-header">
+            <div class = 'post-title--before'>
+                <h6 class="post-category">
+                    {{#foreach tags}}
+                        {{#if @first}}
+                            <a href="{{url}}" title="{{name}}" class="tag-{{id}}">{{name}}</a>
+                        {{/if}}
+                    {{/foreach}}
+                </h6>
+                {{>comment}}
+                <div class="share--header">
+                    <a class="icon-share share-link" href=""></a>
+                    <div class="share-link-wrap hidden">
+                        {{> share}}
+                    </div>
+                </div>
+            </div>
+
+            <h2 class="post-title">{{title}}</h2>
+            <section class="post-meta">
+                <time class="post-date" datetime="{{date format='YYYY-MM-DD'}}">{{date format="DD MMMM YYYY"}}</time>
+                <div class = 'tags'>
+                    {{#foreach tags}}
+                        {{#unless @first}}
+                            <a href="{{url}}" title="{{name}}" class="tag-{{id}}">{{name}}</a>
+                            {{#unless @last}} | {{/unless}}
+                        {{/unless}}
+                    {{/foreach}}
+                </div>
+            </section>
+        </header>
+
+        <section class="post-content">
+            {{content}}
+        </section>
+
+        <footer class="post-footer">
+            <section class="share">
+                <h4>deel dit artikel</h4>
+                {{>share}}
+            </section>
+
+            <a class="img" href="{{@blog.url}}/over" style="background-image: url({{asset "images/logo-klein-witbg.png"}})"><span class="hidden">{{name}}</span></a>
+
+            {{! Everything inside the #author tags pulls data from the author }}
+            {{#author}}
+                <section class="author">
+                    <h4><a href="{{@blog.url}}/over">{{name}}</a></h4>
+                    <p>
+                        <span class= 'brand-name'>De<span class = 'magnifier'>data</span>meester</span> blogt in begrijpelijke taal over data science. <span class= 'brand-name'>De<span class = 'magnifier'>data</span>meester</span>helpt u uw gegevens de baas te worden en levert oplossingen in een vorm waar u mee verder kunt.
+                    </p>
+                </section>
+            {{/author}}
+
+        </footer>
+
+        <div id="disqus_thread"></div>
+        <script type="text/javascript">
+            var disqus_shortname = 'dedatameester'; // required: replace example with your forum shortname
+            var disqus_identifier = '{{post.id}}';
+
+            /* * * DON'T EDIT BELOW THIS LINE * * */
+            (function() {
+                var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+            })();
+        </script>
+        <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+        <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+    </article>
+</main>
+
+{{!-- <aside class="read-next">
+    {{#next_post}}
+    <a class="read-next-story {{#if image}}" style="background-image: url({{image}}){{else}}no-cover{{/if}}" href="{{url}}">
+        <section class="post">
+            <h2>{{title}}</h2>
+            <p>{{excerpt words="19"}}&hellip;</p>
+        </section>
+    </a>
+    {{/next_post}}
+    {{#prev_post}}
+    <a class="read-next-story prev {{#if image}}" style="background-image: url({{image}}){{else}}no-cover{{/if}}" href="{{url}}">
+        <section class="post">
+            <h2>{{title}}</h2>
+            <p>{{excerpt words="19"}}&hellip;</p>
+        </section>
+    </a>
+    {{/prev_post}}
+</aside> --}}
+
+
+
+
+{{/post}}

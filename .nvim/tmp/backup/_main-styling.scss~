@@ -1,0 +1,288 @@
+@import 'color';
+@import 'fonts';
+
+$main-header-bgc:               $gray-light;
+
+$subscribe-button-color:        $brand-color;
+$subscribe-button-bgc:          $white;
+
+$post-borderc:                  $line-color;
+$post-gridimg-bgc :             $site-bgc;
+
+$page-title-color:              $bright-color;
+$page-description-color :       $bright-color;
+
+$disqus-icon-color: $accent-color;
+
+/* ==========================================================================
+   4. General - The main styles for the the theme
+   ========================================================================== */
+/* Wraps the main content & footer */
+.site-wrapper {
+    position: relative;
+    z-index: 10;
+    min-height: 100%;
+    background: $site-bgc;
+    -webkit-transition: -webkit-transform 0.5s ease;
+            transition: transform 0.5s ease;
+}
+
+.contact{
+    width:80%;
+    max-width:710px;
+    margin:0 auto;
+}
+
+.subscribe-button, .contact-button, .follow-button {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    display: inline-block;
+    padding: 0 20px;
+    color: $subscribe-button-color;//ghost:111 !important; /* Overides `.nav a:link, .nav a:visited` colour */
+    text-align: center;
+    font-size: 12px;
+    font-family: $basic-font;
+    text-transform: uppercase;
+    text-decoration: none;
+    line-height: 35px;
+    border-radius: 3px;
+    background:$subscribe-button-bgc; //ghost:fff;
+    transition: all ease 0.3s;
+    margin-bottom: 20px;
+}
+.subscribe-button:before,  .contact-button:before, .follow-button:before{
+    margin-right: 6px;
+}
+.subscribe-button,  .follow-button{
+   float:right;
+}
+.subscribe-button{
+    margin-left:10px;
+}
+.contact-button{
+  float:left;
+}
+/* Appears in the top left corner of your home page */
+.blog-logo {
+    display: block;
+    float: left;
+    background: none !important; /* Makes sure there is never a background */
+    border: none !important; /* Makes sure there is never a border */
+}
+
+.blog-logo img {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    display: block;
+    height: 38px;
+    padding: 1px 0 5px 0;
+    width: auto;
+}
+
+/* The details of your blog. Defined in ghost/settings/ */
+.page-title {
+    margin: 10px 0 10px 0;
+    letter-spacing: -1px;
+    font-weight: 700;
+    //font-family: $basic-font;
+    color: $page-title-color;
+}
+.hero-img img{
+    width:100%;
+}
+
+.page-description {
+    margin: -3rem 0 2rem 0;
+    font-size: 2rem;
+    line-height: 1.5em;
+    font-weight: 400;
+    //font-family:$basic-font;
+    letter-spacing: 0.01rem;
+    color: $page-description-color;
+    text-align:right;
+}
+
+
+/* Big cover image on the home page */
+.main-header {
+    position: relative;
+    display: table;
+    width: 100%;
+    margin-bottom: 5rem;
+    text-align: center;
+    background: $main-header-bgc;
+    background-size: cover;
+    overflow: hidden;
+}
+
+.main-header .inner {
+    width: 80%;
+}
+
+
+
+/* Add subtle load-in animation for content on the home page */
+// .home-template .page-title {
+//     -webkit-animation: fade-in-down 0.6s;
+//     animation: fade-in-down 0.6s;
+//     -webkit-animation-delay: 0.2s;
+//     animation-delay: 0.2s;
+// }
+// .home-template .page-description {
+//     -webkit-animation: fade-in-down 0.9s;
+//     animation: fade-in-down 0.9s;
+//     -webkit-animation-delay: 0.1s;
+//     animation-delay: 0.1s;
+// }
+
+/* Every post, on every page, gets this style on its <article> tag */
+.post {
+    position: relative;
+    width: 80%;
+    max-width: 710px;
+    margin: 4rem auto;
+    padding-bottom: 4rem;
+    border-bottom: $post-borderc 1px solid;
+    word-wrap: break-word;
+}
+.post-separator{
+    padding:10px;
+    position: absolute;
+    bottom: -50px;
+    left: 50%;
+    border: 1px solid transparent;
+    margin-left: -110px;
+    background: $site-bgc;
+    border-radius:20px;
+}
+.post-separator:hover{
+    border-color: $hover-color;
+}
+
+/* Add a little circle in the middle of the border-bottom on our .post
+   just for the lolz and stylepoints. */
+.post-separator-image{
+    display: block;
+    width: 200px;
+    height: 80px;
+}
+
+body:not(.post-template) .post-title {
+    font-size: 3.6rem;
+}
+
+.post-title a {
+    color:$title-color;
+    text-decoration: none;
+}
+
+.post-excerpt {
+    margin-bottom: 8rem;
+}
+.post-excerpt p {
+    margin: 0;
+    font-size: 0.9em;
+    line-height: 1.7em;
+}
+
+.read-more {
+    text-decoration: none;
+}
+
+.post-meta {
+    display: block;
+    // margin: 1.75rem 0 0 0;
+    font-family: $basic-font;
+    font-weight:200;
+    font-size: 1.5rem;
+    line-height: 1rem;
+}
+
+.author-thumb {
+    width: 24px;
+    height: 24px;
+    float: left;
+    margin-right: 9px;
+    border-radius: 100%;
+}
+
+.post-meta a {
+    color: $tag-color;
+    text-decoration: none;
+}
+
+.post-meta a:hover {
+    color: $hover-color;
+    text-decoration: underline;
+}
+
+.user-meta {
+    position: relative;
+    padding: 0.3rem 40px 0 100px;
+    min-height: 77px;
+}
+
+.post-date {
+    display: inline-block;
+    text-transform: uppercase;
+    font-size: 1.3rem;
+    color: $date-color;
+    white-space: nowrap;
+}
+
+.user-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.user-name {
+    display: block;
+    font-weight: 700;
+}
+
+.user-bio {
+    display: block;
+    max-width: 440px;
+    font-size: 1.4rem;
+    line-height: 1.5em;
+}
+
+.publish-meta {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 4.3rem 0 4rem 0;
+    text-align: right;
+}
+
+.publish-heading {
+    display: block;
+    font-weight: 700;
+}
+
+.publish-date {
+    display: block;
+    font-size: 1.4rem;
+    line-height: 1.5em;
+}
+.disqus-comment-count{
+    position:relative;
+    font-size:3rem;
+    line-height:3rem;
+    text-align:right;
+    color:$disqus-icon-color;
+}
+.nr-of-comments{
+    font-size:1rem;
+    font-weight:bold;
+    line-height:3rem;
+    display:inline;
+    vertical-align:middle;
+    position:absolute;
+    top:-5%;
+    left:35%;
+    text-decoration:none;
+}

@@ -1,0 +1,53 @@
+var Twitter = require('twitter');
+var mongoose = require('mongoose');
+var fs = require('fs');
+var async = require('async');
+var time = require('time');
+var R = require('ramda');
+
+var client = new Twitter({
+    consumer_key: 'cWN3UpsbOqG7jn0m8EmvoqtSV',
+    consumer_secret: 'e5Ep2oM1FRVHXgXKiEJwGEZasytAuNDv6h69XS0nPLGmDLx3gz',
+    access_token_key: '15123362-RkHEznCU2x8RhIhu4vWNEzb5BETha2nsLIp7M0vXf',
+    access_token_secret: 't9GeqpH4ufn2fix14BEdM5EKrrOHGGYUDVVbVFkeENsYy'
+});
+
+
+// initialize model(s)
+require('../models/tweet');
+var Tweet = mongoose.model('Tweet');
+
+mongoose.connect('mongodb://localhost/vluchtelingen', {
+    db:{safe: { j: 1, w: 0, wtimeout: 10000 }}
+});
+
+var verloop = {};
+Tweet.
+    find({"check_deleted": {$eq: null}}).
+    sort({"timestamp_ms": 1}).
+    exec(function(err, tweets) {
+        if (err) console.log(err);
+        sum = 0
+        R.forEach(function(tweet) {
+            date = new time.Date(tweet.created_at, 'Europe/Amsterdam');
+            hour = date.getHours();
+            dayOfMonth = date.getDate();
+            index = dayOfMonth + '_' + hour;
+            nr_followers = tweet['user']['followers_count']
+            sum += 1;
+            if (!verloop[index]) {
+                verloop[index] = nr_followers;
+            } else {
+                verloop[index] += nr_followers;
+            }
+        }, tweets);
+        R.forEach(function(index) {
+            console.log(index, verloop[index]);
+        }, R.keys(verloop));
+        console.log("total " + sum);
+        mongoose.disconnect();
+    });
+
+//db.tweets.aggregate([ { $match: {$and: [{"user.location": { $ne: null}}, {"user.location": { $ne: "" }} ]}}, {$group: {_id: {usr: "user.id"}, num: {$sum:1}}}, { $group: {_id: {us: "$_id.usr", loc: "$user.location"}}, number: { $sum:1 }}, {$sort: {number:-1}}])
+
+

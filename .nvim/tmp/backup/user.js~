@@ -1,0 +1,22 @@
+var mongoose = require('mongoose');
+var Schema = mongoose.Schema;
+var emailValidator = require('../logic/emailValidator');
+
+var User = new Schema({
+    email: {
+        type: String,
+        validate: {
+            validator: emailValidator.validate,
+            message: '"{VALUE}" is not a valid email address'
+        }
+    },
+    ip: {
+        type: String
+    },
+    date: { type: Date, default: Date.now },
+    config_id: Schema.Types.ObjectId,
+    autoIndex: false
+});
+
+User.index({email: 1, ip: 1});
+mongoose.model('User', User);

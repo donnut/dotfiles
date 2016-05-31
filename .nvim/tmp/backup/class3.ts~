@@ -1,0 +1,20 @@
+var Pip = (function() {
+    let prive;
+    function Pip(name) {
+        prive = name;
+    }
+
+    const read = function() {
+        return prive;
+    }
+
+    Pip.prototype.get = function() {
+        return read();
+    }
+    return Pip;
+}());
+
+
+var pip = new Pip("Erwin");
+console.log(`Aanroep get ${pip.get()}`);
+console.log(`inhoud prive  ${pip.prive}`);

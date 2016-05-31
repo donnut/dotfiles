@@ -1,0 +1,5 @@
+//declare var F: F.Fantasy;
+
+declare module 'fantasy' {
+    export interface Either {
+}

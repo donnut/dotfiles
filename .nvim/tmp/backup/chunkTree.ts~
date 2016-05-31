@@ -1,0 +1,383 @@
+/// <reference path="./expressionTree.ts" />
+
+namespace Chunk {
+
+    import Expr = Expressions;
+
+    type ConditionalOperators = Expr.ConnectiveOperator|Expr.BooleanOperator|Expr.ComparativeOperator;
+    type ArrayOperators = Expr.MathOperator|Expr.ReduceOperator|Expr.MapOperator;
+
+    enum Types {'number', 'string', 'factor', 'math', 'condition', 'block', 'comparison', 'map',
+                'case', 'boolean', reduce, message, 'message-area', 'message-branch', 'message-case'}
+
+    class Before {
+        nid: string;
+        tpl: string;
+        constructor(type: string, pid: string) {
+            this.nid = `${pid}-before`;
+            this.tpl = `<button class='insert--before ${type}'>&#8230;</button>`;
+        }
+    }
+    class After {
+        nid: string;
+        tpl: string;
+        constructor(type: string, pid: string) {
+            this.nid = `${pid}-after`;
+            this.tpl = `<button class='insert--after${type}'>&#8230;</button>`;
+        }
+    }
+    class Left {
+        nid: string;
+        tpl: string;
+        constructor(type: string, pid: string) {
+            this.nid = `${pid}-left`;
+            this.tpl = `<p class='parenthesis--left ${type}'>&#40;</button>`;
+        }
+    }
+    class Right {
+        nid: string;
+        tpl: string;
+        constructor(type: string, pid: string) {
+            this.nid = `${pid}-right`;
+            this.tpl = `<p class='parenthesis--right ${type}'>&#41;</button>`;
+        }
+    }
+    class Else {
+        nid: string;
+        tpl: string;
+        constructor(type: string, pid: string) {
+            this.nid = `${pid}-else`;
+            this.tpl = `<p class='else ${type}'>else</p>`;
+        }
+    }
+    class Return {
+        nid: string;
+        tpl: string;
+        constructor(type: string, pid: string) {
+            this.nid = `${pid}-return`;
+            this.tpl = `<p class='return ${type}'>return</p>`;
+        }
+    }
+
+    class Operator {
+        nid: string;
+        tpl: string;
+        constructor(type: string, selected: string, pid: string) {
+            let op;
+            switch (selected) {
+                case 'minus': op = '&#8230'; break;
+                case 'plus': op = '&#8230'; break;
+                case 'multiply': op = '&#8230'; break;
+                case 'divide': op = '&#8230'; break;
+            }
+            this.nid = `${pid}-operator`;
+            this.tpl = `<button class='operator ${type}'>${op}</button>`;
+        }
+    }
+
+    class Divider {
+        nid: string;
+        tpl: string;
+        constructor(pid: string) {
+            this.nid = `${pid}-divider`;
+            this.tpl = `<span class='divider'>&#44;</span>`;
+        }
+    }
+
+    class Factor {
+        nid: string;
+        tpl: string;
+        children: any[];
+        constructor(node) {
+            this.nid = node.nid;
+            this.tpl = `<div class='part value'></div>`;
+            const body = node.type === 'boolean'
+                ? new BooleanInput(node.type, node.nid)
+                : new AlphaNumInput(node.type, node.nid)
+            this.children = [];
+            this.children.push(new Before(node.type, this.nid));
+            this.children.push(body);
+            this.children.push(new After(node.type, this.nid));
+        }
+    }
+
+    class AlphaNumInput {
+        nid: string;
+        tpl: string;
+        constructor(type: string, pid: string) {
+            this.nid = `${pid}-${type}-input`;
+            this.tpl = `<button class='value ${type}'>\n
+                    <input type='text' class='${type}'/>\n
+                </button>`;
+        }
+    }
+
+    class BooleanInput {
+        nid: string;
+        tpl: string;
+        constructor(type: string, pid: string) {
+            this.nid = `${pid}-${type}-input`;
+            this.tpl = `<button class='value ${type}'>\n
+                    <ul class='select'/>\n
+                        <li><button class='true'>true</button></li>\n
+                        <li><button class='false'>false</button></li>\n
+                    </ul>\n
+                </button>`;
+        }
+    }
+
+    class Label {
+        nid: string;
+        tpl: string;
+        constructor(node: Expr.Label) {
+            this.nid = node.nid;
+            this.tpl = `<div class='label'>${node.value}</div>`;
+        }
+    }
+
+    class AreaOperator {
+        nid: string;
+        tpl: string;
+        children: any[];
+        constructor(node: Expr.AreaOperator, children: (Expr.CaseOperator|Expr.BranchOperator)[]) {
+            this.nid = node.nid,
+            this.tpl = `<div class='area'></div>`
+            this.children = children;
+        }
+    }
+
+    class BranchOperator {
+        nid: string;
+        tpl: string;
+        children: any[];
+        constructor(node: Expr.BranchOperator, child: Factor) {
+            const tb = Types[Types.block];
+            this.nid = node.nid,
+            this.tpl = `<div class='branch'></div>`
+            this.children = [];
+            this.children.push(new Before(tb, this.nid));
+            this.children.push(new Else(tb, this.nid));
+            this.children.push(new Return(tb, this.nid));
+            this.children.push(child);
+            this.children.push(new After(tb, this.nid));
+        }
+    }
+
+    class OC {
+        nid: string;
+        tpl: string;
+        children: any[];
+        constructor(node: Expr.MathOperator|Expr.BooleanOperator, child: Factor) {
+            let type: string, bType: string;
+            switch (node.constructor) {
+                case Expr.MathOperator: type = Types[Types.math]; bType = Types[Types.factor]; break;
+                case Expr.BooleanOperator: type = Types[Types.boolean]; bType = Types[Types.condition]; break;
+            }
+            this.nid = node.nid,
+            this.tpl = `<div class='reduce'></div>`
+            this.children = [];
+            this.children.push(new Before(bType, this.nid));
+            this.children.push(new Operator(type, node.selected, this.nid));
+            this.children.push(new Left(type, this.nid));
+            this.children.push(child);
+            this.children.push(new Right(type, this.nid));
+            this.children.push(new After(bType, this.nid));
+        }
+    }
+
+    class CaseOperator {
+        nid: string;
+        tpl: string;
+        children: any[];
+        constructor(node: Expr.CaseOperator, child1: Factor, branch: Factor) {
+            this.nid = node.nid,
+            this.tpl = `<div class='reduce'></div>`
+            this.children = [];
+            this.children.push(new Before(Types[Types.block], this.nid));
+            this.children.push(new Else(Types[Types.block], this.nid));
+            this.children.push(new Return(Types[Types.case], this.nid));
+            this.children.push(child1);
+            this.children.push(branch);
+        }
+    }
+
+    class COC {
+        nid: string;
+        tpl: string;
+        children: any[];
+        constructor(node: Expr.NumberOperator|Expr.StringOperator|Expr.ConnectiveOperator|Expr.ComparativeOperator, child1: Factor, child2: Factor) {
+            let type: string, bType: string;
+            switch (node.constructor) {
+                case Expr.NumberOperator: type = Types[Types.number]; bType = Types[Types.number]; break;
+                case Expr.StringOperator: type = Types[Types.string]; bType = Types[Types.string]; break;
+                case Expr.ConnectiveOperator: type = Types[Types.condition]; bType = Types[Types.condition]; break;
+                case Expr.ComparativeOperator: type = Types[Types.comparison]; bType = Types[Types.condition]; break;
+            }
+            this.nid = node.nid,
+            this.tpl = `<div class='number'></div>`
+            this.children = [];
+            this.children.push(new Before(bType, this.nid));
+            this.children.push(new Left(type, this.nid));
+            this.children.push(child1);
+            this.children.push(new Operator(type, node.selected, this.nid));
+            this.children.push(child2);
+            this.children.push(new Right(type, this.nid));
+            this.children.push(new After(bType, this.nid));
+        }
+    }
+
+    class OCAC {
+        nid: string;
+        tpl: string;
+        children: any[];
+        constructor(node: Expr.CaseOperator, condition: ConditionalOperators, childs: ArrayOperators[]) {
+            let beforeClss, clss;
+            this.nid = node.nid;
+            if (node.constructor === Expr.ReduceOperator) {
+                beforeClss = Types[Types.factor];
+                clss = Types[Types.reduce];
+            } else {
+                beforeClss = Types[Types.map];
+                clss = Types[Types.map];
+            }
+            this.tpl = `<div class='${clss}'></div>`;
+            this.children = [];
+            this.children.push(new Before(beforeClss, this.nid));
+            this.children.push(new Operator(clss, node.selected, this.nid));
+            this.children.push(new Left(clss, this.nid));
+            this.children.push(condition);
+            this.children.push(new Divider(this.nid));
+            this.children.push(childs);
+            this.children.push(new Right(clss, this.nid));
+        }
+    }
+
+    class Expression {
+        nid: string;
+        tpl: string;
+        children: any[];
+        constructor(node: Expr.Expression, children: (Expr.MessageArea|Expr.ExpressionArea)[]) {
+            this.tpl = `<div class='expression'></div>`;
+            this.children = children;
+            this.nid = node.nid;
+        }
+    }
+
+    class MessageArea {
+        nid: string;
+        tpl: string;
+        children: any[];
+        constructor(node: Expr.MessageArea, children: (Expr.MessageCase|Expr.MessageBranch)[]) {
+            this.tpl = `<div class='message-area'></div>`;
+            this.children = children;
+            this.nid = node.nid;
+        }
+    }
+
+    class MessageBranch {
+        nid: string;
+        tpl: string;
+        children: any[];
+        constructor(node: Expr.MessageBranch, child: Expr.Message) {
+            this.tpl = `<div class='message-branch'></div>`;
+            this.children = [];
+            const tb = Types[Types.block];
+            this.nid = node.nid,
+            this.children.push(new Before(tb, this.nid));
+            this.children.push(new Else(tb, this.nid));
+            this.children.push(new Return(tb, this.nid));
+            this.children.push(child);
+            this.children.push(new After(tb, this.nid));
+        }
+    }
+
+    class MessageCase {
+        nid: string;
+        tpl: string;
+        children: any[];
+        constructor(node: Expr.MessageCase, condition: ConditionalOperators, child: Expr.MessageArea) {
+            let beforeClss, clss;
+            this.nid = node.nid;
+            const tb = Types[Types.block];
+            this.tpl = `<div class='message-block'></div>`;
+            this.children = [];
+            this.children.push(new Before(beforeClss, this.nid));
+            this.children.push(new Else(tb, this.nid));
+            this.children.push(new Return(tb, this.nid));
+            this.children.push(condition);
+            this.children.push(child);
+            this.children.push(new After(tb, this.nid));
+        }
+    }
+
+    class Message {
+        nid: string;
+        tpl: string;
+        children: any[];
+        constructor(node: Expr.MessageArea, children: Expr.ExpressionArea[]) {
+            this.tpl = `<div class='message'></div>`;
+            this.children = children;
+            this.nid = node.nid;
+        }
+    }
+
+    class ExpressionArea {
+        nid: string;
+        tpl: string;
+        children: any[];
+        constructor(node: Expr.ExpressionArea, label: Expr.Label, area: Expr.AreaOperator) {
+            this.tpl = `<div class='expression-area'></div>`;
+            this.nid = node.nid,
+            this.children = [label, area];
+        }
+    }
+
+    export function makeTree(expressionTree) {
+
+        function walk(node) {
+            switch (node.constructor) {
+                case Expr.Expression:
+                    return new Expression(node, R.map(walk, node.children));
+                case Expr.MessageArea:
+                    return new MessageArea(node, R.map(walk, node.children));
+                case Expr.MessageBranch:
+                    return new MessageBranch(node, walk(node.children[0]));
+                case Expr.MessageCase:
+                    return new MessageCase(node, walk(node.children[0]), walk(node.children[1]));
+                case Expr.Message:
+                    return new Message(node, R.map(walk, node.children));
+                case Expr.ExpressionArea:
+                    return new ExpressionArea(node, walk(node.children[0]), walk(node.children[1]));
+                case Expr.AreaOperator:
+                    return new AreaOperator(node, R.map(walk, node.children));
+                case Expr.BranchOperator:
+                    return new BranchOperator(node, walk(node.children[0]));
+                case Expr.CaseOperator:
+                    return new CaseOperator(node, walk(node.children[0]), walk(node.children[1]));
+
+                case Expr.NumberOperator:
+                case Expr.StringOperator:
+                case Expr.ConnectiveOperator:
+                case Expr.ComparativeOperator:
+                    return new COC(node, walk(node.children[0]), walk(node.children[1]));
+
+                case Expr.MathOperator:
+                case Expr.BooleanOperator:
+                    return new OC(node, walk(node.children[0]));
+
+                case Expr.Label:
+                    return new Label(node);
+
+                case Expr.Value:
+                    return new Factor(node);
+
+                case Expr.ReduceOperator:
+                case Expr.MapOperator:
+                    return new OCAC(node, walk(node.children[0]), walk(node.children[1]));
+                default:
+                    throw new Error(node.constructor);
+            }
+        }
+        return walk(expressionTree);
+    }
+}

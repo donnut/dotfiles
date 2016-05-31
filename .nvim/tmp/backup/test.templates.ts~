@@ -1,0 +1,15 @@
+import * as assert from 'assert';
+import * as Handlebars from 'handlebars';
+import * as Assets from '../ts/index';
+
+describe('template', function() {
+    it('plain import', function() {
+        let source = `<div class="entry">
+            <h1>{{title}}</h1>
+            @import './test/data/body', {"title": "Hello World"};
+            <p></p>
+            @import './test/data/body';
+            </div>`;
+        assert.equal(Assets.importer(source), '');
+    });
+});
