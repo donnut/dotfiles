@@ -1,1 +1,1 @@
-/home/donnut/.nvimrc
+../.vimrc

@@ -1,21 +1,27 @@
-## Goals
-Learn the basics of Typescript such that one is capable of writing their own typed functions.
+# LVM
 
-## Prerequisits
-ES6
+Laptop has 500GB disk.
+Disk partitioned as one big disk
 
-## TOC
-1. Introduction
-1. Basic Types (number, string, and tuple, enum)
-2. Interfaces
-3. Classes
-4. Functions
-5. Generics
-6. Type inference
-7. Modules and namespaces
+pvcreate /dev/sda1
+vgcreate viri /dev/sda1
 
-### Introduction
-Simple example that uses a node module (fs?) and includes `/// <reference path />`
-I has a wrong call and user has to correct it.
+Klein logical volume erop aangemaakt
 
-### Basic types
+lvcreate -L 2G -n data viri  (data is naam lv, viri is naam vg)
+
+Overzicht lv's met
+
+# lvscan
+
+Dan lv geformat met
+
+# mkfs.ext4 /dev/viri/data
+
+Lege mappen aangemaakt
+
+#mkdir -p /viri/data
+
+En deze gemount
+
+mount /dev/viri/data /viri/data

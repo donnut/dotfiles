@@ -52,9 +52,9 @@ set smarttab
 set cmdheight=1
 set laststatus=2
 set cursorline
-set undodir=~/.nvim/tmp/undo//
-set backupdir=~/.nvim/tmp/backup//
-set directory=~/.nvim/tmp/swap//
+set undodir=~/.vim/tmp/undo//
+set backupdir=~/.vim/tmp/backup//
+set directory=~/.vim/tmp/swap//
 set backup
 set noswapfile
 "set list
@@ -131,7 +131,6 @@ let g:haskell_enable_static_pointers = 1 " to enable highlighting of static
 set omnifunc=necoghc#omnifunc
 
 "syntastic
-let g:syntastic_haskell_ghc_mod_exec = '~/.nix-profile/bin/ghc-mod'
 let g:syntastic_typescript_tcs_checker = 'tsc'
 set statusline+=%#warningmsg#
 set statusline+=%{SyntasticStatuslineFlag()}
